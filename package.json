@@ -1,0 +1,23 @@
+{
+  "name": "pipebox",
+  "version": "0.0.0",
+  "description": "A lightweight desktop UI for running and debugging GitHub Actions and Jenkins pipelines locally with visual step-by-step logs—no git push required.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "ci-cd", "github-actions", "jenkins", "act", "desktop-app", "developer-tools", "docker", "devops"
+  ],
+  "author": "Maximiliano Garcia Mortigliengo",
+  "license": "ISC",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "12.18.0",
+      "onFail": "download"
+    }
+  },
+  "packageManager": "pnpm@12.18.0",
+  "type": "module"
+}
