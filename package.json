@@ -16,7 +16,6 @@
     "docker",
     "devops"
   ],
-  "main": "index.js",
   "scripts": {
     "prepare": "simple-git-hooks",
     "lint": "eslint . && pnpm -r --if-present run lint",
