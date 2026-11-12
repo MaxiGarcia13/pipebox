@@ -1,9 +1,17 @@
 minimumReleaseAgeExcludePrune: true
+minimumReleaseAgeExclude:
+  - electron@45.3.1
+
 trustPolicy: no-downgrade
+trustPolicyExclude:
+  - undici-types@6.21.0
+
+nodeLinker: hoisted
 shellEmulator: true
 
 packages:
   - 'packages/*'
 
 allowBuilds:
+  electron-winstaller: true
   simple-git-hooks: true

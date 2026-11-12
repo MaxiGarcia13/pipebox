@@ -22,7 +22,6 @@
     "lint:fix": "eslint --fix . && pnpm -r --if-present run lint:fix",
     "clean": "pnpm -r --if-present run clean && rm -rf node_modules pnpm-lock.yaml",
     "phoenix": "pnpm clean && pnpm install",
-    "app:build": "pnpm -F @pipebox/app build",
     "app:start": "pnpm -F @pipebox/app start"
   },
   "devEngines": {
