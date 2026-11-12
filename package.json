@@ -1,16 +1,27 @@
 {
   "name": "pipebox",
+  "type": "module",
   "version": "0.0.0",
+  "packageManager": "pnpm@12.18.0",
   "description": "A lightweight desktop UI for running and debugging GitHub Actions and Jenkins pipelines locally with visual step-by-step logs—no git push required.",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [
-    "ci-cd", "github-actions", "jenkins", "act", "desktop-app", "developer-tools", "docker", "devops"
-  ],
   "author": "Maximiliano Garcia Mortigliengo",
   "license": "ISC",
+  "keywords": [
+    "ci-cd",
+    "github-actions",
+    "jenkins",
+    "act",
+    "desktop-app",
+    "developer-tools",
+    "docker",
+    "devops"
+  ],
+  "main": "index.js",
+  "scripts": {
+    "prepare": "simple-git-hooks",
+    "lint": "eslint . && pnpm -r --if-present run lint",
+    "lint:fix": "eslint --fix . && pnpm -r --if-present run lint:fix"
+  },
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
@@ -18,6 +29,13 @@
       "onFail": "download"
     }
   },
-  "packageManager": "pnpm@12.18.0",
-  "type": "module"
+  "devDependencies": {
+    "@maxigarcia/eslint-config": "^1.17.0",
+    "eslint": "^10.14.0",
+    "lint-staged": "^17.6.0",
+    "simple-git-hooks": "^2.14.0"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm dlx lint-staged"
+  }
 }
