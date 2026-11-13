@@ -10,6 +10,7 @@ const (
   TypeWorkflowList = "workflow_list"
   TypeRunStarted   = "run_started"
   TypeRunFinished  = "run_finished"
+  TypeJobGraph     = "job_graph"
   TypeStepStarted  = "step_started"
   TypeStepFinished = "step_finished"
   TypeLog          = "log"
@@ -47,11 +48,23 @@ type StepStarted struct {
   Step string `json:"step"`
 }
 
+type JobNode struct {
+  ID    string   `json:"id"`
+  Name  string   `json:"name"`
+  Needs []string `json:"needs"`
+}
+
+type JobGraph struct {
+  Type string    `json:"type"`
+  Jobs []JobNode `json:"jobs"`
+}
+
 type StepFinished struct {
-  Type   string `json:"type"`
-  Job    string `json:"job"`
-  Step   string `json:"step"`
-  Status string `json:"status"`
+  Type       string `json:"type"`
+  Job        string `json:"job"`
+  Step       string `json:"step"`
+  Status     string `json:"status"`
+  DurationMs int64  `json:"durationMs,omitempty"`
 }
 
 type Log struct {

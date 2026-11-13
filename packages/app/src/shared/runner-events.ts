@@ -2,6 +2,7 @@ export type RunnerEventType
   = | 'workflow_list'
     | 'run_started'
     | 'run_finished'
+    | 'job_graph'
     | 'step_started'
     | 'step_finished'
     | 'log'
@@ -41,11 +42,23 @@ export interface StepStartedEvent {
   step: string;
 }
 
+export interface JobNode {
+  id: string;
+  name: string;
+  needs: string[];
+}
+
+export interface JobGraphEvent {
+  type: 'job_graph';
+  jobs: JobNode[];
+}
+
 export interface StepFinishedEvent {
   type: 'step_finished';
   job: string;
   step: string;
   status: StepStatus;
+  durationMs?: number;
 }
 
 export interface LogEvent {
@@ -77,6 +90,7 @@ export type RunnerEvent
   = | WorkflowListEvent
     | RunStartedEvent
     | RunFinishedEvent
+    | JobGraphEvent
     | StepStartedEvent
     | StepFinishedEvent
     | LogEvent
