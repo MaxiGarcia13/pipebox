@@ -16,6 +16,8 @@ alwaysApply: true
 - Reinvent act; wrap the CLI and normalize output to NDJSON events
 - Expose a generic shell API through preload
 - Build ad-hoc UI primitives; use shadcn-vue under `packages/app/src/components/ui/`
+- After `shadcn-vue add`, rename generated Vue files to **kebab-case** (`Button.vue` → `button.vue`) and fix local imports — CLI defaults to PascalCase
+- Add shadcn components only when a screen needs them (currently: `button` only)
 
 ## Process boundaries
 

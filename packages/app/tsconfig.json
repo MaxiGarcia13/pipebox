@@ -3,6 +3,9 @@
     "target": "ESNext",
     "module": "preserve",
     "moduleResolution": "bundler",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
     "resolveJsonModule": true,
     "allowJs": true,
     "noImplicitAny": true,

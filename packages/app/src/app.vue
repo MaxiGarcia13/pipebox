@@ -1,8 +1,17 @@
+<script setup lang="ts">
+import { Button } from '@/components/ui/button';
+</script>
+
 <template>
-  <h1 class="text-2xl font-semibold text-rose-500">
-    Hello World!
-  </h1>
-  <p class="mt-2 text-zinc-600">
-    Welcome to your Electron application.
-  </p>
+  <div class="flex flex-col gap-4 p-4">
+    <h1 class="text-2xl font-semibold">
+      PipeBox
+    </h1>
+    <p class="text-muted-foreground">
+      Local CI control panel
+    </p>
+    <Button>
+      Get started
+    </Button>
+  </div>
 </template>
