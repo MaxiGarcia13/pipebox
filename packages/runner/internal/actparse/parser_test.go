@@ -40,19 +40,28 @@ func TestParserStepLifecycle(t *testing.T) {
   if !ok || stepFinished.Status != "passed" || stepFinished.Step != "Main Install" {
     t.Fatalf("unexpected finish: %#v", finished[0])
   }
+  if stepFinished.DurationMs != 1200 {
+    t.Fatalf("duration: got %d want 1200", stepFinished.DurationMs)
+  }
 }
 
 func TestParserFailureAndSkip(t *testing.T) {
   parser := NewParser()
-  failed := parser.HandleLine("[ci/test]   ❌  Failure - Main Test")
+  failed := parser.HandleLine("[ci/test]   ❌  Failure - Main Test [500ms]")
   stepFailed := failed[0].(event.StepFinished)
   if stepFailed.Status != "failed" {
     t.Fatalf("expected failed, got %s", stepFailed.Status)
+  }
+  if stepFailed.DurationMs != 500 {
+    t.Fatalf("duration: got %d want 500", stepFailed.DurationMs)
   }
 
   skipped := parser.HandleLine("[ci/test]   🚧  Skipped - Main Deploy")
   stepSkipped := skipped[0].(event.StepFinished)
   if stepSkipped.Status != "skipped" {
     t.Fatalf("expected skipped, got %s", stepSkipped.Status)
+  }
+  if stepSkipped.DurationMs != 0 {
+    t.Fatalf("expected no duration, got %d", stepSkipped.DurationMs)
   }
 }

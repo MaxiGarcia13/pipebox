@@ -10,9 +10,9 @@ import (
 var (
   jobPrefixPattern = regexp.MustCompile(`^\[([^/\]]+)/([^\]]+)\]\s*(.*)$`)
   stepStartPattern = regexp.MustCompile(`(?i)(?:⭐\s*)?Run\s+(.+)$`)
-  stepSuccessPattern = regexp.MustCompile(`(?i)(?:✅\s*)?Success\s+-\s+(.+?)(?:\s+\[[^\]]+\])?\s*$`)
-  stepFailurePattern = regexp.MustCompile(`(?i)(?:❌\s*)?Failure\s+-\s+(.+?)(?:\s+\[[^\]]+\])?\s*$`)
-  stepSkippedPattern = regexp.MustCompile(`(?i)(?:🚧\s*)?Skipped\s+-\s+(.+?)(?:\s+\[[^\]]+\])?\s*$`)
+  stepSuccessPattern = regexp.MustCompile(`(?i)(?:✅\s*)?Success\s+-\s+(.+?)(?:\s+\[([^\]]+)\])?\s*$`)
+  stepFailurePattern = regexp.MustCompile(`(?i)(?:❌\s*)?Failure\s+-\s+(.+?)(?:\s+\[([^\]]+)\])?\s*$`)
+  stepSkippedPattern = regexp.MustCompile(`(?i)(?:🚧\s*)?Skipped\s+-\s+(.+?)(?:\s+\[([^\]]+)\])?\s*$`)
 )
 
 type Parser struct {
@@ -50,14 +50,15 @@ func (parser *Parser) HandleLine(rawLine string) []any {
     }
   }
 
-  if step, status, ok := matchStepFinished(message); ok {
+  if step, status, durationMs, ok := matchStepFinished(message); ok {
     parser.currentStep = step
     return []any{
       event.StepFinished{
-        Type:   event.TypeStepFinished,
-        Job:    parser.currentJob,
-        Step:   step,
-        Status: status,
+        Type:       event.TypeStepFinished,
+        Job:        parser.currentJob,
+        Step:       step,
+        Status:     status,
+        DurationMs: durationMs,
       },
     }
   }
@@ -99,15 +100,15 @@ func matchStepStart(message string) (string, bool) {
   return step, true
 }
 
-func matchStepFinished(message string) (step string, status string, ok bool) {
+func matchStepFinished(message string) (step string, status string, durationMs int64, ok bool) {
   if matches := stepSuccessPattern.FindStringSubmatch(message); matches != nil {
-    return strings.TrimSpace(matches[1]), "passed", true
+    return strings.TrimSpace(matches[1]), "passed", parseActDurationMs(matches[2]), true
   }
   if matches := stepFailurePattern.FindStringSubmatch(message); matches != nil {
-    return strings.TrimSpace(matches[1]), "failed", true
+    return strings.TrimSpace(matches[1]), "failed", parseActDurationMs(matches[2]), true
   }
   if matches := stepSkippedPattern.FindStringSubmatch(message); matches != nil {
-    return strings.TrimSpace(matches[1]), "skipped", true
+    return strings.TrimSpace(matches[1]), "skipped", parseActDurationMs(matches[2]), true
   }
-  return "", "", false
+  return "", "", 0, false
 }
