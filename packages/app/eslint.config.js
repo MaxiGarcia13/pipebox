@@ -17,5 +17,10 @@ export default eslintConfig(
         cssConfigPath,
       },
     },
+    ignores: [
+      'node_modules',
+      'dist',
+      '.vite',
+    ],
   },
 );
