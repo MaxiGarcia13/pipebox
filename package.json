@@ -5,7 +5,10 @@
   "packageManager": "pnpm@12.18.0",
   "description": "A lightweight desktop UI for running and debugging GitHub Actions and Jenkins pipelines locally with visual step-by-step logs—no git push required.",
   "author": "Maximiliano Garcia Mortigliengo",
-  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MaxiGarcia13/pipebox.git"
+  },
   "keywords": [
     "ci-cd",
     "github-actions",
