@@ -7,6 +7,7 @@ import (
   "os/exec"
   "path/filepath"
   "runtime"
+  "strconv"
 
   "pipebox/internal/actimage"
   "pipebox/internal/workflows"
@@ -53,13 +54,29 @@ func buildActArgs(repoPath string, options Options) ([]string, error) {
   }
 
   dockerSock := dockerSocketPath()
+  artifactDir, err := resolveArtifactDir(options.ArtifactDir)
+  if err != nil {
+    return nil, err
+  }
+  if options.ArtifactPort <= 0 {
+    return nil, fmt.Errorf("artifact port is required")
+  }
+  artifactPort := strconv.Itoa(options.ArtifactPort)
+  // Job containers are siblings of the act container (docker.sock). Publish the
+  // artifact server and point ACTIONS_RUNTIME_URL at host.docker.internal so
+  // upload-artifact can reach it; 127.0.0.1 only works when act runs on the host.
+  runtimeURL := fmt.Sprintf("http://host.docker.internal:%s/", artifactPort)
 
   args := []string{
     "run",
     "--rm",
     "-t",
+    "-p", fmt.Sprintf("%s:%s", artifactPort, artifactPort),
+    "--add-host", "host.docker.internal:host-gateway",
+    "-e", "ACTIONS_RUNTIME_URL="+runtimeURL,
     "-v", fmt.Sprintf("%s:/workspace", repoPath),
     "-v", fmt.Sprintf("%s:/var/run/docker.sock", dockerSock),
+    "-v", fmt.Sprintf("%s:%s", artifactDir, artifactMountPath),
     "-w", "/workspace",
   }
 
@@ -91,6 +108,10 @@ func buildActArgs(repoPath string, options Options) ([]string, error) {
     "-P", "ubuntu-20.04=catthehacker/ubuntu:act-20.04",
     "-P", "ubuntu-18.04=catthehacker/ubuntu:act-18.04",
     "--use-new-action-cache",
+    "--artifact-server-path", artifactMountPath,
+    "--artifact-server-addr", artifactBindAddr,
+    "--artifact-server-port", artifactPort,
+    "--container-options", "--add-host=host.docker.internal:host-gateway",
     "-W", workflowPath,
   )
   if options.Job != "" {
@@ -139,4 +160,18 @@ func dockerSocketPath() string {
     return "//var/run/docker.sock"
   }
   return "/var/run/docker.sock"
+}
+
+func resolveArtifactDir(artifactDir string) (string, error) {
+  if artifactDir == "" {
+    return "", fmt.Errorf("artifact dir is required")
+  }
+  absolutePath, err := filepath.Abs(artifactDir)
+  if err != nil {
+    return "", fmt.Errorf("resolve artifact dir: %w", err)
+  }
+  if err := os.MkdirAll(absolutePath, 0o700); err != nil {
+    return "", fmt.Errorf("create artifact dir: %w", err)
+  }
+  return absolutePath, nil
 }

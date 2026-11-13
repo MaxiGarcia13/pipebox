@@ -29,6 +29,6 @@ alwaysApply: true
 
 ## Runner protocol (v1)
 
-Stdout is NDJSON (one object per line): `workflow_list`, `run_started`, `run_finished`, `step_started`, `step_finished`, `log`, `error`.
+Stdout is NDJSON (one object per line): `workflow_list`, `run_started`, `run_finished`, `step_started`, `step_finished`, `log`, `error`, `artifacts`.
 
 Mirror types in the app at `packages/app/src/domain/runner-events.ts` (types-only copy of Go structs).

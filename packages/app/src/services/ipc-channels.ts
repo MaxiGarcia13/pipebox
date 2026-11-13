@@ -6,8 +6,14 @@ export const IPC_CHANNELS = {
   gitBranch: 'pipebox:git-branch',
   startRun: 'pipebox:start-run',
   stopRun: 'pipebox:stop-run',
+  saveArtifact: 'pipebox:save-artifact',
   event: 'pipebox:event',
 } as const;
+
+export interface SaveArtifactOptions {
+  sourcePath: string;
+  defaultName: string;
+}
 
 export interface StartRunOptions {
   repoPath: string;

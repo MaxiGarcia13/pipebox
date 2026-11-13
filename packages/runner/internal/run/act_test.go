@@ -25,10 +25,13 @@ on:
     t.Fatal(err)
   }
 
+  artifactDir := t.TempDir()
   args, err := buildActArgs(repoPath, Options{
-    Repo:     repoPath,
-    Workflow: ".github/workflows/deploy.yml",
-    Inputs:   []string{"tag=v1"},
+    Repo:         repoPath,
+    Workflow:     ".github/workflows/deploy.yml",
+    Inputs:       []string{"tag=v1"},
+    ArtifactDir:  artifactDir,
+    ArtifactPort: 34567,
   })
   if err != nil {
     t.Fatal(err)
@@ -47,6 +50,24 @@ on:
   if !containsPair(args, "-W", ".github/workflows/deploy.yml") {
     t.Fatalf("missing -W in %#v", args)
   }
+  if !containsPair(args, "--artifact-server-path", artifactMountPath) {
+    t.Fatalf("missing artifact-server-path in %#v", args)
+  }
+  if !containsPair(args, "--artifact-server-addr", artifactBindAddr) {
+    t.Fatalf("missing artifact-server-addr in %#v", args)
+  }
+  if !containsPair(args, "--artifact-server-port", "34567") {
+    t.Fatalf("missing artifact-server-port in %#v", args)
+  }
+  if !containsPair(args, "-v", artifactDir+":"+artifactMountPath) {
+    t.Fatalf("missing artifact mount in %#v", args)
+  }
+  if !containsPair(args, "-p", "34567:34567") {
+    t.Fatalf("missing artifact port publish in %#v", args)
+  }
+  if !containsPair(args, "-e", "ACTIONS_RUNTIME_URL=http://host.docker.internal:34567/") {
+    t.Fatalf("missing ACTIONS_RUNTIME_URL in %#v", args)
+  }
 }
 
 func TestBuildActArgsPushWorkflow(t *testing.T) {
@@ -62,8 +83,10 @@ func TestBuildActArgsPushWorkflow(t *testing.T) {
   }
 
   args, err := buildActArgs(repoPath, Options{
-    Repo:     repoPath,
-    Workflow: ".github/workflows/ci.yml",
+    Repo:         repoPath,
+    Workflow:     ".github/workflows/ci.yml",
+    ArtifactDir:  t.TempDir(),
+    ArtifactPort: 34567,
   })
   if err != nil {
     t.Fatal(err)

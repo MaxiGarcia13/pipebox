@@ -16,6 +16,7 @@ const (
   TypeLog          = "log"
   TypeError        = "error"
   TypeDoctor       = "doctor"
+  TypeArtifacts    = "artifacts"
 )
 
 type WorkflowInput struct {
@@ -102,6 +103,17 @@ type Doctor struct {
   Type   string        `json:"type"`
   OK     bool          `json:"ok"`
   Checks []DoctorCheck `json:"checks"`
+}
+
+type Artifact struct {
+  Name string `json:"name"`
+  Path string `json:"path"`
+  Size int64  `json:"size"`
+}
+
+type Artifacts struct {
+  Type      string     `json:"type"`
+  Artifacts []Artifact `json:"artifacts"`
 }
 
 func Emit(w io.Writer, value any) error {

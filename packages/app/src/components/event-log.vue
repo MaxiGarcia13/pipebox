@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { ErrorEvent, RunnerEvent } from '@/domain/runner-events';
+import type { Artifact, ErrorEvent, RunnerEvent } from '@/domain/runner-events';
 import { computed, ref } from 'vue';
+import ArtifactList from '@/components/artifact-list.vue';
 import JobTimeline from '@/components/job-timeline.vue';
 import StepLogGroup from '@/components/step-log-group.vue';
 import {
@@ -42,6 +43,16 @@ const runFinished = computed(() => {
     }
   }
   return null;
+});
+
+const artifacts = computed((): Artifact[] => {
+  for (let index = props.events.length - 1; index >= 0; index -= 1) {
+    const event = props.events[index];
+    if (event?.type === 'artifacts') {
+      return event.artifacts;
+    }
+  }
+  return [];
 });
 
 const runErrors = computed(() =>
@@ -100,6 +111,8 @@ const isEmpty = computed(() =>
             {{ error.message }}
           </li>
         </ul>
+
+        <ArtifactList :artifacts="artifacts" />
 
         <p
           v-if="runFinished"

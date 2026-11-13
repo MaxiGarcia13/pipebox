@@ -21,12 +21,14 @@ import (
 )
 
 type Options struct {
-  Repo       string
-  Workflow   string
-  Job        string
-  Secrets    []string
-  SecretFile string
-  Inputs     []string
+  Repo         string
+  Workflow     string
+  Job          string
+  Secrets      []string
+  SecretFile   string
+  Inputs       []string
+  ArtifactDir  string
+  ArtifactPort int
 }
 
 func Start(options Options) (int, error) {
@@ -51,6 +53,17 @@ func Start(options Options) (int, error) {
     })
   }
 
+  artifacts, err := prepareArtifactRuntime()
+  if err != nil {
+    _ = event.EmitStdout(event.Error{
+      Type:    event.TypeError,
+      Message: err.Error(),
+    })
+    return 1, nil
+  }
+  options.ArtifactDir = artifacts.Dir
+  options.ArtifactPort = artifacts.Port
+
   if !actimage.Exists() {
     _ = event.EmitStdout(event.Log{
       Type: event.TypeLog,
@@ -59,6 +72,12 @@ func Start(options Options) (int, error) {
   }
 
   exitCode, status := runAct(ctx, options)
+  if err := emitArtifacts(artifacts.Dir); err != nil {
+    _ = event.EmitStdout(event.Error{
+      Type:    event.TypeError,
+      Message: fmt.Sprintf("list artifacts: %v", err),
+    })
+  }
 
   if err := event.EmitStdout(event.RunFinished{
     Type:     event.TypeRunFinished,

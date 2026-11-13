@@ -7,7 +7,8 @@ export type RunnerEventType
     | 'step_finished'
     | 'log'
     | 'error'
-    | 'doctor';
+    | 'doctor'
+    | 'artifacts';
 
 export type StepStatus = 'passed' | 'failed' | 'skipped' | 'cancelled';
 export type RunStatus = 'passed' | 'failed' | 'cancelled';
@@ -98,6 +99,17 @@ export interface DoctorEvent {
   checks: DoctorCheck[];
 }
 
+export interface Artifact {
+  name: string;
+  path: string;
+  size: number;
+}
+
+export interface ArtifactsEvent {
+  type: 'artifacts';
+  artifacts: Artifact[];
+}
+
 export type RunnerEvent
   = | WorkflowListEvent
     | RunStartedEvent
@@ -107,4 +119,5 @@ export type RunnerEvent
     | StepFinishedEvent
     | LogEvent
     | ErrorEvent
-    | DoctorEvent;
+    | DoctorEvent
+    | ArtifactsEvent;

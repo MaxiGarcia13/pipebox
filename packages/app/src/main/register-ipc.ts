@@ -1,9 +1,14 @@
 import type { DoctorEvent, JobGraphEvent, WorkflowListEvent } from '../domain/runner-events';
-import type { GraphWorkflowOptions, StartRunOptions } from '../services/ipc-channels';
+import type {
+  GraphWorkflowOptions,
+  SaveArtifactOptions,
+  StartRunOptions,
+} from '../services/ipc-channels';
 import { BrowserWindow, dialog, ipcMain } from 'electron';
 import { IPC_CHANNELS } from '../services/ipc-channels';
 import { resolveGitBranch } from './resolve-git-branch';
 import { RunnerClient } from './runner-client';
+import { saveArtifact } from './save-artifact';
 
 const runnerClient = new RunnerClient();
 
@@ -87,5 +92,10 @@ export function registerIpc(): void {
 
   ipcMain.handle(IPC_CHANNELS.stopRun, async () => {
     runnerClient.stop();
+  });
+
+  ipcMain.handle(IPC_CHANNELS.saveArtifact, async (event, options: SaveArtifactOptions) => {
+    const window = BrowserWindow.fromWebContents(event.sender);
+    return saveArtifact(window, options);
   });
 }

@@ -1,5 +1,9 @@
 import type { RunnerEvent } from './domain/runner-events';
-import type { GraphWorkflowOptions, StartRunOptions } from './services/ipc-channels';
+import type {
+  GraphWorkflowOptions,
+  SaveArtifactOptions,
+  StartRunOptions,
+} from './services/ipc-channels';
 import type { PipeboxApi } from './services/pipebox-api';
 import { contextBridge, ipcRenderer } from 'electron';
 import { IPC_CHANNELS } from './services/ipc-channels';
@@ -15,6 +19,8 @@ const pipeboxApi: PipeboxApi = {
   startRun: (options: StartRunOptions) =>
     ipcRenderer.invoke(IPC_CHANNELS.startRun, options),
   stopRun: () => ipcRenderer.invoke(IPC_CHANNELS.stopRun),
+  saveArtifact: (options: SaveArtifactOptions) =>
+    ipcRenderer.invoke(IPC_CHANNELS.saveArtifact, options),
   onEvent: (callback) => {
     const listener = (_event: Electron.IpcRendererEvent, data: RunnerEvent) => {
       callback(data);
