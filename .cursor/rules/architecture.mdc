@@ -24,8 +24,8 @@ alwaysApply: true
 - **Renderer:** typed runner events + shadcn-vue only
 - **Preload:** narrow typed bridge
 - **Main:** spawn/kill `pipebox`, forward NDJSON → IPC, file dialogs
-- **Runner (`pipebox`):** discover workflows, run **Dockerized act** (`ghcr.io/nektos/act`), load project `.env` / `.env.*` as secrets, parse streams, emit events; CLI commands `doctor`, `list`, `run`, `install`
-- **v1 dependency:** Docker only — do not require a local `act` binary
+- **Runner (`pipebox`):** discover workflows, run **Dockerized act** (local `pipebox-act` image built from `packages/runner/docker/act`), load project `.env` / `.env.*` as secrets, parse streams, emit events; CLI commands `doctor`, `list`, `run`, `install`
+- **v1 dependency:** Docker only — do not require a local `act` binary; do not depend on a public `ghcr.io/nektos/act` image (it is not publicly pullable)
 
 ## Runner protocol (v1)
 

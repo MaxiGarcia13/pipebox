@@ -20,7 +20,7 @@ const message = computed(() => {
     return 'Docker is installed but the daemon is not reachable. Start Docker Desktop (or your Docker service), then refresh doctor.';
   }
   if (checks.act_image && !checks.act_image.ok) {
-    return 'Act image is not pulled yet. The first workflow run will download it automatically.';
+    return 'Act image is not built yet. The first workflow run will build pipebox-act locally.';
   }
   if (!props.doctor.ok) {
     return 'Doctor reported issues. Fix Docker setup before running workflows.';

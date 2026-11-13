@@ -9,7 +9,7 @@ Local CI/CD desktop control panel that wraps tools like **act** and Dockerized J
 | `packages/app`    | Desktop shell + UI       | Electron, Vue 3, Vite, Tailwind v4, [shadcn-vue](https://shadcn-vue.com) |
 | `packages/runner` | CI runner + terminal CLI | Go binary `pipebox`                                                      |
 
-Requires **Docker** only for local GitHub Actions runs (act runs via `ghcr.io/nektos/act` — no local `act` install). Jenkins support comes later.
+Requires **Docker** only for local GitHub Actions runs (PipeBox builds a local `pipebox-act` image with the official act binary — no local `act` install). Jenkins support comes later.
 
 ## Architecture
 
@@ -44,6 +44,7 @@ pnpm install
 pnpm app:start
 pnpm runner:build
 pnpm runner:test
+pnpm runner:image
 pnpm runner:lint
 pnpm runner:lint:fix
 pnpm runner:doctor

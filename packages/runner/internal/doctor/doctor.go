@@ -63,12 +63,11 @@ func dockerInfoCheck() event.DoctorCheck {
 }
 
 func actImageCheck() event.DoctorCheck {
-  cmd := exec.Command("docker", "image", "inspect", actimage.Image)
-  if err := cmd.Run(); err != nil {
+  if !actimage.Exists() {
     return event.DoctorCheck{
       Name:   "act_image",
       OK:     false,
-      Detail: actimage.Image + " not pulled yet (pulled on first run)",
+      Detail: actimage.Image + " missing (built on first run)",
     }
   }
   return event.DoctorCheck{

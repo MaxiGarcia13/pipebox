@@ -26,6 +26,7 @@
     "app:start": "pnpm -F @pipebox/app start",
     "runner:build": "make -C packages/runner build",
     "runner:test": "make -C packages/runner test",
+    "runner:image": "make -C packages/runner image",
     "runner:lint": "make -C packages/runner lint",
     "runner:lint:fix": "make -C packages/runner lint-fix",
     "runner:doctor": "make -C packages/runner doctor"

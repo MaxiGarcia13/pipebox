@@ -16,6 +16,10 @@ func buildActCommand(ctx context.Context, options Options) (*exec.Cmd, error) {
     return nil, fmt.Errorf("docker not found on PATH")
   }
 
+  if err := actimage.Ensure(); err != nil {
+    return nil, fmt.Errorf("act image: %w", err)
+  }
+
   repoPath, err := filepath.Abs(options.Repo)
   if err != nil {
     return nil, fmt.Errorf("resolve repo path: %w", err)
@@ -55,7 +59,15 @@ func buildActCommand(ctx context.Context, options Options) (*exec.Cmd, error) {
     actSecretArgs = append(actSecretArgs, "--secret-file", mountPath)
   }
 
-  args = append(args, actimage.Image, "-W", workflowPath)
+  // -P skips act's interactive first-run image survey (Medium defaults).
+  args = append(args, actimage.Image,
+    "-P", "ubuntu-latest=catthehacker/ubuntu:act-latest",
+    "-P", "ubuntu-24.04=catthehacker/ubuntu:act-24.04",
+    "-P", "ubuntu-22.04=catthehacker/ubuntu:act-22.04",
+    "-P", "ubuntu-20.04=catthehacker/ubuntu:act-20.04",
+    "-P", "ubuntu-18.04=catthehacker/ubuntu:act-18.04",
+    "-W", workflowPath,
+  )
   if options.Job != "" {
     args = append(args, "-j", options.Job)
   }

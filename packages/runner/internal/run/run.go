@@ -14,6 +14,7 @@ import (
   "sync"
   "syscall"
 
+  "pipebox/internal/actimage"
   "pipebox/internal/actparse"
   "pipebox/internal/event"
 )
@@ -43,6 +44,13 @@ func Start(options Options) (int, error) {
     _ = event.EmitStdout(event.Error{
       Type:    event.TypeError,
       Message: err.Error(),
+    })
+  }
+
+  if !actimage.Exists() {
+    _ = event.EmitStdout(event.Log{
+      Type: event.TypeLog,
+      Line: "building " + actimage.Image + " (first run)",
     })
   }
 
