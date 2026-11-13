@@ -26,6 +26,11 @@ func buildActCommand(ctx context.Context, options Options) (*exec.Cmd, error) {
     return nil, err
   }
 
+  secretFiles, err := resolveSecretFiles(repoPath, options.SecretFile)
+  if err != nil {
+    return nil, fmt.Errorf("resolve secret files: %w", err)
+  }
+
   dockerSock := dockerSocketPath()
   args := []string{
     "run",
@@ -33,11 +38,30 @@ func buildActCommand(ctx context.Context, options Options) (*exec.Cmd, error) {
     "-v", fmt.Sprintf("%s:/workspace", repoPath),
     "-v", fmt.Sprintf("%s:/var/run/docker.sock", dockerSock),
     "-w", "/workspace",
-    actimage.Image,
-    "-W", workflowPath,
   }
+
+  actSecretArgs := make([]string, 0, len(secretFiles)*2+len(options.Secrets)*2)
+  for index, secretFile := range secretFiles {
+    workspacePath, inRepo, err := workspaceSecretPath(repoPath, secretFile)
+    if err != nil {
+      return nil, fmt.Errorf("secret file path: %w", err)
+    }
+    if inRepo {
+      actSecretArgs = append(actSecretArgs, "--secret-file", "/workspace/"+workspacePath)
+      continue
+    }
+    mountPath := fmt.Sprintf("/tmp/pipebox-secrets-%d", index)
+    args = append(args, "-v", fmt.Sprintf("%s:%s:ro", secretFile, mountPath))
+    actSecretArgs = append(actSecretArgs, "--secret-file", mountPath)
+  }
+
+  args = append(args, actimage.Image, "-W", workflowPath)
   if options.Job != "" {
     args = append(args, "-j", options.Job)
+  }
+  args = append(args, actSecretArgs...)
+  for _, secret := range options.Secrets {
+    args = append(args, "--secret", secret)
   }
 
   cmd := exec.CommandContext(ctx, "docker", args...)

@@ -57,7 +57,7 @@ export function registerIpc(): void {
     }
 
     const window = BrowserWindow.fromWebContents(event.sender);
-    runnerClient.start(args, (runnerEvent) => {
+    void runnerClient.start(args, (runnerEvent) => {
       window?.webContents.send(IPC_CHANNELS.event, runnerEvent);
     });
   });

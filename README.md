@@ -1,6 +1,6 @@
 # PipeBox
 
-Local CI/CD desktop control panel that wraps tools like **act** and Dockerized Jenkins into a clean visual interface. Select any local repository, trigger workflows or pipeline stages with one click, manage local secrets safely, and inspect real-time pass/fail step logs—without pushing test commits just to check YAML.
+Local CI/CD desktop control panel that wraps tools like **act** and Dockerized Jenkins into a clean visual interface. Select any local repository, trigger workflows or pipeline stages with one click, inject secrets from the project’s `.env` / `.env.*` files, and inspect real-time pass/fail step logs—without pushing test commits just to check YAML.
 
 ## Stack
 
@@ -35,12 +35,15 @@ pipebox run --repo <path> --workflow <file>
 pipebox install
 ```
 
+`run` loads `.env` and any `.env.*` files from the repo root (`.env` first, then alphabetical). Override with `--secret KEY=VALUE` or `--secret-file <path>`.
+
 ## Develop
 
 ```bash
 pnpm install
 pnpm app:start
 pnpm runner:build
+pnpm runner:test
 pnpm runner:lint
 pnpm runner:lint:fix
 pnpm runner:doctor

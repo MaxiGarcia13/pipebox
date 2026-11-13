@@ -20,10 +20,12 @@
     "prepare": "simple-git-hooks",
     "lint": "eslint . && pnpm -r --if-present run lint && pnpm runner:lint",
     "lint:fix": "eslint --fix . && pnpm -r --if-present run lint:fix && pnpm runner:lint:fix",
+    "test": "pnpm runner:test",
     "clean": "pnpm -r --if-present run clean && rm -rf node_modules pnpm-lock.yaml",
     "phoenix": "pnpm clean && pnpm install",
     "app:start": "pnpm -F @pipebox/app start",
     "runner:build": "make -C packages/runner build",
+    "runner:test": "make -C packages/runner test",
     "runner:lint": "make -C packages/runner lint",
     "runner:lint:fix": "make -C packages/runner lint-fix",
     "runner:doctor": "make -C packages/runner doctor"

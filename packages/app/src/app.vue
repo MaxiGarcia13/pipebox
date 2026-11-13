@@ -3,6 +3,7 @@ import DoctorStatus from '@/components/doctor-status.vue';
 import EventLog from '@/components/event-log.vue';
 import ProjectStatus from '@/components/project-status.vue';
 import RunToolbar from '@/components/run-toolbar.vue';
+import SetupBanner from '@/components/setup-banner.vue';
 import WorkbenchShell from '@/components/workbench-shell.vue';
 import WorkflowList from '@/components/workflow-list.vue';
 import { usePipeboxSession } from '@/composables/use-pipebox-session';
@@ -31,6 +32,10 @@ const {
         @open-project="selectRepo"
         @refresh-doctor="runDoctor"
       />
+    </template>
+
+    <template #banner>
+      <SetupBanner :doctor="doctor" />
     </template>
 
     <template #sidebar>

@@ -9,6 +9,8 @@ import (
   "os"
   "os/exec"
   "os/signal"
+  "path/filepath"
+  "strings"
   "sync"
   "syscall"
 
@@ -17,9 +19,11 @@ import (
 )
 
 type Options struct {
-  Repo     string
-  Workflow string
-  Job      string
+  Repo       string
+  Workflow   string
+  Job        string
+  Secrets    []string
+  SecretFile string
 }
 
 func Start(options Options) (int, error) {
@@ -34,6 +38,13 @@ func Start(options Options) (int, error) {
 
   ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
   defer stop()
+
+  if err := emitSecretSources(options); err != nil {
+    _ = event.EmitStdout(event.Error{
+      Type:    event.TypeError,
+      Message: err.Error(),
+    })
+  }
 
   cmd, err := buildActCommand(ctx, options)
   if err != nil {
@@ -117,4 +128,26 @@ func streamLines(waitGroup *sync.WaitGroup, reader io.Reader, parser *actparse.P
       _ = event.EmitStdout(item)
     }
   }
+}
+
+func emitSecretSources(options Options) error {
+  repoPath, err := filepath.Abs(options.Repo)
+  if err != nil {
+    return err
+  }
+  secretFiles, err := resolveSecretFiles(repoPath, options.SecretFile)
+  if err != nil {
+    return err
+  }
+  if len(secretFiles) == 0 {
+    return event.EmitStdout(event.Log{
+      Type: event.TypeLog,
+      Line: "secrets: none (.env / .env.* not found)",
+    })
+  }
+  names := secretSourceNames(repoPath, secretFiles)
+  return event.EmitStdout(event.Log{
+    Type: event.TypeLog,
+    Line: "secrets: " + strings.Join(names, ", "),
+  })
 }

@@ -17,11 +17,11 @@ export class RunnerClient {
     return events;
   }
 
-  start(args: string[], onEvent: EventHandler): void {
+  start(args: string[], onEvent: EventHandler): Promise<number> {
     if (this.activeProcess) {
       throw new Error('A run is already in progress');
     }
-    void this.spawn(args, onEvent).finally(() => {
+    return this.spawn(args, onEvent).finally(() => {
       this.activeProcess = null;
     });
   }
