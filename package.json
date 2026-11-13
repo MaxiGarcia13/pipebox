@@ -18,11 +18,15 @@
   ],
   "scripts": {
     "prepare": "simple-git-hooks",
-    "lint": "eslint . && pnpm -r --if-present run lint",
-    "lint:fix": "eslint --fix . && pnpm -r --if-present run lint:fix",
+    "lint": "eslint . && pnpm -r --if-present run lint && pnpm runner:lint",
+    "lint:fix": "eslint --fix . && pnpm -r --if-present run lint:fix && pnpm runner:lint:fix",
     "clean": "pnpm -r --if-present run clean && rm -rf node_modules pnpm-lock.yaml",
     "phoenix": "pnpm clean && pnpm install",
-    "app:start": "pnpm -F @pipebox/app start"
+    "app:start": "pnpm -F @pipebox/app start",
+    "runner:build": "make -C packages/runner build",
+    "runner:lint": "make -C packages/runner lint",
+    "runner:lint:fix": "make -C packages/runner lint-fix",
+    "runner:doctor": "make -C packages/runner doctor"
   },
   "devEngines": {
     "packageManager": {

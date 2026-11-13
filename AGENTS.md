@@ -20,11 +20,12 @@ flowchart LR
 - **MVP:** GitHub Actions via act, Electron UI, `pipebox` CLI, secrets in Electron main.
 - **Later:** Jenkins adapter, richer installers (Homebrew), package runner into Forge release.
 
-## Commands (once scaffolded)
+## Commands
 
 ```bash
-pnpm app:start          # Electron app
-# from packages/runner:
-go build -o pipebox .   # build CLI/runner
-./pipebox doctor
+pnpm app:start       # Electron app
+pnpm runner:build    # Go CLI → packages/runner/pipebox
+pnpm runner:lint       # golangci-lint
+pnpm runner:lint:fix  # golangci-lint --fix
+pnpm runner:doctor
 ```

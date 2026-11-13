@@ -26,7 +26,7 @@ flowchart LR
 
 The Go binary is both the app’s runner (spawned by Electron) and a **CLI** you can install on your `PATH`.
 
-## CLI (planned)
+## CLI
 
 ```bash
 pipebox doctor
@@ -40,14 +40,18 @@ pipebox install
 ```bash
 pnpm install
 pnpm app:start
+pnpm runner:build
+pnpm runner:lint
+pnpm runner:lint:fix
+pnpm runner:doctor
 ```
 
-Runner build (once `packages/runner` exists):
+Or from `packages/runner`:
 
 ```bash
-cd packages/runner
-go build -o pipebox .
+make build
 ./pipebox doctor
+./pipebox list --repo /path/to/repo
 ```
 
 See [AGENTS.md](AGENTS.md) for package boundaries and agent conventions.

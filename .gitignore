@@ -1,11 +1,8 @@
 .vscode
 node_modules
 dist
-.nx
-.astro
 
 .env
 .env.*
 
-.vercel
 .vite
