@@ -36,9 +36,11 @@ func buildActCommand(ctx context.Context, options Options) (*exec.Cmd, error) {
   }
 
   dockerSock := dockerSocketPath()
+
   args := []string{
     "run",
     "--rm",
+    "-t",
     "-v", fmt.Sprintf("%s:/workspace", repoPath),
     "-v", fmt.Sprintf("%s:/var/run/docker.sock", dockerSock),
     "-w", "/workspace",
@@ -60,12 +62,14 @@ func buildActCommand(ctx context.Context, options Options) (*exec.Cmd, error) {
   }
 
   // -P skips act's interactive first-run image survey (Medium defaults).
+  // --use-new-action-cache: avoid shared worktree races between parallel jobs (nektos/act#6180).
   args = append(args, actimage.Image,
     "-P", "ubuntu-latest=catthehacker/ubuntu:act-latest",
     "-P", "ubuntu-24.04=catthehacker/ubuntu:act-24.04",
     "-P", "ubuntu-22.04=catthehacker/ubuntu:act-22.04",
     "-P", "ubuntu-20.04=catthehacker/ubuntu:act-20.04",
     "-P", "ubuntu-18.04=catthehacker/ubuntu:act-18.04",
+    "--use-new-action-cache",
     "-W", workflowPath,
   )
   if options.Job != "" {

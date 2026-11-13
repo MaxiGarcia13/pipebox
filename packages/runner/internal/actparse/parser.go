@@ -79,7 +79,8 @@ func splitJobPrefix(line string) (job string, rest string) {
   if matches == nil {
     return "", line
   }
-  return matches[2], matches[3]
+
+  return strings.TrimSpace(matches[2]), matches[3]
 }
 
 func matchStepStart(message string) (string, bool) {

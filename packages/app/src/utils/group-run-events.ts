@@ -140,10 +140,8 @@ function demoteOtherRunningSteps(
     if (normalizeStepName(group.step) === normalizedActive) {
       continue;
     }
-    if (group.lines.length > 0 || group.durationMs != null) {
-      continue;
-    }
-    group.status = 'pending';
+
+    group.status = 'passed';
     group.openDefault = false;
   }
 }
@@ -202,13 +200,19 @@ function settleAfterRunFinished(
 
   for (const group of steps) {
     if (group.status === 'running') {
-      group.status = runStatus === 'cancelled'
-        ? 'cancelled'
-        : 'failed';
-      group.openDefault = runStatus !== 'cancelled';
+      if (runStatus === 'passed') {
+        group.status = 'passed';
+        group.openDefault = false;
+      } else if (runStatus === 'cancelled') {
+        group.status = 'cancelled';
+        group.openDefault = false;
+      } else {
+        group.status = 'failed';
+        group.openDefault = true;
+      }
       continue;
     }
-    if (group.status === 'pending' && runStatus === 'cancelled') {
+    if (group.status === 'pending') {
       group.status = 'skipped';
       group.openDefault = false;
     }
@@ -335,6 +339,10 @@ function summarizeJobs(
   for (const step of steps) {
     let summary = byMatch.get(step.job);
     if (!summary) {
+      // Graph present: skip unmatched labels (avoids duplicate root-column pills).
+      if (graphJobs.length > 0) {
+        continue;
+      }
       summary = {
         id: step.job,
         name: step.job,
@@ -351,11 +359,19 @@ function summarizeJobs(
     }
   }
 
-  // Steps finish one-by-one; without job_finished, "all known steps passed"
-  // would flash green between steps while the run is still going.
+  // Without job_finished, keep the job "running" only while a step is running
+  // (pending peers stay pending; finished jobs stay passed).
   if (!runFinished) {
     for (const summary of summaries) {
-      if (summary.status !== 'pending' && summary.status !== 'failed') {
+      if (
+        summary.status === 'pending'
+        || summary.status === 'failed'
+        || summary.status === 'cancelled'
+      ) {
+        continue;
+      }
+      const jobSteps = steps.filter((step) => matchesJob(summary, step.job));
+      if (jobSteps.some((step) => step.status === 'running')) {
         summary.status = 'running';
       }
     }

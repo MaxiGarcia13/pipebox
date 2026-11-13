@@ -64,6 +64,25 @@ func TestParserIgnoresNpmRunHints(t *testing.T) {
   }
 }
 
+func TestParserTrimsPaddedJobName(t *testing.T) {
+  parser := NewParser()
+
+  started := parser.HandleLine("[Validation/Lint     ] ⭐ Run Main actions/checkout@v4")
+  if len(started) != 1 {
+    t.Fatalf("expected 1 event, got %d", len(started))
+  }
+  stepStarted, ok := started[0].(event.StepStarted)
+  if !ok || stepStarted.Job != "Lint" {
+    t.Fatalf("expected job Lint, got %#v", started[0])
+  }
+
+  finished := parser.HandleLine("[Validation/Lint     ]   ✅  Success - Main actions/checkout@v4 [1s]")
+  stepFinished, ok := finished[0].(event.StepFinished)
+  if !ok || stepFinished.Job != "Lint" || stepFinished.Status != "passed" {
+    t.Fatalf("unexpected finish: %#v", finished[0])
+  }
+}
+
 func TestParserFailureAndSkip(t *testing.T) {
   parser := NewParser()
   failed := parser.HandleLine("[ci/test]   ❌  Failure - Main Test [500ms]")

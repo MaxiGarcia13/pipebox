@@ -37,7 +37,8 @@ func Start(options Options) (int, error) {
   }); err != nil {
     return 1, err
   }
-  emitJobGraph(options)
+
+  _ = event.EmitStdout(loadJobGraph(options))
 
   ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
   defer stop()
@@ -56,70 +57,7 @@ func Start(options Options) (int, error) {
     })
   }
 
-  cmd, err := buildActCommand(ctx, options)
-  if err != nil {
-    _ = event.EmitStdout(event.Error{
-      Type:    event.TypeError,
-      Message: err.Error(),
-    })
-    _ = event.EmitStdout(event.RunFinished{
-      Type:     event.TypeRunFinished,
-      Status:   "failed",
-      ExitCode: 1,
-    })
-    return 1, nil
-  }
-
-  stdout, err := cmd.StdoutPipe()
-  if err != nil {
-    return 1, fmt.Errorf("stdout pipe: %w", err)
-  }
-  stderr, err := cmd.StderrPipe()
-  if err != nil {
-    return 1, fmt.Errorf("stderr pipe: %w", err)
-  }
-
-  if err := cmd.Start(); err != nil {
-    _ = event.EmitStdout(event.Error{
-      Type:    event.TypeError,
-      Message: fmt.Sprintf("start dockerized act: %v", err),
-    })
-    _ = event.EmitStdout(event.RunFinished{
-      Type:     event.TypeRunFinished,
-      Status:   "failed",
-      ExitCode: 1,
-    })
-    return 1, nil
-  }
-
-  parser := actparse.NewParser()
-  var waitGroup sync.WaitGroup
-  waitGroup.Add(2)
-  go streamLines(&waitGroup, stdout, parser)
-  go streamLines(&waitGroup, stderr, parser)
-
-  waitErr := cmd.Wait()
-  waitGroup.Wait()
-
-  exitCode := 0
-  status := "passed"
-  if waitErr != nil {
-    var exitError *exec.ExitError
-    if errors.Is(ctx.Err(), context.Canceled) {
-      exitCode = 130
-      status = "cancelled"
-    } else if errors.As(waitErr, &exitError) {
-      exitCode = exitError.ExitCode()
-      status = "failed"
-    } else {
-      exitCode = 1
-      status = "failed"
-      _ = event.EmitStdout(event.Error{
-        Type:    event.TypeError,
-        Message: waitErr.Error(),
-      })
-    }
-  }
+  exitCode, status := runAct(ctx, options)
 
   if err := event.EmitStdout(event.RunFinished{
     Type:     event.TypeRunFinished,
@@ -131,31 +69,106 @@ func Start(options Options) (int, error) {
   return exitCode, nil
 }
 
-func streamLines(waitGroup *sync.WaitGroup, reader io.Reader, parser *actparse.Parser) {
+func runAct(ctx context.Context, options Options) (exitCode int, status string) {
+  cmd, err := buildActCommand(ctx, options)
+  if err != nil {
+    _ = event.EmitStdout(event.Error{
+      Type:    event.TypeError,
+      Message: err.Error(),
+    })
+    return 1, "failed"
+  }
+
+  stdout, err := cmd.StdoutPipe()
+  if err != nil {
+    _ = event.EmitStdout(event.Error{
+      Type:    event.TypeError,
+      Message: fmt.Sprintf("stdout pipe: %v", err),
+    })
+    return 1, "failed"
+  }
+  stderr, err := cmd.StderrPipe()
+  if err != nil {
+    _ = event.EmitStdout(event.Error{
+      Type:    event.TypeError,
+      Message: fmt.Sprintf("stderr pipe: %v", err),
+    })
+    return 1, "failed"
+  }
+
+  if err := cmd.Start(); err != nil {
+    _ = event.EmitStdout(event.Error{
+      Type:    event.TypeError,
+      Message: fmt.Sprintf("start dockerized act: %v", err),
+    })
+    return 1, "failed"
+  }
+
+  parser := actparse.NewParser()
+  var parseMu sync.Mutex
+  var emitMu sync.Mutex
+  var waitGroup sync.WaitGroup
+  waitGroup.Add(2)
+  go streamLines(&waitGroup, stdout, parser, &parseMu, &emitMu)
+  go streamLines(&waitGroup, stderr, parser, &parseMu, &emitMu)
+
+  waitErr := cmd.Wait()
+  waitGroup.Wait()
+
+  if waitErr == nil {
+    return 0, "passed"
+  }
+
+  var exitError *exec.ExitError
+  if errors.Is(ctx.Err(), context.Canceled) {
+    return 130, "cancelled"
+  }
+  if errors.As(waitErr, &exitError) {
+    return exitError.ExitCode(), "failed"
+  }
+  _ = event.EmitStdout(event.Error{
+    Type:    event.TypeError,
+    Message: waitErr.Error(),
+  })
+  return 1, "failed"
+}
+
+func streamLines(
+  waitGroup *sync.WaitGroup,
+  reader io.Reader,
+  parser *actparse.Parser,
+  parseMu *sync.Mutex,
+  emitMu *sync.Mutex,
+) {
   defer waitGroup.Done()
   scanner := bufio.NewScanner(reader)
   scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
   for scanner.Scan() {
-    for _, item := range parser.HandleLine(scanner.Text()) {
+    line := scanner.Text()
+    parseMu.Lock()
+    items := parser.HandleLine(line)
+    parseMu.Unlock()
+    emitMu.Lock()
+    for _, item := range items {
       _ = event.EmitStdout(item)
     }
+    emitMu.Unlock()
   }
 }
 
-func emitJobGraph(options Options) {
+func loadJobGraph(options Options) event.JobGraph {
   graph, err := workflows.Graph(options.Repo, options.Workflow)
   if err != nil {
     _ = event.EmitStdout(event.Error{
       Type:    event.TypeError,
       Message: fmt.Sprintf("job graph: %v", err),
     })
-    _ = event.EmitStdout(event.JobGraph{
+    return event.JobGraph{
       Type: event.TypeJobGraph,
       Jobs: []event.JobNode{},
-    })
-    return
+    }
   }
-  _ = event.EmitStdout(graph)
+  return graph
 }
 
 func emitSecretSources(options Options) error {
