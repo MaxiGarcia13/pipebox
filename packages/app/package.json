@@ -10,7 +10,7 @@
     "make": "electron-forge make",
     "release": "electron-forge release",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf .vite node_modules dist"
+    "clean": "rm -rf .vite node_modules dist out"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",
