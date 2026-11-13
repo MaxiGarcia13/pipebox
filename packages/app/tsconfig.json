@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "target": "ESNext",
+    "baseUrl": ".",
     "module": "preserve",
     "moduleResolution": "bundler",
     "paths": {
@@ -11,7 +12,8 @@
     "noImplicitAny": true,
     "sourceMap": true,
     "esModuleInterop": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "ignoreDeprecations": "6.0"
   },
   "include": ["src/**/*", "*.ts", "*.mts"]
 }
