@@ -1,5 +1,6 @@
 {
   "name": "@pipebox/app",
+  "type": "module",
   "version": "0.0.0",
   "private": true,
   "main": ".vite/build/main.cjs",
