@@ -13,6 +13,7 @@ export interface StartRunOptions {
   repoPath: string;
   workflow: string;
   job?: string;
+  inputs?: string[];
 }
 
 export interface GraphWorkflowOptions {

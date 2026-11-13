@@ -1,8 +1,57 @@
-import type { DoctorEvent, RunnerEvent, Workflow } from '@/domain/runner-events';
+import type { DoctorEvent, RunnerEvent, Workflow, WorkflowInput } from '@/domain/runner-events';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 
 function hasRunFinished(events: RunnerEvent[]): boolean {
   return events.some((event) => event.type === 'run_finished');
+}
+
+function defaultInputValue(input: WorkflowInput): string {
+  if (input.type === 'boolean') {
+    return input.default === 'true'
+      ? 'true'
+      : 'false';
+  }
+  return input.default ?? '';
+}
+
+function seedInputValues(inputs: WorkflowInput[]): Record<string, string> {
+  const values: Record<string, string> = {};
+  for (const input of inputs) {
+    values[input.id] = defaultInputValue(input);
+  }
+  return values;
+}
+
+function missingRequiredInputs(
+  inputs: WorkflowInput[],
+  values: Record<string, string>,
+): string[] {
+  return inputs
+    .filter((input) => {
+      if (!input.required) {
+        return false;
+      }
+      if (input.type === 'boolean') {
+        return false;
+      }
+      return !(values[input.id] ?? '').trim();
+    })
+    .map((input) => input.id);
+}
+
+function toInputArgs(
+  inputs: WorkflowInput[],
+  values: Record<string, string>,
+): string[] {
+  return inputs
+    .map((input) => {
+      const value = values[input.id] ?? '';
+      if (value === '' && input.type !== 'boolean') {
+        return null;
+      }
+      return `${input.id}=${value}`;
+    })
+    .filter((entry): entry is string => entry != null);
 }
 
 export function usePipeboxSession() {
@@ -18,6 +67,8 @@ export function usePipeboxSession() {
   const previewEvents = ref<RunnerEvent[]>([]);
   const isRunning = ref(false);
   const statusMessage = ref('');
+  const inputValues = ref<Record<string, string>>({});
+  const inputValuesWorkflow = ref<string | null>(null);
 
   let unsubscribe: (() => void) | undefined;
 
@@ -33,6 +84,13 @@ export function usePipeboxSession() {
   const logIsRunning = computed(() =>
     viewingRun.value && isRunning.value,
   );
+
+  const selectedWorkflowInputs = computed(() => {
+    const workflow = workflows.value.find(
+      (item) => item.path === selectedWorkflow.value,
+    );
+    return workflow?.inputs ?? [];
+  });
 
   onMounted(() => {
     unsubscribe = window.pipebox.onEvent((event) => {
@@ -52,6 +110,22 @@ export function usePipeboxSession() {
     unsubscribe?.();
   });
 
+  function ensureInputValues(workflowPath: string) {
+    if (inputValuesWorkflow.value === workflowPath) {
+      return;
+    }
+    const workflow = workflows.value.find((item) => item.path === workflowPath);
+    inputValues.value = seedInputValues(workflow?.inputs ?? []);
+    inputValuesWorkflow.value = workflowPath;
+  }
+
+  function setInputValue(id: string, value: string) {
+    inputValues.value = {
+      ...inputValues.value,
+      [id]: value,
+    };
+  }
+
   async function selectRepo() {
     statusMessage.value = '';
     const nextPath = await window.pipebox.selectRepo();
@@ -67,6 +141,8 @@ export function usePipeboxSession() {
     runEvents.value = [];
     previewEvents.value = [];
     isRunning.value = false;
+    inputValues.value = {};
+    inputValuesWorkflow.value = null;
     const [list, nextBranch] = await Promise.all([
       window.pipebox.listWorkflows(nextPath),
       window.pipebox.gitBranch(nextPath),
@@ -106,6 +182,7 @@ export function usePipeboxSession() {
 
   async function selectWorkflow(workflowPath: string) {
     selectedWorkflow.value = workflowPath;
+    ensureInputValues(workflowPath);
     if (workflowPath === runEventsWorkflow.value) {
       return;
     }
@@ -118,6 +195,16 @@ export function usePipeboxSession() {
     }
     statusMessage.value = '';
     selectedWorkflow.value = workflowPath;
+    ensureInputValues(workflowPath);
+
+    const workflow = workflows.value.find((item) => item.path === workflowPath);
+    const inputs = workflow?.inputs ?? [];
+    const missing = missingRequiredInputs(inputs, inputValues.value);
+    if (missing.length > 0) {
+      statusMessage.value = `Required inputs: ${missing.join(', ')}`;
+      return;
+    }
+
     runningWorkflow.value = workflowPath;
     runEventsWorkflow.value = workflowPath;
     runEvents.value = [];
@@ -126,6 +213,7 @@ export function usePipeboxSession() {
       await window.pipebox.startRun({
         repoPath: repoPath.value,
         workflow: workflowPath,
+        inputs: toInputArgs(inputs, inputValues.value),
       });
     } catch (error) {
       isRunning.value = false;
@@ -163,6 +251,9 @@ export function usePipeboxSession() {
     isRunning,
     logIsRunning,
     statusMessage,
+    selectedWorkflowInputs,
+    inputValues,
+    setInputValue,
     selectRepo,
     selectWorkflow,
     runDoctor,

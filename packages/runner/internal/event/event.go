@@ -18,10 +18,21 @@ const (
   TypeDoctor       = "doctor"
 )
 
+type WorkflowInput struct {
+  ID          string   `json:"id"`
+  Description string   `json:"description,omitempty"`
+  Required    bool     `json:"required,omitempty"`
+  Default     string   `json:"default,omitempty"`
+  Type        string   `json:"type,omitempty"`
+  Options     []string `json:"options,omitempty"`
+}
+
 type Workflow struct {
-  ID   string `json:"id"`
-  Name string `json:"name"`
-  Path string `json:"path"`
+  ID       string          `json:"id"`
+  Name     string          `json:"name"`
+  Path     string          `json:"path"`
+  Callable bool            `json:"callable,omitempty"`
+  Inputs   []WorkflowInput `json:"inputs,omitempty"`
 }
 
 type WorkflowList struct {

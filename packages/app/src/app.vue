@@ -5,6 +5,7 @@ import ProjectStatus from '@/components/project-status.vue';
 import RunToolbar from '@/components/run-toolbar.vue';
 import SetupBanner from '@/components/setup-banner.vue';
 import WorkbenchShell from '@/components/workbench-shell.vue';
+import WorkflowInputs from '@/components/workflow-inputs.vue';
 import WorkflowList from '@/components/workflow-list.vue';
 import { usePipeboxSession } from '@/composables/use-pipebox-session';
 
@@ -19,6 +20,9 @@ const {
   isRunning,
   logIsRunning,
   statusMessage,
+  selectedWorkflowInputs,
+  inputValues,
+  setInputValue,
   selectRepo,
   selectWorkflow,
   runDoctor,
@@ -56,11 +60,25 @@ const {
     </template>
 
     <template #main>
-      <EventLog
-        :key="`${selectedWorkflow ?? 'none'}:${logIsRunning ? 'live' : 'preview'}`"
-        :events="events"
-        :is-running="logIsRunning"
-      />
+      <div class="flex min-h-0 flex-1">
+        <EventLog
+          :key="`${selectedWorkflow ?? 'none'}:${logIsRunning ? 'live' : 'preview'}`"
+          class="min-w-0 flex-1"
+          :events="events"
+          :is-running="logIsRunning"
+        />
+        <aside
+          v-if="selectedWorkflowInputs.length > 0"
+          class="flex w-72 shrink-0 flex-col border-l border-border"
+        >
+          <WorkflowInputs
+            :inputs="selectedWorkflowInputs"
+            :values="inputValues"
+            :disabled="isRunning"
+            @update="setInputValue"
+          />
+        </aside>
+      </div>
     </template>
 
     <template #panel>

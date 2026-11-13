@@ -75,6 +75,9 @@ export function registerIpc(): void {
     if (options.job) {
       args.push('--job', options.job);
     }
+    for (const input of options.inputs ?? []) {
+      args.push('--input', input);
+    }
 
     const window = BrowserWindow.fromWebContents(event.sender);
     void runnerClient.start(args, (runnerEvent) => {

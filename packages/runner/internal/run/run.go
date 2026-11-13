@@ -26,6 +26,7 @@ type Options struct {
   Job        string
   Secrets    []string
   SecretFile string
+  Inputs     []string
 }
 
 func Start(options Options) (int, error) {

@@ -9,6 +9,7 @@ import (
   "runtime"
 
   "pipebox/internal/actimage"
+  "pipebox/internal/workflows"
 )
 
 func buildActCommand(ctx context.Context, options Options) (*exec.Cmd, error) {
@@ -25,6 +26,17 @@ func buildActCommand(ctx context.Context, options Options) (*exec.Cmd, error) {
     return nil, fmt.Errorf("resolve repo path: %w", err)
   }
 
+  args, err := buildActArgs(repoPath, options)
+  if err != nil {
+    return nil, err
+  }
+
+  cmd := exec.CommandContext(ctx, "docker", args...)
+  cmd.Env = os.Environ()
+  return cmd, nil
+}
+
+func buildActArgs(repoPath string, options Options) ([]string, error) {
   workflowPath, err := workspaceWorkflowPath(repoPath, options.Workflow)
   if err != nil {
     return nil, err
@@ -33,6 +45,11 @@ func buildActCommand(ctx context.Context, options Options) (*exec.Cmd, error) {
   secretFiles, err := resolveSecretFiles(repoPath, options.SecretFile)
   if err != nil {
     return nil, fmt.Errorf("resolve secret files: %w", err)
+  }
+
+  callable, err := workflowIsCallable(repoPath, options.Workflow)
+  if err != nil {
+    return nil, err
   }
 
   dockerSock := dockerSocketPath()
@@ -61,9 +78,13 @@ func buildActCommand(ctx context.Context, options Options) (*exec.Cmd, error) {
     actSecretArgs = append(actSecretArgs, "--secret-file", mountPath)
   }
 
+  args = append(args, actimage.Image)
+  if callable {
+    args = append(args, "workflow_dispatch")
+  }
   // -P skips act's interactive first-run image survey (Medium defaults).
   // --use-new-action-cache: avoid shared worktree races between parallel jobs (nektos/act#6180).
-  args = append(args, actimage.Image,
+  args = append(args,
     "-P", "ubuntu-latest=catthehacker/ubuntu:act-latest",
     "-P", "ubuntu-24.04=catthehacker/ubuntu:act-24.04",
     "-P", "ubuntu-22.04=catthehacker/ubuntu:act-22.04",
@@ -79,10 +100,27 @@ func buildActCommand(ctx context.Context, options Options) (*exec.Cmd, error) {
   for _, secret := range options.Secrets {
     args = append(args, "--secret", secret)
   }
+  for _, input := range options.Inputs {
+    args = append(args, "--input", input)
+  }
 
-  cmd := exec.CommandContext(ctx, "docker", args...)
-  cmd.Env = os.Environ()
-  return cmd, nil
+  return args, nil
+}
+
+func workflowIsCallable(repoPath, workflow string) (bool, error) {
+  relativePath := workflow
+  if filepath.IsAbs(workflow) {
+    var err error
+    relativePath, err = filepath.Rel(repoPath, workflow)
+    if err != nil {
+      return false, fmt.Errorf("workflow must be inside the repo: %w", err)
+    }
+  }
+  meta, err := workflows.LoadDispatch(filepath.Join(repoPath, filepath.FromSlash(relativePath)))
+  if err != nil {
+    return false, fmt.Errorf("detect workflow_dispatch: %w", err)
+  }
+  return meta.Callable, nil
 }
 
 func workspaceWorkflowPath(repoPath, workflow string) (string, error) {

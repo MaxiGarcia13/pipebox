@@ -33,11 +33,27 @@ func List(repoPath string) (event.WorkflowList, error) {
       continue
     }
     id := strings.TrimSuffix(name, filepath.Ext(name))
-    workflows = append(workflows, event.Workflow{
-      ID:   id,
-      Name: id,
-      Path: filepath.Join(".github", "workflows", name),
-    })
+    relativePath := filepath.Join(".github", "workflows", name)
+    workflow := event.Workflow{
+      ID:     id,
+      Name:   id,
+      Path:   relativePath,
+      Inputs: []event.WorkflowInput{},
+    }
+
+    meta, err := LoadDispatch(filepath.Join(workflowsDir, name))
+    if err != nil {
+      return event.WorkflowList{}, fmt.Errorf("workflow %s: %w", name, err)
+    }
+    if meta.Name != "" {
+      workflow.Name = meta.Name
+    }
+    workflow.Callable = meta.Callable
+    if meta.Inputs != nil {
+      workflow.Inputs = meta.Inputs
+    }
+
+    workflows = append(workflows, workflow)
   }
 
   return event.WorkflowList{

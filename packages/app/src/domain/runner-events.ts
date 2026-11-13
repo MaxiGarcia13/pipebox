@@ -12,10 +12,21 @@ export type RunnerEventType
 export type StepStatus = 'passed' | 'failed' | 'skipped' | 'cancelled';
 export type RunStatus = 'passed' | 'failed' | 'cancelled';
 
+export interface WorkflowInput {
+  id: string;
+  description?: string;
+  required?: boolean;
+  default?: string;
+  type?: 'string' | 'boolean' | 'choice' | 'number';
+  options?: string[];
+}
+
 export interface Workflow {
   id: string;
   name: string;
   path: string;
+  callable?: boolean;
+  inputs?: WorkflowInput[];
 }
 
 export interface WorkflowListEvent {
