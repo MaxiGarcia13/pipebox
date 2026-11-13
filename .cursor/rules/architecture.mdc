@@ -1,0 +1,31 @@
+---
+description: PipeBox package boundaries, runner protocol, and UI stack
+alwaysApply: true
+---
+
+# Architecture
+
+## Packages
+
+- `packages/app` — Electron shell + Vue UI (Forge, Vite, Tailwind, shadcn-vue)
+- `packages/runner` — Go binary `pipebox` (CI runner + public CLI)
+
+## Do not
+
+- Put act/log parsing in `packages/app` (not in Vue, preload, or main as a permanent home — main only spawns and forwards)
+- Reinvent act; wrap the CLI and normalize output to NDJSON events
+- Expose a generic shell API through preload
+- Build ad-hoc UI primitives; use shadcn-vue under `packages/app/src/components/ui/`
+
+## Process boundaries
+
+- **Renderer:** typed runner events + shadcn-vue only
+- **Preload:** narrow typed bridge
+- **Main:** spawn/kill `pipebox`, forward NDJSON → IPC, OS keychain secrets, file dialogs
+- **Runner (`pipebox`):** discover workflows, run act, parse streams, emit events; CLI commands `doctor`, `list`, `run`, `install`
+
+## Runner protocol (v1)
+
+Stdout is NDJSON (one object per line): `workflow_list`, `run_started`, `run_finished`, `step_started`, `step_finished`, `log`, `error`.
+
+Mirror types in the app at `packages/app/src/shared/runner-events.ts` (types-only copy of Go structs).
