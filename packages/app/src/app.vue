@@ -10,6 +10,7 @@ import { usePipeboxSession } from '@/composables/use-pipebox-session';
 
 const {
   repoPath,
+  branch,
   workflows,
   selectedWorkflow,
   runningWorkflow,
@@ -67,7 +68,10 @@ const {
     </template>
 
     <template #status>
-      <ProjectStatus :repo-path="repoPath" />
+      <ProjectStatus
+        :repo-path="repoPath"
+        :branch="branch"
+      />
     </template>
   </WorkbenchShell>
 </template>

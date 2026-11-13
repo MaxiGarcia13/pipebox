@@ -7,6 +7,7 @@ function hasRunFinished(events: RunnerEvent[]): boolean {
 
 export function usePipeboxSession() {
   const repoPath = ref<string | null>(null);
+  const branch = ref<string | null>(null);
   const workflows = ref<Workflow[]>([]);
   const selectedWorkflow = ref<string | null>(null);
   const runningWorkflow = ref<string | null>(null);
@@ -58,6 +59,7 @@ export function usePipeboxSession() {
       return;
     }
     repoPath.value = nextPath;
+    branch.value = null;
     selectedWorkflow.value = null;
     runningWorkflow.value = null;
     runEventsWorkflow.value = null;
@@ -65,8 +67,12 @@ export function usePipeboxSession() {
     runEvents.value = [];
     previewEvents.value = [];
     isRunning.value = false;
-    const list = await window.pipebox.listWorkflows(nextPath);
+    const [list, nextBranch] = await Promise.all([
+      window.pipebox.listWorkflows(nextPath),
+      window.pipebox.gitBranch(nextPath),
+    ]);
     workflows.value = list.workflows;
+    branch.value = nextBranch;
   }
 
   async function runDoctor() {
@@ -148,6 +154,7 @@ export function usePipeboxSession() {
 
   return {
     repoPath,
+    branch,
     workflows,
     selectedWorkflow,
     runningWorkflow,

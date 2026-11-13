@@ -2,6 +2,7 @@ import type { GraphWorkflowOptions, StartRunOptions } from '../shared/ipc-channe
 import type { DoctorEvent, JobGraphEvent, WorkflowListEvent } from '../shared/runner-events';
 import { BrowserWindow, dialog, ipcMain } from 'electron';
 import { IPC_CHANNELS } from '../shared/ipc-channels';
+import { resolveGitBranch } from './resolve-git-branch';
 import { RunnerClient } from './runner-client';
 
 const runnerClient = new RunnerClient();
@@ -57,6 +58,10 @@ export function registerIpc(): void {
       return null;
     }
     return result.filePaths[0];
+  });
+
+  ipcMain.handle(IPC_CHANNELS.gitBranch, async (_event, repoPath: string) => {
+    return resolveGitBranch(repoPath);
   });
 
   ipcMain.handle(IPC_CHANNELS.startRun, async (event, options: StartRunOptions) => {
