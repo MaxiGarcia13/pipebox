@@ -37,6 +37,8 @@ export function usePipeboxSession() {
     repoPath.value = nextPath;
     selectedWorkflow.value = null;
     runningWorkflow.value = null;
+    events.value = [];
+    isRunning.value = false;
     const list = await window.pipebox.listWorkflows(nextPath);
     workflows.value = list.workflows;
   }
