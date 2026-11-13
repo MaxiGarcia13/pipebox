@@ -29,13 +29,22 @@ defineEmits<{
 
     <div
       v-if="!hasRepo"
-      class="flex flex-col items-start gap-4 p-4"
+      class="flex flex-col items-center justify-center gap-4 p-4 text-center"
     >
-      <p class="text-sm text-muted-foreground">
-        Open a project to list its GitHub Actions workflows
-      </p>
-      <Button @click="$emit('openProject')">
-        Select project
+      <div class="flex flex-col gap-2">
+        <p class="text-sm font-medium text-sidebar-foreground">
+          No project open
+        </p>
+        <p class="text-xs text-muted-foreground">
+          Open a project to list its GitHub Actions workflows.
+        </p>
+      </div>
+      <Button
+        variant="outline"
+        class="w-full max-w-48 rounded-xl"
+        @click="$emit('openProject')"
+      >
+        Open Project…
       </Button>
     </div>
 
