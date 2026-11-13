@@ -1,6 +1,7 @@
 export const IPC_CHANNELS = {
   doctor: 'pipebox:doctor',
   listWorkflows: 'pipebox:list-workflows',
+  graphWorkflow: 'pipebox:graph-workflow',
   selectRepo: 'pipebox:select-repo',
   startRun: 'pipebox:start-run',
   stopRun: 'pipebox:stop-run',
@@ -11,4 +12,9 @@ export interface StartRunOptions {
   repoPath: string;
   workflow: string;
   job?: string;
+}
+
+export interface GraphWorkflowOptions {
+  repoPath: string;
+  workflow: string;
 }

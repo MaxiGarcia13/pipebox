@@ -1,21 +1,37 @@
 import type { DoctorEvent, RunnerEvent, Workflow } from '@/shared/runner-events';
-import { onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 
 export function usePipeboxSession() {
   const repoPath = ref<string | null>(null);
   const workflows = ref<Workflow[]>([]);
   const selectedWorkflow = ref<string | null>(null);
   const runningWorkflow = ref<string | null>(null);
+  const runEventsWorkflow = ref<string | null>(null);
+  const previewWorkflow = ref<string | null>(null);
   const doctor = ref<DoctorEvent | null>(null);
-  const events = ref<RunnerEvent[]>([]);
+  const runEvents = ref<RunnerEvent[]>([]);
+  const previewEvents = ref<RunnerEvent[]>([]);
   const isRunning = ref(false);
   const statusMessage = ref('');
 
   let unsubscribe: (() => void) | undefined;
 
+  const viewingRun = computed(() =>
+    selectedWorkflow.value != null
+    && selectedWorkflow.value === runEventsWorkflow.value,
+  );
+
+  const events = computed(() =>
+    viewingRun.value ? runEvents.value : previewEvents.value,
+  );
+
+  const logIsRunning = computed(() =>
+    viewingRun.value && isRunning.value,
+  );
+
   onMounted(() => {
     unsubscribe = window.pipebox.onEvent((event) => {
-      events.value = [...events.value, event];
+      runEvents.value = [...runEvents.value, event];
       if (event.type === 'run_finished') {
         isRunning.value = false;
         runningWorkflow.value = null;
@@ -37,7 +53,10 @@ export function usePipeboxSession() {
     repoPath.value = nextPath;
     selectedWorkflow.value = null;
     runningWorkflow.value = null;
-    events.value = [];
+    runEventsWorkflow.value = null;
+    previewWorkflow.value = null;
+    runEvents.value = [];
+    previewEvents.value = [];
     isRunning.value = false;
     const list = await window.pipebox.listWorkflows(nextPath);
     workflows.value = list.workflows;
@@ -48,6 +67,38 @@ export function usePipeboxSession() {
     doctor.value = await window.pipebox.doctor();
   }
 
+  async function loadPreview(workflowPath: string) {
+    if (!repoPath.value) {
+      return;
+    }
+    if (previewWorkflow.value === workflowPath && previewEvents.value.length > 0) {
+      return;
+    }
+    statusMessage.value = '';
+    try {
+      const graph = await window.pipebox.graphWorkflow({
+        repoPath: repoPath.value,
+        workflow: workflowPath,
+      });
+      previewEvents.value = [graph];
+      previewWorkflow.value = workflowPath;
+    } catch (error) {
+      previewEvents.value = [];
+      previewWorkflow.value = null;
+      statusMessage.value = error instanceof Error
+        ? error.message
+        : String(error);
+    }
+  }
+
+  async function selectWorkflow(workflowPath: string) {
+    selectedWorkflow.value = workflowPath;
+    if (workflowPath === runEventsWorkflow.value) {
+      return;
+    }
+    await loadPreview(workflowPath);
+  }
+
   async function startRun(workflowPath: string) {
     if (!repoPath.value || !workflowPath || isRunning.value) {
       return;
@@ -55,7 +106,8 @@ export function usePipeboxSession() {
     statusMessage.value = '';
     selectedWorkflow.value = workflowPath;
     runningWorkflow.value = workflowPath;
-    events.value = [];
+    runEventsWorkflow.value = workflowPath;
+    runEvents.value = [];
     isRunning.value = true;
     try {
       await window.pipebox.startRun({
@@ -85,8 +137,10 @@ export function usePipeboxSession() {
     doctor,
     events,
     isRunning,
+    logIsRunning,
     statusMessage,
     selectRepo,
+    selectWorkflow,
     runDoctor,
     startRun,
     stopRun,

@@ -141,34 +141,7 @@ func streamLines(waitGroup *sync.WaitGroup, reader io.Reader, parser *actparse.P
 }
 
 func emitJobGraph(options Options) {
-  repoPath, err := filepath.Abs(options.Repo)
-  if err != nil {
-    _ = event.EmitStdout(event.Error{
-      Type:    event.TypeError,
-      Message: fmt.Sprintf("job graph: %v", err),
-    })
-    _ = event.EmitStdout(event.JobGraph{
-      Type: event.TypeJobGraph,
-      Jobs: []event.JobNode{},
-    })
-    return
-  }
-
-  workflowRel, err := workspaceWorkflowPath(repoPath, options.Workflow)
-  if err != nil {
-    _ = event.EmitStdout(event.Error{
-      Type:    event.TypeError,
-      Message: fmt.Sprintf("job graph: %v", err),
-    })
-    _ = event.EmitStdout(event.JobGraph{
-      Type: event.TypeJobGraph,
-      Jobs: []event.JobNode{},
-    })
-    return
-  }
-
-  workflowPath := filepath.Join(repoPath, filepath.FromSlash(workflowRel))
-  graph, err := workflows.LoadJobGraph(workflowPath)
+  graph, err := workflows.Graph(options.Repo, options.Workflow)
   if err != nil {
     _ = event.EmitStdout(event.Error{
       Type:    event.TypeError,

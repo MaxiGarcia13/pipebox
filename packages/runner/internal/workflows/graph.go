@@ -3,6 +3,7 @@ package workflows
 import (
   "fmt"
   "os"
+  "path/filepath"
   "strings"
 
   "go.yaml.in/yaml/v4"
@@ -55,6 +56,23 @@ func (list *needsList) UnmarshalYAML(value *yaml.Node) error {
   default:
     return fmt.Errorf("needs must be a string or list of strings")
   }
+}
+
+func Graph(repoPath, workflow string) (event.JobGraph, error) {
+  repoAbs, err := filepath.Abs(repoPath)
+  if err != nil {
+    return event.JobGraph{}, err
+  }
+
+  relativePath := workflow
+  if filepath.IsAbs(workflow) {
+    relativePath, err = filepath.Rel(repoAbs, workflow)
+    if err != nil {
+      return event.JobGraph{}, fmt.Errorf("workflow must be inside the repo: %w", err)
+    }
+  }
+
+  return LoadJobGraph(filepath.Join(repoAbs, filepath.FromSlash(relativePath)))
 }
 
 func LoadJobGraph(workflowPath string) (event.JobGraph, error) {

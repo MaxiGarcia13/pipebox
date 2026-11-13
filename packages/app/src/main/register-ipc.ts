@@ -1,5 +1,5 @@
-import type { StartRunOptions } from '../shared/ipc-channels';
-import type { DoctorEvent, WorkflowListEvent } from '../shared/runner-events';
+import type { GraphWorkflowOptions, StartRunOptions } from '../shared/ipc-channels';
+import type { DoctorEvent, JobGraphEvent, WorkflowListEvent } from '../shared/runner-events';
 import { BrowserWindow, dialog, ipcMain } from 'electron';
 import { IPC_CHANNELS } from '../shared/ipc-channels';
 import { RunnerClient } from './runner-client';
@@ -27,6 +27,21 @@ export function registerIpc(): void {
       throw new Error('list did not return a workflow_list event');
     }
     return listEvent satisfies WorkflowListEvent;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.graphWorkflow, async (_event, options: GraphWorkflowOptions) => {
+    const events = await runnerClient.runToCompletion([
+      'graph',
+      '--repo',
+      options.repoPath,
+      '--workflow',
+      options.workflow,
+    ]);
+    const graphEvent = events.find((event) => event.type === 'job_graph');
+    if (!graphEvent || graphEvent.type !== 'job_graph') {
+      throw new Error('graph did not return a job_graph event');
+    }
+    return graphEvent satisfies JobGraphEvent;
   });
 
   ipcMain.handle(IPC_CHANNELS.selectRepo, async (event) => {

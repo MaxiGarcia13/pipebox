@@ -1,4 +1,4 @@
-import type { StartRunOptions } from './shared/ipc-channels';
+import type { GraphWorkflowOptions, StartRunOptions } from './shared/ipc-channels';
 import type { PipeboxApi } from './shared/pipebox-api';
 import type { RunnerEvent } from './shared/runner-events';
 import { contextBridge, ipcRenderer } from 'electron';
@@ -8,6 +8,8 @@ const pipeboxApi: PipeboxApi = {
   doctor: () => ipcRenderer.invoke(IPC_CHANNELS.doctor),
   listWorkflows: (repoPath) =>
     ipcRenderer.invoke(IPC_CHANNELS.listWorkflows, repoPath),
+  graphWorkflow: (options: GraphWorkflowOptions) =>
+    ipcRenderer.invoke(IPC_CHANNELS.graphWorkflow, options),
   selectRepo: () => ipcRenderer.invoke(IPC_CHANNELS.selectRepo),
   startRun: (options: StartRunOptions) =>
     ipcRenderer.invoke(IPC_CHANNELS.startRun, options),

@@ -16,8 +16,10 @@ const {
   doctor,
   events,
   isRunning,
+  logIsRunning,
   statusMessage,
   selectRepo,
+  selectWorkflow,
   runDoctor,
   startRun,
   stopRun,
@@ -46,7 +48,7 @@ const {
         :running-path="runningWorkflow"
         :is-running="isRunning"
         @open-project="selectRepo"
-        @select="selectedWorkflow = $event"
+        @select="selectWorkflow($event)"
         @run="startRun"
         @stop="stopRun"
       />
@@ -54,8 +56,9 @@ const {
 
     <template #main>
       <EventLog
+        :key="`${selectedWorkflow ?? 'none'}:${logIsRunning ? 'live' : 'preview'}`"
         :events="events"
-        :is-running="isRunning"
+        :is-running="logIsRunning"
       />
     </template>
 

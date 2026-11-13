@@ -65,7 +65,7 @@ const isEmpty = computed(() =>
       v-if="isEmpty"
       class="p-4 text-sm text-muted-foreground"
     >
-      Run a workflow to stream logs here
+      Select a workflow to preview jobs and steps
     </p>
 
     <template v-else>

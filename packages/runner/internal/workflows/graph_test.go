@@ -80,6 +80,36 @@ func TestLoadJobGraphEmptyJobs(t *testing.T) {
   }
 }
 
+func TestGraphResolvesRelativeWorkflow(t *testing.T) {
+  t.Parallel()
+
+  repoPath := t.TempDir()
+  workflowsDir := filepath.Join(repoPath, ".github", "workflows")
+  if err := os.MkdirAll(workflowsDir, 0o700); err != nil {
+    t.Fatal(err)
+  }
+  if err := os.WriteFile(filepath.Join(workflowsDir, "ci.yml"), []byte(`
+jobs:
+  lint:
+    name: Lint
+    steps:
+      - run: echo ok
+`), 0o600); err != nil {
+    t.Fatal(err)
+  }
+
+  graph, err := Graph(repoPath, ".github/workflows/ci.yml")
+  if err != nil {
+    t.Fatal(err)
+  }
+  if len(graph.Jobs) != 1 || graph.Jobs[0].Name != "Lint" {
+    t.Fatalf("unexpected graph: %#v", graph.Jobs)
+  }
+  if len(graph.Jobs[0].Steps) != 1 || graph.Jobs[0].Steps[0] != "echo ok" {
+    t.Fatalf("unexpected steps: %#v", graph.Jobs[0].Steps)
+  }
+}
+
 func TestLoadJobGraphSteps(t *testing.T) {
   t.Parallel()
 

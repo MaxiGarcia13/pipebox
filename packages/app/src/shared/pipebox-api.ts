@@ -1,9 +1,15 @@
-import type { StartRunOptions } from './ipc-channels';
-import type { DoctorEvent, RunnerEvent, WorkflowListEvent } from './runner-events';
+import type { GraphWorkflowOptions, StartRunOptions } from './ipc-channels';
+import type {
+  DoctorEvent,
+  JobGraphEvent,
+  RunnerEvent,
+  WorkflowListEvent,
+} from './runner-events';
 
 export interface PipeboxApi {
   doctor: () => Promise<DoctorEvent>;
   listWorkflows: (repoPath: string) => Promise<WorkflowListEvent>;
+  graphWorkflow: (options: GraphWorkflowOptions) => Promise<JobGraphEvent>;
   selectRepo: () => Promise<string | null>;
   startRun: (options: StartRunOptions) => Promise<void>;
   stopRun: () => Promise<void>;
