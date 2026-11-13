@@ -46,27 +46,28 @@ function statusIcon(status: string): string {
     </div>
 
     <div class="min-h-0 flex-1 overflow-auto bg-background p-4 font-mono text-xs leading-relaxed">
-      <div
-        v-if="isRunning && events.length === 0"
-        class="flex flex-col gap-2"
-        aria-label="Waiting for log stream"
-      >
-        <Skeleton class="h-3 w-3/4" />
-        <Skeleton class="h-3 w-full" />
-        <Skeleton class="h-3 w-5/6" />
-        <Skeleton class="h-3 w-2/3" />
-        <Skeleton class="h-3 w-4/5" />
-      </div>
       <p
-        v-else-if="events.length === 0"
+        v-if="!isRunning && events.length === 0"
         class="text-muted-foreground"
       >
         Run a workflow to stream logs here
       </p>
-      <pre
-        v-else
-        class="break-all whitespace-pre-wrap text-foreground"
-      >{{ events.map(formatEvent).join('\n') }}</pre>
+
+      <template v-else>
+        <pre
+          v-if="events.length > 0"
+          class="break-all whitespace-pre-wrap text-foreground"
+        >{{ events.map(formatEvent).join('\n') }}</pre>
+
+        <div
+          v-if="isRunning"
+          class="mt-2 flex flex-row gap-2"
+          aria-label="Waiting for log stream"
+        >
+          <Skeleton class="h-3 w-30" />
+          <Skeleton class="h-3 w-full" />
+        </div>
+      </template>
     </div>
   </div>
 </template>
