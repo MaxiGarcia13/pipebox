@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { JobRunStatus, StepRunStatus } from '@/utils';
+import type { JobRunStatus, StepRunStatus } from '@/domain/run';
 import { Ban, CheckCircle2, Circle, CircleX, LoaderCircle, MinusCircle } from 'lucide-vue-next';
 
 defineProps<{

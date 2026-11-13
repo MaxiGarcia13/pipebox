@@ -1,4 +1,4 @@
-import type { DoctorEvent, RunnerEvent, Workflow } from '@/shared/runner-events';
+import type { DoctorEvent, RunnerEvent, Workflow } from '@/domain/runner-events';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 
 function hasRunFinished(events: RunnerEvent[]): boolean {

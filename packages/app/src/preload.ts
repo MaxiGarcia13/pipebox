@@ -1,8 +1,8 @@
-import type { GraphWorkflowOptions, StartRunOptions } from './shared/ipc-channels';
-import type { PipeboxApi } from './shared/pipebox-api';
-import type { RunnerEvent } from './shared/runner-events';
+import type { RunnerEvent } from './domain/runner-events';
+import type { GraphWorkflowOptions, StartRunOptions } from './services/ipc-channels';
+import type { PipeboxApi } from './services/pipebox-api';
 import { contextBridge, ipcRenderer } from 'electron';
-import { IPC_CHANNELS } from './shared/ipc-channels';
+import { IPC_CHANNELS } from './services/ipc-channels';
 
 const pipeboxApi: PipeboxApi = {
   doctor: () => ipcRenderer.invoke(IPC_CHANNELS.doctor),

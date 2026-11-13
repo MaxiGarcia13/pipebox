@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import type { JobSummary } from '@/utils';
+import type { JobSummary } from '@/domain/run';
 import { ChevronRight } from 'lucide-vue-next';
 import { computed } from 'vue';
 import RunStatusIcon from '@/components/run-status-icon.vue';
-import { formatDuration, groupJobsByColumn } from '@/utils';
+import { groupJobsByColumn } from '@/domain/run';
+import { formatDuration } from '@/utils';
 
 const props = defineProps<{
   jobs: JobSummary[];

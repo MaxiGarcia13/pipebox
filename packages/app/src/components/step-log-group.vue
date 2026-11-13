@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { StepGroup } from '@/utils';
+import type { StepGroup } from '@/domain/run';
 import { ChevronRight } from 'lucide-vue-next';
 import RunStatusIcon from '@/components/run-status-icon.vue';
 import {

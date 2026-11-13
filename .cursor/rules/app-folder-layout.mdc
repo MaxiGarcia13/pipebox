@@ -1,0 +1,33 @@
+---
+description: packages/app src folder roles (domain, utils, components, services)
+globs: packages/app/**
+alwaysApply: false
+---
+
+# App folder layout
+
+Under `packages/app/src/`:
+
+| Folder | Put here | Not here |
+| --- | --- | --- |
+| `domain/` | Business logic, domain types, protocol types (`runner-events`), run grouping/layout | Vue UI, IPC contracts, generic helpers |
+| `utils/` | Reusable, domain-agnostic helpers (`cn`, `formatDuration`) | Run/job/step rules, event folding, API calls |
+| `components/` | Vue UI (screens + shadcn under `components/ui/`) | Business rules, fetch/IPC orchestration |
+| `services/` | API / IPC contracts and call wrappers (`ipc-channels`, `pipebox-api`) | Domain transforms, presentational components |
+
+```text
+// ❌ BAD — domain logic in utils
+packages/app/src/utils/group-run-events.ts
+
+// ✅ GOOD — domain owns business logic
+packages/app/src/domain/run/group-run-events.ts
+
+// ❌ BAD — IPC contract under domain
+packages/app/src/domain/shared/ipc-channels.ts
+
+// ✅ GOOD — IPC/API under services; protocol types under domain
+packages/app/src/services/ipc-channels.ts
+packages/app/src/domain/runner-events.ts
+```
+
+Import from `@/domain/...` and `@/services/...`. Domain must not import `services`. Keep `utils` thin.

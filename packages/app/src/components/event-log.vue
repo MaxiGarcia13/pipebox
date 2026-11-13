@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ErrorEvent, RunnerEvent } from '@/shared/runner-events';
+import type { ErrorEvent, RunnerEvent } from '@/domain/runner-events';
 import { computed, ref } from 'vue';
 import JobTimeline from '@/components/job-timeline.vue';
 import StepLogGroup from '@/components/step-log-group.vue';
@@ -7,7 +7,7 @@ import {
   defaultSelectedJobId,
   groupRunEvents,
   stepsForJob,
-} from '@/utils';
+} from '@/domain/run';
 
 const props = defineProps<{
   events: RunnerEvent[];

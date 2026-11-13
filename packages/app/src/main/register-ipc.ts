@@ -1,7 +1,7 @@
-import type { GraphWorkflowOptions, StartRunOptions } from '../shared/ipc-channels';
-import type { DoctorEvent, JobGraphEvent, WorkflowListEvent } from '../shared/runner-events';
+import type { DoctorEvent, JobGraphEvent, WorkflowListEvent } from '../domain/runner-events';
+import type { GraphWorkflowOptions, StartRunOptions } from '../services/ipc-channels';
 import { BrowserWindow, dialog, ipcMain } from 'electron';
-import { IPC_CHANNELS } from '../shared/ipc-channels';
+import { IPC_CHANNELS } from '../services/ipc-channels';
 import { resolveGitBranch } from './resolve-git-branch';
 import { RunnerClient } from './runner-client';
 

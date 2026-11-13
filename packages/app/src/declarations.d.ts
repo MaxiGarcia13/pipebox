@@ -2,7 +2,7 @@
 
 declare global {
   interface Window {
-    pipebox: import('./shared/pipebox-api').PipeboxApi;
+    pipebox: import('./services/pipebox-api').PipeboxApi;
   }
 }
 

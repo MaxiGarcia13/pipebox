@@ -1,4 +1,4 @@
-import type { JobNode } from '@/shared/runner-events';
+import type { JobNode } from '@/domain/runner-events';
 
 export type LaidOutJob<T extends JobNode = JobNode> = T & {
   column: number;

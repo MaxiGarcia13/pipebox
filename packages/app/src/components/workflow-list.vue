@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Workflow } from '@/shared/runner-events';
+import type { Workflow } from '@/domain/runner-events';
 import { Play, Square } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 

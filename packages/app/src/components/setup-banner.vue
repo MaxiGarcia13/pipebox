@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { DoctorEvent } from '@/shared/runner-events';
+import type { DoctorEvent } from '@/domain/runner-events';
 import { computed } from 'vue';
 
 const props = defineProps<{

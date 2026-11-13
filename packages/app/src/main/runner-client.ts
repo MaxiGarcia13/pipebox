@@ -1,5 +1,5 @@
 import type { ChildProcess } from 'node:child_process';
-import type { RunnerEvent } from '../shared/runner-events';
+import type { RunnerEvent } from '../domain/runner-events';
 import { spawn } from 'node:child_process';
 import readline from 'node:readline';
 import { resolvePipeboxPath } from './resolve-pipebox-path';

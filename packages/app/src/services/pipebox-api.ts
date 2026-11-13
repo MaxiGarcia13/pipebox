@@ -4,7 +4,7 @@ import type {
   JobGraphEvent,
   RunnerEvent,
   WorkflowListEvent,
-} from './runner-events';
+} from '@/domain/runner-events';
 
 export interface PipeboxApi {
   doctor: () => Promise<DoctorEvent>;
