@@ -7,7 +7,7 @@ import {
   MenubarSubContent,
   useForwardPropsEmits,
 } from 'reka-ui';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils';
 
 const props = defineProps<MenubarSubContentProps & { class?: HTMLAttributes['class'] }>();
 
