@@ -12,5 +12,5 @@ export type {
   StepGroup,
   StepRunStatus,
 } from './group-run-events';
-export { layoutJobGraph } from './layout-job-graph';
+export { groupJobsByColumn, layoutJobGraph } from './layout-job-graph';
 export type { LaidOutJob } from './layout-job-graph';

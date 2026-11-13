@@ -1,11 +1,11 @@
 import type { JobNode } from '@/shared/runner-events';
 
-export interface LaidOutJob extends JobNode {
+export type LaidOutJob<T extends JobNode = JobNode> = T & {
   column: number;
   row: number;
-}
+};
 
-export function layoutJobGraph(jobs: JobNode[]): LaidOutJob[] {
+export function layoutJobGraph<T extends JobNode>(jobs: T[]): LaidOutJob<T>[] {
   if (jobs.length === 0) {
     return [];
   }
@@ -58,4 +58,18 @@ export function layoutJobGraph(jobs: JobNode[]): LaidOutJob[] {
       row,
     };
   });
+}
+
+export function groupJobsByColumn<T extends JobNode>(jobs: T[]): LaidOutJob<T>[][] {
+  const laidOut = layoutJobGraph(jobs);
+  if (laidOut.length === 0) {
+    return [];
+  }
+
+  const maxColumn = laidOut.reduce((max, job) => Math.max(max, job.column), 0);
+  const columns: LaidOutJob<T>[][] = Array.from({ length: maxColumn + 1 }, () => []);
+  for (const job of laidOut) {
+    columns[job.column]?.push(job);
+  }
+  return columns;
 }
