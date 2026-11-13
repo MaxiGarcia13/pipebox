@@ -105,18 +105,20 @@ func Start(options Options) (int, error) {
   status := "passed"
   if waitErr != nil {
     var exitError *exec.ExitError
-    if errors.As(waitErr, &exitError) {
-      exitCode = exitError.ExitCode()
-    } else if errors.Is(ctx.Err(), context.Canceled) {
+    if errors.Is(ctx.Err(), context.Canceled) {
       exitCode = 130
+      status = "cancelled"
+    } else if errors.As(waitErr, &exitError) {
+      exitCode = exitError.ExitCode()
+      status = "failed"
     } else {
       exitCode = 1
+      status = "failed"
       _ = event.EmitStdout(event.Error{
         Type:    event.TypeError,
         Message: waitErr.Error(),
       })
     }
-    status = "failed"
   }
 
   if err := event.EmitStdout(event.RunFinished{

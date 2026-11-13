@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { JobRunStatus, StepRunStatus } from '@/utils';
-import { CheckCircle2, Circle, CircleX, LoaderCircle, MinusCircle } from 'lucide-vue-next';
+import { Ban, CheckCircle2, Circle, CircleX, LoaderCircle, MinusCircle } from 'lucide-vue-next';
 
 defineProps<{
   status: JobRunStatus | StepRunStatus;
@@ -16,6 +16,11 @@ defineProps<{
   <CircleX
     v-else-if="status === 'failed'"
     class="size-4 shrink-0 text-destructive"
+    aria-hidden="true"
+  />
+  <Ban
+    v-else-if="status === 'cancelled'"
+    class="size-4 shrink-0 text-muted-foreground"
     aria-hidden="true"
   />
   <MinusCircle

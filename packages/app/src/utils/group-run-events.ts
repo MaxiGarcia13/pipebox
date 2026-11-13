@@ -1,6 +1,7 @@
 import type {
   JobNode,
   RunnerEvent,
+  RunStatus,
   StepStatus,
 } from '@/shared/runner-events';
 
@@ -32,10 +33,12 @@ export interface GroupedRun {
 
 export function groupRunEvents(events: RunnerEvent[]): GroupedRun {
   const graphJobs = jobsFromGraph(events);
-  const runFinished = hasRunFinished(events);
+  const runStatus = runFinishedStatus(events);
+  const runFinished = runStatus != null;
   const steps = foldSteps(events, graphJobs);
   cascadeAfterFailure(steps);
   advancePendingSteps(steps, runFinished);
+  settleAfterRunFinished(steps, runStatus);
   const jobs = summarizeJobs(graphJobs, steps, runFinished);
   return { jobs, steps };
 }
@@ -189,6 +192,29 @@ function advancePendingSteps(steps: StepGroup[], runFinished: boolean): void {
   }
 }
 
+function settleAfterRunFinished(
+  steps: StepGroup[],
+  runStatus: RunStatus | null,
+): void {
+  if (runStatus == null) {
+    return;
+  }
+
+  for (const group of steps) {
+    if (group.status === 'running') {
+      group.status = runStatus === 'cancelled'
+        ? 'cancelled'
+        : 'failed';
+      group.openDefault = runStatus !== 'cancelled';
+      continue;
+    }
+    if (group.status === 'pending' && runStatus === 'cancelled') {
+      group.status = 'skipped';
+      group.openDefault = false;
+    }
+  }
+}
+
 function seedStepsFromGraph(graphJobs: JobNode[]): StepGroup[] {
   const groups: StepGroup[] = [];
   for (const job of graphJobs) {
@@ -278,13 +304,14 @@ function indexesForJob(groups: StepGroup[], job: string): number[] {
   return indexes;
 }
 
-function hasRunFinished(events: RunnerEvent[]): boolean {
+function runFinishedStatus(events: RunnerEvent[]): RunStatus | null {
   for (let index = events.length - 1; index >= 0; index -= 1) {
-    if (events[index]?.type === 'run_finished') {
-      return true;
+    const event = events[index];
+    if (event?.type === 'run_finished') {
+      return event.status;
     }
   }
-  return false;
+  return null;
 }
 
 function summarizeJobs(
@@ -343,6 +370,9 @@ function mergeJobStatus(current: JobRunStatus, stepStatus: StepRunStatus): JobRu
   }
   if (current === 'failed' || stepStatus === 'failed') {
     return 'failed';
+  }
+  if (current === 'cancelled' || stepStatus === 'cancelled') {
+    return 'cancelled';
   }
   if (current === 'running' || stepStatus === 'running') {
     return 'running';

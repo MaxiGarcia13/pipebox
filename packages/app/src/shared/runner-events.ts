@@ -9,8 +9,8 @@ export type RunnerEventType
     | 'error'
     | 'doctor';
 
-export type StepStatus = 'passed' | 'failed' | 'skipped';
-export type RunStatus = 'passed' | 'failed';
+export type StepStatus = 'passed' | 'failed' | 'skipped' | 'cancelled';
+export type RunStatus = 'passed' | 'failed' | 'cancelled';
 
 export interface Workflow {
   id: string;

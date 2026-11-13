@@ -1,6 +1,10 @@
 import type { DoctorEvent, RunnerEvent, Workflow } from '@/shared/runner-events';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 
+function hasRunFinished(events: RunnerEvent[]): boolean {
+  return events.some((event) => event.type === 'run_finished');
+}
+
 export function usePipeboxSession() {
   const repoPath = ref<string | null>(null);
   const workflows = ref<Workflow[]>([]);
@@ -31,6 +35,9 @@ export function usePipeboxSession() {
 
   onMounted(() => {
     unsubscribe = window.pipebox.onEvent((event) => {
+      if (event.type === 'run_finished' && hasRunFinished(runEvents.value)) {
+        return;
+      }
       runEvents.value = [...runEvents.value, event];
       if (event.type === 'run_finished') {
         isRunning.value = false;
@@ -127,6 +134,16 @@ export function usePipeboxSession() {
     await window.pipebox.stopRun();
     isRunning.value = false;
     runningWorkflow.value = null;
+    if (!hasRunFinished(runEvents.value)) {
+      runEvents.value = [
+        ...runEvents.value,
+        {
+          type: 'run_finished',
+          status: 'cancelled',
+          exitCode: 130,
+        },
+      ];
+    }
   }
 
   return {
