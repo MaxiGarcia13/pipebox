@@ -1,4 +1,6 @@
 import type { ForgeConfig } from '@electron-forge/shared-types';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { MakerDeb } from '@electron-forge/maker-deb';
 import { MakerRpm } from '@electron-forge/maker-rpm';
 import { MakerSquirrel } from '@electron-forge/maker-squirrel';
@@ -7,16 +9,27 @@ import { FusesPlugin } from '@electron-forge/plugin-fuses';
 import { VitePlugin } from '@electron-forge/plugin-vite';
 import { FuseV1Options, FuseVersion } from '@electron/fuses';
 
+const rootDir = path.dirname(fileURLToPath(import.meta.url));
+const appIcon = path.join(rootDir, 'assets', 'icon');
+
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
+    icon: appIcon,
+    extraResource: [`${appIcon}.png`],
   },
   rebuildConfig: {},
   makers: [
-    new MakerSquirrel({}),
+    new MakerSquirrel({
+      setupIcon: `${appIcon}.ico`,
+    }),
     new MakerZIP({}, ['darwin']),
     new MakerRpm({}),
-    new MakerDeb({}),
+    new MakerDeb({
+      options: {
+        icon: `${appIcon}.png`,
+      },
+    }),
   ],
   plugins: [
     new VitePlugin({
