@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import AppHeader from '@/components/app-header.vue';
 import DoctorStatus from '@/components/doctor-status.vue';
 import EventLog from '@/components/event-log.vue';
+import ProjectStatus from '@/components/project-status.vue';
 import RunToolbar from '@/components/run-toolbar.vue';
+import WorkbenchShell from '@/components/workbench-shell.vue';
 import WorkflowList from '@/components/workflow-list.vue';
 import { usePipeboxSession } from '@/composables/use-pipebox-session';
 
@@ -10,6 +11,7 @@ const {
   repoPath,
   workflows,
   selectedWorkflow,
+  runningWorkflow,
   doctor,
   events,
   isRunning,
@@ -22,46 +24,42 @@ const {
 </script>
 
 <template>
-  <div class="flex flex-col gap-6 p-6">
-    <AppHeader />
+  <WorkbenchShell>
+    <template #toolbar>
+      <RunToolbar
+        :status-message="statusMessage"
+        @open-project="selectRepo"
+        @refresh-doctor="runDoctor"
+      />
+    </template>
 
-    <RunToolbar
-      :can-run="Boolean(repoPath && selectedWorkflow)"
-      :is-running="isRunning"
-      @select-repo="selectRepo"
-      @doctor="runDoctor"
-      @start-run="startRun"
-      @stop-run="stopRun"
-    />
+    <template #sidebar>
+      <WorkflowList
+        :workflows="workflows"
+        :has-repo="Boolean(repoPath)"
+        :selected-path="selectedWorkflow"
+        :running-path="runningWorkflow"
+        :is-running="isRunning"
+        @open-project="selectRepo"
+        @select="selectedWorkflow = $event"
+        @run="startRun"
+        @stop="stopRun"
+      />
+    </template>
 
-    <p
-      v-if="repoPath"
-      class="text-sm break-all"
-    >
-      Repo: {{ repoPath }}
-    </p>
-    <p
-      v-if="statusMessage"
-      class="text-sm text-destructive"
-    >
-      {{ statusMessage }}
-    </p>
+    <template #main>
+      <EventLog
+        :events="events"
+        :is-running="isRunning"
+      />
+    </template>
 
-    <DoctorStatus
-      v-if="doctor"
-      :doctor="doctor"
-    />
+    <template #panel>
+      <DoctorStatus :doctor="doctor" />
+    </template>
 
-    <WorkflowList
-      v-if="workflows.length > 0"
-      :workflows="workflows"
-      :selected-path="selectedWorkflow"
-      @select="selectedWorkflow = $event"
-    />
-
-    <EventLog
-      v-if="events.length > 0"
-      :events="events"
-    />
-  </div>
+    <template #status>
+      <ProjectStatus :repo-path="repoPath" />
+    </template>
+  </WorkbenchShell>
 </template>

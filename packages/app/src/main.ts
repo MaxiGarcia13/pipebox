@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { app, BrowserWindow } from 'electron';
@@ -8,10 +9,24 @@ if (started) {
   app.quit();
 }
 
+function resolveWindowIcon(): string | undefined {
+  if (process.platform === 'darwin') {
+    return undefined;
+  }
+
+  const candidates = [
+    path.join(__dirname, '../../assets/icon.png'),
+    path.join(process.resourcesPath, 'icon.png'),
+  ];
+
+  return candidates.find((candidate) => existsSync(candidate));
+}
+
 function createWindow() {
   const mainWindow = new BrowserWindow({
     width: 960,
     height: 720,
+    icon: resolveWindowIcon(),
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,

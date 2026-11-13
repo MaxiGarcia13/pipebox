@@ -1,42 +1,40 @@
 <script setup lang="ts">
-import { Button } from '@/components/ui/button';
+import logoUrl from '@/assets/logo-32.png';
+import AppMenubar from '@/components/app-menubar.vue';
 
 defineProps<{
-  canRun: boolean;
-  isRunning: boolean;
+  statusMessage: string;
 }>();
 
 defineEmits<{
-  selectRepo: [];
-  doctor: [];
-  startRun: [];
-  stopRun: [];
+  openProject: [];
+  refreshDoctor: [];
 }>();
 </script>
 
 <template>
-  <section class="flex flex-wrap gap-2">
-    <Button @click="$emit('selectRepo')">
-      Select repo
-    </Button>
-    <Button
-      variant="secondary"
-      @click="$emit('doctor')"
+  <div class="flex min-w-0 flex-1 items-center gap-2">
+    <div class="flex shrink-0 items-center gap-2">
+      <img
+        :src="logoUrl"
+        alt=""
+        class="size-6"
+      >
+      <span class="text-sm font-semibold tracking-wide">
+        PipeBox
+      </span>
+    </div>
+
+    <AppMenubar
+      @open-project="$emit('openProject')"
+      @refresh-doctor="$emit('refreshDoctor')"
+    />
+
+    <p
+      v-if="statusMessage"
+      class="min-w-0 flex-1 truncate text-sm text-destructive"
     >
-      Doctor
-    </Button>
-    <Button
-      :disabled="!canRun || isRunning"
-      @click="$emit('startRun')"
-    >
-      Run
-    </Button>
-    <Button
-      variant="destructive"
-      :disabled="!isRunning"
-      @click="$emit('stopRun')"
-    >
-      Stop
-    </Button>
-  </section>
+      {{ statusMessage }}
+    </p>
+  </div>
 </template>

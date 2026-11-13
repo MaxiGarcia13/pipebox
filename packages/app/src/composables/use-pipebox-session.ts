@@ -5,6 +5,7 @@ export function usePipeboxSession() {
   const repoPath = ref<string | null>(null);
   const workflows = ref<Workflow[]>([]);
   const selectedWorkflow = ref<string | null>(null);
+  const runningWorkflow = ref<string | null>(null);
   const doctor = ref<DoctorEvent | null>(null);
   const events = ref<RunnerEvent[]>([]);
   const isRunning = ref(false);
@@ -17,8 +18,10 @@ export function usePipeboxSession() {
       events.value = [...events.value, event];
       if (event.type === 'run_finished') {
         isRunning.value = false;
+        runningWorkflow.value = null;
       }
     });
+    void runDoctor();
   });
 
   onUnmounted(() => {
@@ -33,6 +36,7 @@ export function usePipeboxSession() {
     }
     repoPath.value = nextPath;
     selectedWorkflow.value = null;
+    runningWorkflow.value = null;
     const list = await window.pipebox.listWorkflows(nextPath);
     workflows.value = list.workflows;
   }
@@ -42,20 +46,23 @@ export function usePipeboxSession() {
     doctor.value = await window.pipebox.doctor();
   }
 
-  async function startRun() {
-    if (!repoPath.value || !selectedWorkflow.value) {
+  async function startRun(workflowPath: string) {
+    if (!repoPath.value || !workflowPath || isRunning.value) {
       return;
     }
     statusMessage.value = '';
+    selectedWorkflow.value = workflowPath;
+    runningWorkflow.value = workflowPath;
     events.value = [];
     isRunning.value = true;
     try {
       await window.pipebox.startRun({
         repoPath: repoPath.value,
-        workflow: selectedWorkflow.value,
+        workflow: workflowPath,
       });
     } catch (error) {
       isRunning.value = false;
+      runningWorkflow.value = null;
       statusMessage.value = error instanceof Error
         ? error.message
         : String(error);
@@ -65,12 +72,14 @@ export function usePipeboxSession() {
   async function stopRun() {
     await window.pipebox.stopRun();
     isRunning.value = false;
+    runningWorkflow.value = null;
   }
 
   return {
     repoPath,
     workflows,
     selectedWorkflow,
+    runningWorkflow,
     doctor,
     events,
     isRunning,
