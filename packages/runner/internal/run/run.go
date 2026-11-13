@@ -1,6 +1,18 @@
 package run
 
 import (
+  "bufio"
+  "context"
+  "errors"
+  "fmt"
+  "io"
+  "os"
+  "os/exec"
+  "os/signal"
+  "sync"
+  "syscall"
+
+  "pipebox/internal/actparse"
   "pipebox/internal/event"
 )
 
@@ -10,27 +22,99 @@ type Options struct {
   Job      string
 }
 
-// Start emits the run lifecycle stubs until act integration lands.
-func Start(options Options) error {
+func Start(options Options) (int, error) {
   if err := event.EmitStdout(event.RunStarted{
     Type:     event.TypeRunStarted,
     Repo:     options.Repo,
     Workflow: options.Workflow,
     Job:      options.Job,
   }); err != nil {
-    return err
+    return 1, err
   }
 
-  if err := event.EmitStdout(event.Log{
-    Type: event.TypeLog,
-    Line: "act integration not wired yet",
-  }); err != nil {
-    return err
+  ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+  defer stop()
+
+  cmd, err := buildActCommand(ctx, options)
+  if err != nil {
+    _ = event.EmitStdout(event.Error{
+      Type:    event.TypeError,
+      Message: err.Error(),
+    })
+    _ = event.EmitStdout(event.RunFinished{
+      Type:     event.TypeRunFinished,
+      Status:   "failed",
+      ExitCode: 1,
+    })
+    return 1, nil
   }
 
-  return event.EmitStdout(event.RunFinished{
+  stdout, err := cmd.StdoutPipe()
+  if err != nil {
+    return 1, fmt.Errorf("stdout pipe: %w", err)
+  }
+  stderr, err := cmd.StderrPipe()
+  if err != nil {
+    return 1, fmt.Errorf("stderr pipe: %w", err)
+  }
+
+  if err := cmd.Start(); err != nil {
+    _ = event.EmitStdout(event.Error{
+      Type:    event.TypeError,
+      Message: fmt.Sprintf("start dockerized act: %v", err),
+    })
+    _ = event.EmitStdout(event.RunFinished{
+      Type:     event.TypeRunFinished,
+      Status:   "failed",
+      ExitCode: 1,
+    })
+    return 1, nil
+  }
+
+  parser := actparse.NewParser()
+  var waitGroup sync.WaitGroup
+  waitGroup.Add(2)
+  go streamLines(&waitGroup, stdout, parser)
+  go streamLines(&waitGroup, stderr, parser)
+
+  waitErr := cmd.Wait()
+  waitGroup.Wait()
+
+  exitCode := 0
+  status := "passed"
+  if waitErr != nil {
+    var exitError *exec.ExitError
+    if errors.As(waitErr, &exitError) {
+      exitCode = exitError.ExitCode()
+    } else if errors.Is(ctx.Err(), context.Canceled) {
+      exitCode = 130
+    } else {
+      exitCode = 1
+      _ = event.EmitStdout(event.Error{
+        Type:    event.TypeError,
+        Message: waitErr.Error(),
+      })
+    }
+    status = "failed"
+  }
+
+  if err := event.EmitStdout(event.RunFinished{
     Type:     event.TypeRunFinished,
-    Status:   "failed",
-    ExitCode: 1,
-  })
+    Status:   status,
+    ExitCode: exitCode,
+  }); err != nil {
+    return exitCode, err
+  }
+  return exitCode, nil
+}
+
+func streamLines(waitGroup *sync.WaitGroup, reader io.Reader, parser *actparse.Parser) {
+  defer waitGroup.Done()
+  scanner := bufio.NewScanner(reader)
+  scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
+  for scanner.Scan() {
+    for _, item := range parser.HandleLine(scanner.Text()) {
+      _ = event.EmitStdout(item)
+    }
+  }
 }

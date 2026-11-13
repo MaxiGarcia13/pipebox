@@ -3,26 +3,23 @@ package doctor
 import (
   "os/exec"
 
+  "pipebox/internal/actimage"
   "pipebox/internal/event"
 )
 
 func Run() event.Doctor {
   checks := []event.DoctorCheck{
-    lookPathCheck("act"),
     lookPathCheck("docker"),
   }
 
-  ok := true
-  for _, check := range checks {
-    if !check.OK {
+  ok := checks[0].OK
+  if checks[0].OK {
+    daemonCheck := dockerInfoCheck()
+    checks = append(checks, daemonCheck)
+    if !daemonCheck.OK {
       ok = false
-    }
-  }
-
-  if dockerOK := checks[1].OK; dockerOK {
-    checks = append(checks, dockerInfoCheck())
-    if !checks[len(checks)-1].OK {
-      ok = false
+    } else {
+      checks = append(checks, actImageCheck())
     }
   }
 
@@ -62,5 +59,21 @@ func dockerInfoCheck() event.DoctorCheck {
     Name:   "docker_daemon",
     OK:     true,
     Detail: "reachable",
+  }
+}
+
+func actImageCheck() event.DoctorCheck {
+  cmd := exec.Command("docker", "image", "inspect", actimage.Image)
+  if err := cmd.Run(); err != nil {
+    return event.DoctorCheck{
+      Name:   "act_image",
+      OK:     false,
+      Detail: actimage.Image + " not pulled yet (pulled on first run)",
+    }
+  }
+  return event.DoctorCheck{
+    Name:   "act_image",
+    OK:     true,
+    Detail: actimage.Image,
   }
 }

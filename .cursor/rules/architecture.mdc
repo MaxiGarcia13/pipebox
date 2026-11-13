@@ -24,7 +24,8 @@ alwaysApply: true
 - **Renderer:** typed runner events + shadcn-vue only
 - **Preload:** narrow typed bridge
 - **Main:** spawn/kill `pipebox`, forward NDJSON → IPC, OS keychain secrets, file dialogs
-- **Runner (`pipebox`):** discover workflows, run act, parse streams, emit events; CLI commands `doctor`, `list`, `run`, `install`
+- **Runner (`pipebox`):** discover workflows, run **Dockerized act** (`ghcr.io/nektos/act`), parse streams, emit events; CLI commands `doctor`, `list`, `run`, `install`
+- **v1 dependency:** Docker only — do not require a local `act` binary
 
 ## Runner protocol (v1)
 

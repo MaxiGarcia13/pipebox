@@ -9,7 +9,7 @@ Local CI/CD desktop control panel that wraps tools like **act** and Dockerized J
 | `packages/app`    | Desktop shell + UI       | Electron, Vue 3, Vite, Tailwind v4, [shadcn-vue](https://shadcn-vue.com) |
 | `packages/runner` | CI runner + terminal CLI | Go binary `pipebox`                                                      |
 
-Requires **Docker** and **act** on the machine for local GitHub Actions runs. Jenkins support comes later.
+Requires **Docker** only for local GitHub Actions runs (act runs via `ghcr.io/nektos/act` — no local `act` install). Jenkins support comes later.
 
 ## Architecture
 
@@ -18,8 +18,8 @@ flowchart LR
   Vue[Vue_renderer] -->|IPC| Preload[preload_bridge]
   Preload --> Main[Electron_main]
   Main -->|spawn_stdin_stdout| Runner[Go_runner]
-  Runner -->|exec| Act[act_CLI]
-  Act --> Docker[Docker]
+  Runner -->|docker_run| ActImage[nektos_act_image]
+  ActImage --> Docker[Docker]
   Runner -->|NDJSON_events| Main
   Main -->|IPC_events| Vue
 ```
