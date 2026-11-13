@@ -7,6 +7,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import { Skeleton } from '@/components/ui/skeleton';
 import { formatDuration } from '@/utils';
 
 defineProps<{
@@ -15,7 +16,23 @@ defineProps<{
 </script>
 
 <template>
+  <div
+    v-if="group.status === 'pending'"
+    class="flex items-center gap-2 border-b border-border px-4 py-2 text-sm text-muted-foreground opacity-50"
+    aria-disabled="true"
+  >
+    <ChevronRight
+      class="size-4 shrink-0"
+      aria-hidden="true"
+    />
+    <RunStatusIcon :status="group.status" />
+    <span class="min-w-0 flex-1 truncate font-medium">
+      {{ group.step }}
+    </span>
+  </div>
+
   <Collapsible
+    v-else
     v-slot="{ open }"
     :default-open="group.openDefault"
     class="border-b border-border"
@@ -46,11 +63,19 @@ defineProps<{
         class="overflow-x-auto bg-background px-4 py-2 font-mono text-xs leading-relaxed break-all whitespace-pre-wrap text-foreground"
       >{{ group.lines.join('\n') }}</pre>
       <p
-        v-else
+        v-else-if="group.status !== 'running'"
         class="px-4 py-2 text-xs text-muted-foreground"
       >
         No log lines
       </p>
+      <div
+        v-if="group.status === 'running'"
+        class="flex flex-row gap-2 px-4 py-2"
+        aria-label="Waiting for step output"
+      >
+        <Skeleton class="h-3 w-30" />
+        <Skeleton class="h-3 w-full" />
+      </div>
     </CollapsibleContent>
   </Collapsible>
 </template>

@@ -46,6 +46,7 @@ export interface JobNode {
   id: string;
   name: string;
   needs: string[];
+  steps?: string[];
 }
 
 export interface JobGraphEvent {

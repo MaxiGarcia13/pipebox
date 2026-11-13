@@ -9,10 +9,11 @@ import (
 
 var (
   jobPrefixPattern = regexp.MustCompile(`^\[([^/\]]+)/([^\]]+)\]\s*(.*)$`)
-  stepStartPattern = regexp.MustCompile(`(?i)(?:⭐\s*)?Run\s+(.+)$`)
-  stepSuccessPattern = regexp.MustCompile(`(?i)(?:✅\s*)?Success\s+-\s+(.+?)(?:\s+\[([^\]]+)\])?\s*$`)
-  stepFailurePattern = regexp.MustCompile(`(?i)(?:❌\s*)?Failure\s+-\s+(.+?)(?:\s+\[([^\]]+)\])?\s*$`)
-  stepSkippedPattern = regexp.MustCompile(`(?i)(?:🚧\s*)?Skipped\s+-\s+(.+?)(?:\s+\[([^\]]+)\])?\s*$`)
+  // Anchored: npm logs often contain "Run `npm …`" mid-line and must not become steps.
+  stepStartPattern = regexp.MustCompile(`(?i)^(?:⭐\s*)?Run\s+(.+)$`)
+  stepSuccessPattern = regexp.MustCompile(`(?i)^(?:✅\s*)?Success\s+-\s+(.+?)(?:\s+\[([^\]]+)\])?\s*$`)
+  stepFailurePattern = regexp.MustCompile(`(?i)^(?:❌\s*)?Failure\s+-\s+(.+?)(?:\s+\[([^\]]+)\])?\s*$`)
+  stepSkippedPattern = regexp.MustCompile(`(?i)^(?:🚧\s*)?Skipped\s+-\s+(.+?)(?:\s+\[([^\]]+)\])?\s*$`)
 )
 
 type Parser struct {
@@ -82,6 +83,10 @@ func splitJobPrefix(line string) (job string, rest string) {
 }
 
 func matchStepStart(message string) (string, bool) {
+  message = strings.TrimSpace(message)
+  if message == "" || strings.HasPrefix(message, "|") {
+    return "", false
+  }
   if !strings.Contains(message, "Run ") && !strings.Contains(message, "⭐") {
     return "", false
   }
@@ -94,13 +99,18 @@ func matchStepStart(message string) (string, bool) {
     return "", false
   }
   step := strings.TrimSpace(matches[1])
-  if step == "" {
+  // npm hints: Run `npm audit` / Run 'npm fund'
+  if step == "" || strings.HasPrefix(step, "`") || strings.HasPrefix(step, "'") {
     return "", false
   }
   return step, true
 }
 
 func matchStepFinished(message string) (step string, status string, durationMs int64, ok bool) {
+  message = strings.TrimSpace(message)
+  if message == "" || strings.HasPrefix(message, "|") {
+    return "", "", 0, false
+  }
   if matches := stepSuccessPattern.FindStringSubmatch(message); matches != nil {
     return strings.TrimSpace(matches[1]), "passed", parseActDurationMs(matches[2]), true
   }

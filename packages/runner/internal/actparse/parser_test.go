@@ -45,6 +45,25 @@ func TestParserStepLifecycle(t *testing.T) {
   }
 }
 
+func TestParserIgnoresNpmRunHints(t *testing.T) {
+  parser := NewParser()
+  _ = parser.HandleLine("[ci/build] ⭐ Run Main Install")
+
+  for _, line := range []string{
+    "[ci/build] | Run `npm audit` for details.",
+    "[ci/build] | Run `npm install-scripts ls` to review.",
+    "[ci/build] Run `npm fund` for details.",
+  } {
+    events := parser.HandleLine(line)
+    if len(events) != 1 {
+      t.Fatalf("%q: expected 1 event, got %d", line, len(events))
+    }
+    if _, ok := events[0].(event.Log); !ok {
+      t.Fatalf("%q: expected log, got %#v", line, events[0])
+    }
+  }
+}
+
 func TestParserFailureAndSkip(t *testing.T) {
   parser := NewParser()
   failed := parser.HandleLine("[ci/test]   ❌  Failure - Main Test [500ms]")

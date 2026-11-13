@@ -52,6 +52,7 @@ type JobNode struct {
   ID    string   `json:"id"`
   Name  string   `json:"name"`
   Needs []string `json:"needs"`
+  Steps []string `json:"steps"`
 }
 
 type JobGraph struct {

@@ -1,40 +1,56 @@
 <script setup lang="ts">
-import type { RunnerEvent } from '@/shared/runner-events';
-import { Skeleton } from '@/components/ui/skeleton';
+import type { ErrorEvent, RunnerEvent } from '@/shared/runner-events';
+import { computed, ref } from 'vue';
+import JobTimeline from '@/components/job-timeline.vue';
+import StepLogGroup from '@/components/step-log-group.vue';
+import {
+  defaultSelectedJobId,
+  groupRunEvents,
+  stepsForJob,
+} from '@/utils';
 
-defineProps<{
+const props = defineProps<{
   events: RunnerEvent[];
   isRunning: boolean;
 }>();
 
-function formatEvent(event: RunnerEvent): string {
-  switch (event.type) {
-    case 'log':
-      return event.line;
-    case 'step_started':
-      return `▶ ${event.job} / ${event.step}`;
-    case 'step_finished':
-      return `${statusIcon(event.status)} ${event.job} / ${event.step}`;
-    case 'run_started':
-      return `run started: ${event.workflow}`;
-    case 'run_finished':
-      return `run ${event.status} (exit ${event.exitCode})`;
-    case 'error':
-      return `error: ${event.message}`;
-    default:
-      return JSON.stringify(event);
-  }
-}
+const selectedId = ref<string | null>(null);
 
-function statusIcon(status: string): string {
-  if (status === 'passed') {
-    return '✓';
+const grouped = computed(() => groupRunEvents(props.events));
+
+const activeJobId = computed(() => {
+  const jobs = grouped.value.jobs;
+  if (selectedId.value && jobs.some((job) => job.id === selectedId.value)) {
+    return selectedId.value;
   }
-  if (status === 'failed') {
-    return '✗';
+  return defaultSelectedJobId(jobs);
+});
+
+const activeJob = computed(() =>
+  grouped.value.jobs.find((job) => job.id === activeJobId.value) ?? null,
+);
+
+const visibleSteps = computed(() =>
+  stepsForJob(grouped.value.steps, activeJob.value),
+);
+
+const runFinished = computed(() => {
+  for (let index = props.events.length - 1; index >= 0; index -= 1) {
+    const event = props.events[index];
+    if (event?.type === 'run_finished') {
+      return event;
+    }
   }
-  return '○';
-}
+  return null;
+});
+
+const runErrors = computed(() =>
+  props.events.filter((event): event is ErrorEvent => event.type === 'error'),
+);
+
+const isEmpty = computed(() =>
+  !props.isRunning && props.events.length === 0,
+);
 </script>
 
 <template>
@@ -45,29 +61,53 @@ function statusIcon(status: string): string {
       </h2>
     </div>
 
-    <div class="min-h-0 flex-1 overflow-auto bg-background p-4 font-mono text-xs leading-relaxed">
-      <p
-        v-if="!isRunning && events.length === 0"
-        class="text-muted-foreground"
-      >
-        Run a workflow to stream logs here
-      </p>
+    <p
+      v-if="isEmpty"
+      class="p-4 text-sm text-muted-foreground"
+    >
+      Run a workflow to stream logs here
+    </p>
 
-      <template v-else>
-        <pre
-          v-if="events.length > 0"
-          class="break-all whitespace-pre-wrap text-foreground"
-        >{{ events.map(formatEvent).join('\n') }}</pre>
+    <template v-else>
+      <JobTimeline
+        :jobs="grouped.jobs"
+        :selected-id="activeJobId"
+        @select="selectedId = $event"
+      />
 
-        <div
-          v-if="isRunning"
-          class="mt-2 flex flex-row gap-2"
-          aria-label="Waiting for log stream"
+      <div class="min-h-0 flex-1 overflow-auto">
+        <StepLogGroup
+          v-for="group in visibleSteps"
+          :key="group.key"
+          :group="group"
+        />
+
+        <p
+          v-if="visibleSteps.length === 0 && !isRunning"
+          class="p-4 text-sm text-muted-foreground"
         >
-          <Skeleton class="h-3 w-30" />
-          <Skeleton class="h-3 w-full" />
-        </div>
-      </template>
-    </div>
+          No steps for this job yet
+        </p>
+
+        <ul
+          v-if="runErrors.length > 0"
+          class="space-y-2 border-t border-border p-4 text-sm text-destructive"
+        >
+          <li
+            v-for="(error, index) in runErrors"
+            :key="index"
+          >
+            {{ error.message }}
+          </li>
+        </ul>
+
+        <p
+          v-if="runFinished"
+          class="border-t border-border px-4 py-2 text-sm text-muted-foreground"
+        >
+          run {{ runFinished.status }} (exit {{ runFinished.exitCode }})
+        </p>
+      </div>
+    </template>
   </div>
 </template>

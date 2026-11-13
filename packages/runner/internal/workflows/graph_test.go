@@ -80,6 +80,46 @@ func TestLoadJobGraphEmptyJobs(t *testing.T) {
   }
 }
 
+func TestLoadJobGraphSteps(t *testing.T) {
+  t.Parallel()
+
+  workflowPath := filepath.Join(t.TempDir(), "test.yml")
+  content := `
+jobs:
+  test-unit:
+    name: Unit Tests & E2E Tests
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+      - run: npm ci
+      - name: Run Unit Tests
+        run: npm run test:unit
+`
+  if err := os.WriteFile(workflowPath, []byte(content), 0o600); err != nil {
+    t.Fatal(err)
+  }
+
+  graph, err := LoadJobGraph(workflowPath)
+  if err != nil {
+    t.Fatal(err)
+  }
+  if len(graph.Jobs) != 1 {
+    t.Fatalf("jobs: got %d", len(graph.Jobs))
+  }
+  steps := graph.Jobs[0].Steps
+  want := []string{"Checkout", "Setup Node", "npm ci", "Run Unit Tests"}
+  if len(steps) != len(want) {
+    t.Fatalf("steps: got %#v want %#v", steps, want)
+  }
+  for index := range want {
+    if steps[index] != want[index] {
+      t.Fatalf("steps: got %#v want %#v", steps, want)
+    }
+  }
+}
+
 func assertJob(
   t *testing.T,
   byID map[string]struct {

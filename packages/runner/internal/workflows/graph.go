@@ -3,6 +3,7 @@ package workflows
 import (
   "fmt"
   "os"
+  "strings"
 
   "go.yaml.in/yaml/v4"
 
@@ -10,8 +11,15 @@ import (
 )
 
 type workflowJob struct {
-  Name  string    `yaml:"name"`
-  Needs needsList `yaml:"needs"`
+  Name  string         `yaml:"name"`
+  Needs needsList      `yaml:"needs"`
+  Steps []workflowStep `yaml:"steps"`
+}
+
+type workflowStep struct {
+  Name string `yaml:"name"`
+  Uses string `yaml:"uses"`
+  Run  string `yaml:"run"`
 }
 
 type needsList []string
@@ -83,10 +91,18 @@ func LoadJobGraph(workflowPath string) (event.JobGraph, error) {
     if needs == nil {
       needs = []string{}
     }
+    steps := make([]string, 0, len(job.Steps))
+    for _, step := range job.Steps {
+      label := stepLabel(step)
+      if label != "" {
+        steps = append(steps, label)
+      }
+    }
     jobs = append(jobs, event.JobNode{
       ID:    id,
       Name:  name,
       Needs: needs,
+      Steps: steps,
     })
   }
 
@@ -94,6 +110,23 @@ func LoadJobGraph(workflowPath string) (event.JobGraph, error) {
     Type: event.TypeJobGraph,
     Jobs: jobs,
   }, nil
+}
+
+func stepLabel(step workflowStep) string {
+  if step.Name != "" {
+    return step.Name
+  }
+  if step.Uses != "" {
+    return step.Uses
+  }
+  run := strings.TrimSpace(step.Run)
+  if run == "" {
+    return ""
+  }
+  if line, _, ok := strings.Cut(run, "\n"); ok {
+    run = strings.TrimSpace(line)
+  }
+  return run
 }
 
 func mapValue(node *yaml.Node, key string) *yaml.Node {
