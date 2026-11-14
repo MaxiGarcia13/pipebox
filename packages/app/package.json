@@ -1,16 +1,19 @@
 {
   "name": "@pipebox/app",
+  "productName": "PipeBox",
   "type": "module",
   "version": "0.2.0",
   "private": true,
   "main": ".vite/build/main.cjs",
   "scripts": {
     "start": "electron-forge start",
+    "prepackage": "node ./scripts/embed-runner.mjs",
     "package": "electron-forge package",
+    "premake": "node ./scripts/embed-runner.mjs",
     "make": "electron-forge make",
     "release": "electron-forge release",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf .vite node_modules dist out"
+    "clean": "rm -rf .vite node_modules dist out resources"
   },
   "dependencies": {
     "@vueuse/core": "^15.0.0",

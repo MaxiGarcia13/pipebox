@@ -3,9 +3,15 @@ import path from 'node:path';
 import process from 'node:process';
 import { app } from 'electron';
 
+function runnerBinaryName(): string {
+  return process.platform === 'win32'
+    ? 'pipebox.exe'
+    : 'pipebox';
+}
+
 export function resolvePipeboxPath(): string {
   if (app.isPackaged) {
-    return path.join(process.resourcesPath, 'pipebox');
+    return path.join(process.resourcesPath, runnerBinaryName());
   }
 
   // packages/app/.vite/build → packages/runner/pipebox
