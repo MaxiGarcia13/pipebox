@@ -2,8 +2,6 @@
 
 Local CI/CD control panel for GitHub Actions: pick a repo, run workflows with Dockerized **act**, inject secrets from `.env` / `.env.*`, and watch step logs—without pushing test commits. Jenkins support comes later.
 
-Requires **Docker** only (PipeBox builds a local `pipebox-act` image—no local `act` binary).
-
 ## Install
 
 ### Prerequisites
