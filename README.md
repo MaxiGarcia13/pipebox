@@ -51,9 +51,10 @@ pipebox list --repo <path>
 pipebox graph --repo <path> --workflow <file>
 pipebox run --repo <path> --workflow <file> [--job <id>] [--input KEY=VALUE] [--secret KEY=VALUE] [--secret-file <path>]
 pipebox install
+pipebox uninstall
 ```
 
-`run` loads `.env` and any `.env.*` from the repo root (`.env` first, then alphabetical) when `--secret-file` is omitted. `install` copies the current binary into a user PATH directory.
+`run` loads `.env` and any `.env.*` from the repo root (`.env` first, then alphabetical) when `--secret-file` is omitted. `install` copies the current binary into `~/.local/bin/pipebox`; `uninstall` removes that file.
 
 Desktop lookup order: `PIPEBOX_APP`, platform defaults (e.g. `/Applications/PipeBox.app`), then a packaged monorepo build under `packages/app/out/`.
 

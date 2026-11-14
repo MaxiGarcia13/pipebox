@@ -104,6 +104,22 @@ func runSubcommand(command string, args []string) {
 		}); err != nil {
 			fail(err)
 		}
+	case "uninstall":
+		targetPath, removed, err := install.Uninstall()
+		if err != nil {
+			emitError(err)
+			os.Exit(1)
+		}
+		line := fmt.Sprintf("not installed at %s", targetPath)
+		if removed {
+			line = fmt.Sprintf("uninstalled %s", targetPath)
+		}
+		if err := event.EmitStdout(event.Log{
+			Type: event.TypeLog,
+			Line: line,
+		}); err != nil {
+			fail(err)
+		}
 	default:
 		fail(fmt.Errorf("unknown command %q", command))
 	}
@@ -164,6 +180,7 @@ Usage:
   pipebox graph --repo <path> --workflow <file>
   pipebox run --repo <path> --workflow <file> [--job <id>] [--input KEY=VALUE] [--secret KEY=VALUE] [--secret-file <path>]
   pipebox install
+  pipebox uninstall
 
 Desktop:
   bare pipebox (or pipebox --repo <path>) opens the desktop UI

@@ -25,8 +25,9 @@ var subcommands = map[string]struct{}{
 	"list":    {},
 	"graph":   {},
 	"run":     {},
-	"install": {},
-	"version": {},
+	"install":   {},
+	"uninstall": {},
+	"version":   {},
 }
 
 func Parse(args []string) Args {
