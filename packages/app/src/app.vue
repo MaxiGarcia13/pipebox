@@ -82,7 +82,10 @@ const {
     </template>
 
     <template #panel>
-      <DoctorStatus :doctor="doctor" />
+      <DoctorStatus
+        :doctor="doctor"
+        @refresh="runDoctor"
+      />
     </template>
 
     <template #status>

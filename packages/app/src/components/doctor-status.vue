@@ -1,8 +1,14 @@
 <script setup lang="ts">
 import type { DoctorEvent } from '@/domain/runner-events';
+import { RefreshCw } from 'lucide-vue-next';
+import { Button } from '@/components/ui/button';
 
 defineProps<{
   doctor: DoctorEvent | null;
+}>();
+
+defineEmits<{
+  refresh: [];
 }>();
 </script>
 
@@ -17,6 +23,16 @@ defineProps<{
       <span class="text-muted-foreground">
         {{ doctor ? (doctor.ok ? 'OK' : 'issues') : '…' }}
       </span>
+
+      <Button
+        variant="ghost"
+        size="icon-xs"
+        class="rounded-xl text-muted-foreground"
+        title="Refresh Doctor"
+        @click="$emit('refresh')"
+      >
+        <RefreshCw class="size-4" />
+      </Button>
     </div>
 
     <ul
