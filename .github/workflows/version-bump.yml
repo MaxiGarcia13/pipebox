@@ -85,7 +85,7 @@ jobs:
               if [ "$bump" != major ]; then
                 bump=minor
               fi
-            elif echo "$msg" | grep -qE '^fix(\([^)]*\))?!?:'; then
+            elif echo "$msg" | grep -qE '^(fix|refactor)(\([^)]*\))?!?:'; then
               if [ "$bump" = none ]; then
                 bump=patch
               fi
