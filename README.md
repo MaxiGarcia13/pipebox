@@ -42,22 +42,6 @@ Builds are unsigned for now. On macOS, if Gatekeeper blocks the app: right-click
 
 Desktop lookup order: `PIPEBOX_APP`, user install (`~/Applications/PipeBox.app`, `%LOCALAPPDATA%\PipeBox\PipeBox.exe`, `~/.local/share/pipebox-app/PipeBox`), system installs (`/Applications`, `/opt/pipebox-app`), then a packaged monorepo build under `packages/app/out/`.
 
-### Alternative — GitHub Release binary
-
-1. Download the CLI asset for your OS/arch from [Releases](https://github.com/MaxiGarcia13/pipebox/releases)
-2. Put it on your `PATH`, or run `./pipebox install` (CLI + desktop)
-3. Or download a desktop zip/setup/`.deb` manually from the same release
-
-### Alternative — build from source
-
-```bash
-pnpm runner:build
-# or: make -C packages/runner build
-./packages/runner/pipebox install   # CLI + desktop from the published release for this version
-```
-
-Local desktop: `pnpm start` (launches Electron in dev). To package locally: `pnpm --filter @pipebox/app package` or `make` (embeds the runner binary).
-
 ## CLI
 
 ```bash
