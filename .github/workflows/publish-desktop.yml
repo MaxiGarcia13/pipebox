@@ -17,10 +17,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: macos-14
+          - os: macos-latest
             zip_asset: PipeBox-darwin-arm64.zip
-          - os: macos-13
-            zip_asset: PipeBox-darwin-x64.zip
           - os: windows-latest
             zip_asset: PipeBox-windows-x64.zip
             setup_asset: PipeBox-windows-x64-Setup.exe
