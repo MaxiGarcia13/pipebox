@@ -14,8 +14,6 @@ Local CI/CD control panel for GitHub Actions: pick a repo, run workflows with Do
 
 ```bash
 go install github.com/MaxiGarcia13/pipebox/packages/runner/cmd/pipebox@latest
-pipebox --version
-pipebox doctor
 ```
 
 This installs the `pipebox` CLI into `$GOBIN` (or `$GOPATH/bin`). `@latest` resolves the newest `packages/runner/v*` release. Pin a version with `@v0.1.0` (module version—not the git tag path prefix).
