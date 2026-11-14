@@ -51,35 +51,23 @@ func installCLI() (string, error) {
   return path, nil
 }
 
-func Uninstall() (cliPath string, desktopPath string, err error) {
-  cliPath, err = cliTargetPath()
+func Uninstall() (cliPaths []string, desktopPath string, err error) {
+  cliPaths, err = existingManagedCLIPaths()
   if err != nil {
-    return "", "", err
+    return nil, "", err
   }
 
-  if _, statErr := os.Stat(cliPath); statErr == nil {
-    if removeErr := os.Remove(cliPath); removeErr != nil {
-      return cliPath, "", fmt.Errorf("remove cli: %w", removeErr)
+  for _, path := range cliPaths {
+    if removeErr := os.Remove(path); removeErr != nil {
+      return cliPaths, "", fmt.Errorf("remove cli %s: %w", path, removeErr)
     }
-  } else if !os.IsNotExist(statErr) {
-    return cliPath, "", fmt.Errorf("stat cli: %w", statErr)
-  } else {
-    cliPath = ""
   }
 
   desktopPath, err = UninstallDesktop()
   if err != nil {
-    return cliPath, desktopPath, err
+    return cliPaths, desktopPath, err
   }
-  return cliPath, desktopPath, nil
-}
-
-func cliTargetPath() (string, error) {
-  homeDir, err := os.UserHomeDir()
-  if err != nil {
-    return "", fmt.Errorf("resolve home: %w", err)
-  }
-  return filepath.Join(homeDir, ".local", "bin", "pipebox"), nil
+  return cliPaths, desktopPath, nil
 }
 
 func copyFile(sourcePath, targetPath string) (err error) {

@@ -130,15 +130,17 @@ func runSubcommand(command string, args []string) {
     emitInstallLog(fmt.Sprintf("cli updated to %s (%s)", result.TargetVersion, result.CLIPath))
     emitInstallLog(fmt.Sprintf("desktop installed to %s", result.DesktopPath))
   case "uninstall":
-    cliPath, desktopPath, err := install.Uninstall()
+    cliPaths, desktopPath, err := install.Uninstall()
     if err != nil {
       emitError(err)
       os.Exit(1)
     }
-    if cliPath == "" {
+    if len(cliPaths) == 0 {
       emitInstallLog("cli not installed")
     } else {
-      emitInstallLog(fmt.Sprintf("uninstalled cli %s", cliPath))
+      for _, cliPath := range cliPaths {
+        emitInstallLog(fmt.Sprintf("uninstalled cli %s", cliPath))
+      }
     }
     if desktopPath == "" {
       emitInstallLog("desktop not installed")
@@ -230,7 +232,7 @@ Usage:
 Desktop:
   bare pipebox (or pipebox --repo <path>) opens the desktop UI
   pipebox install / install-desktop fetches the UI from GitHub Releases
-  pipebox update downloads the latest CLI release binary + desktop app
+  pipebox update replaces managed CLI installs (~/.local/bin and go install bin) + desktop app
   set PIPEBOX_APP to override the desktop path
 
 Secrets:

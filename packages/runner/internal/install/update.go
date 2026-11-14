@@ -4,6 +4,7 @@ import (
   "fmt"
   "os"
   "path/filepath"
+  "strings"
 )
 
 type UpdateOptions struct {
@@ -60,12 +61,9 @@ func installCLIFromRelease(version string) (string, error) {
     return "", err
   }
 
-  path, err := cliTargetPath()
+  targets, err := cliUpdateTargets()
   if err != nil {
     return "", err
-  }
-  if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-    return "", fmt.Errorf("create bin dir: %w", err)
   }
 
   tmpDir, err := os.MkdirTemp("", "pipebox-cli-*")
@@ -78,11 +76,19 @@ func installCLIFromRelease(version string) (string, error) {
   if err := downloadFile(releaseAssetURL(version, asset), tmpPath); err != nil {
     return "", err
   }
-  if err := copyFile(tmpPath, path); err != nil {
-    return "", err
+
+  updated := make([]string, 0, len(targets))
+  for _, path := range targets {
+    if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+      return "", fmt.Errorf("create bin dir: %w", err)
+    }
+    if err := copyFile(tmpPath, path); err != nil {
+      return "", err
+    }
+    if err := os.Chmod(path, 0o755); err != nil {
+      return "", fmt.Errorf("chmod: %w", err)
+    }
+    updated = append(updated, path)
   }
-  if err := os.Chmod(path, 0o755); err != nil {
-    return "", fmt.Errorf("chmod: %w", err)
-  }
-  return path, nil
+  return strings.Join(updated, ", "), nil
 }
