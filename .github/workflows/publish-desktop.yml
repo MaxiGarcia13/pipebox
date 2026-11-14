@@ -1,0 +1,117 @@
+name: Publish desktop
+
+on:
+  workflow_call:
+    inputs:
+      tag_name:
+        description: Git tag to publish desktop assets to (e.g. packages/runner/v0.1.0)
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  publish-desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            zip_asset: PipeBox-darwin-arm64.zip
+          - os: macos-13
+            zip_asset: PipeBox-darwin-x64.zip
+          - os: windows-latest
+            zip_asset: PipeBox-windows-x64.zip
+            setup_asset: PipeBox-windows-x64-Setup.exe
+          - os: ubuntu-latest
+            zip_asset: PipeBox-linux-amd64.zip
+            deb_asset: PipeBox-linux-amd64.deb
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag_name }}
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: packages/runner/go.mod
+          cache-dependency-path: packages/runner/go.sum
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install Linux packaging tools
+        if: runner.os == 'Linux'
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y fakeroot dpkg
+
+      - name: Install
+        run: pnpm install
+
+      - name: Make desktop app
+        run: pnpm --filter @pipebox/app make
+
+      - name: Stage release assets
+        id: stage
+        shell: bash
+        env:
+          ZIP_ASSET: ${{ matrix.zip_asset }}
+          SETUP_ASSET: ${{ matrix.setup_asset }}
+          DEB_ASSET: ${{ matrix.deb_asset }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist-desktop
+          uploads=()
+
+          zip_src=$(find packages/app/out/make/zip -type f -name '*.zip' | head -n1)
+          if [ -z "${zip_src:-}" ]; then
+            echo "no zip artifact found" >&2
+            find packages/app/out/make -type f >&2 || true
+            exit 1
+          fi
+          cp "$zip_src" "dist-desktop/$ZIP_ASSET"
+          uploads+=("dist-desktop/$ZIP_ASSET")
+
+          if [ -n "${SETUP_ASSET:-}" ]; then
+            setup_src=$(find packages/app/out/make -type f -name '*Setup.exe' | head -n1)
+            if [ -z "${setup_src:-}" ]; then
+              echo "no Setup.exe artifact found" >&2
+              exit 1
+            fi
+            cp "$setup_src" "dist-desktop/$SETUP_ASSET"
+            uploads+=("dist-desktop/$SETUP_ASSET")
+          fi
+
+          if [ -n "${DEB_ASSET:-}" ]; then
+            deb_src=$(find packages/app/out/make -type f -name '*.deb' | head -n1)
+            if [ -z "${deb_src:-}" ]; then
+              echo "no deb artifact found" >&2
+              exit 1
+            fi
+            cp "$deb_src" "dist-desktop/$DEB_ASSET"
+            uploads+=("dist-desktop/$DEB_ASSET")
+          fi
+
+          {
+            echo "uploads<<EOF"
+            printf '%s\n' "${uploads[@]}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Upload desktop assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ inputs.tag_name }}
+          UPLOADS: ${{ steps.stage.outputs.uploads }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          # shellcheck disable=SC2086
+          gh release upload "$TAG_NAME" $UPLOADS --clobber

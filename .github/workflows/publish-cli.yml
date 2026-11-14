@@ -1,0 +1,91 @@
+name: Publish CLI
+
+on:
+  workflow_call:
+    inputs:
+      tag_name:
+        description: Git tag to publish (e.g. packages/runner/v0.1.0)
+        required: true
+        type: string
+      create_release:
+        description: Create the GitHub release; false only uploads assets
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  publish-cli:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag_name }}
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: packages/runner/go.mod
+          cache-dependency-path: packages/runner/go.sum
+
+      - name: Build
+        working-directory: packages/runner
+        env:
+          TAG_NAME: ${{ inputs.tag_name }}
+        run: |
+          set -euo pipefail
+          mkdir -p ../../dist
+          version="${TAG_NAME#packages/runner/}"
+          for pair in darwin/amd64 darwin/arm64 linux/amd64 linux/arm64 windows/amd64; do
+            goos="${pair%/*}"
+            goarch="${pair#*/}"
+            out="../../dist/pipebox_${version}_${goos}_${goarch}"
+            if [ "$goos" = windows ]; then
+              out="${out}.exe"
+            fi
+            GOOS="$goos" GOARCH="$goarch" CGO_ENABLED=0 \
+              go build -trimpath -ldflags "-s -w" -o "$out" ./cmd/pipebox
+          done
+
+      - name: Release notes
+        if: ${{ inputs.create_release }}
+        env:
+          TAG_NAME: ${{ inputs.tag_name }}
+        run: |
+          set -euo pipefail
+          previous=$(
+            git tag --sort=-version:refname -l 'packages/runner/v*' \
+              | grep -vx "${TAG_NAME}" \
+              | head -n1 || true
+          )
+          {
+            echo "## What's Changed"
+            echo
+            if [ -n "$previous" ]; then
+              git log --pretty=format:'- %s (%h)' "${previous}..${TAG_NAME}"
+            else
+              git log --pretty=format:'- %s (%h)' "${TAG_NAME}"
+            fi
+            echo
+          } > release-notes.md
+
+      - name: Create release
+        if: ${{ inputs.create_release }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ inputs.tag_name }}
+        run: |
+          set -euo pipefail
+          title="${TAG_NAME#packages/runner/}"
+          gh release create "$TAG_NAME" dist/* \
+            --title "$title" \
+            --notes-file release-notes.md
+
+      - name: Upload assets
+        if: ${{ !inputs.create_release }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ inputs.tag_name }}
+        run: gh release upload "$TAG_NAME" dist/* --clobber
