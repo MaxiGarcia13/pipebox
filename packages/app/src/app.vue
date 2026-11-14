@@ -89,10 +89,18 @@ const {
     </template>
 
     <template #status>
-      <ProjectStatus
-        :repo-path="repoPath"
-        :branch="branch"
-      />
+      <div class="flex items-center gap-4">
+        <span
+          v-if="doctor?.version"
+          class="shrink-0 text-xs text-muted-foreground tabular-nums"
+        >
+          v{{ doctor.version }}
+        </span>
+        <ProjectStatus
+          :repo-path="repoPath"
+          :branch="branch"
+        />
+      </div>
     </template>
   </WorkbenchShell>
 </template>
