@@ -13,7 +13,7 @@ import (
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/workflows"
 )
 
-const version = "0.2.0"
+const version = "0.3.0"
 
 func main() {
   parsed := cli.Parse(os.Args[1:])

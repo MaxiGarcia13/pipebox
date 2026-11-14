@@ -2,7 +2,7 @@
   "name": "@pipebox/app",
   "productName": "PipeBox",
   "type": "module",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "main": ".vite/build/main.cjs",
   "scripts": {
