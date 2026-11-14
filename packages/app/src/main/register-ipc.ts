@@ -13,7 +13,7 @@ import { saveArtifact } from './save-artifact';
 
 const runnerClient = new RunnerClient();
 
-export function registerIpc(): void {
+export function registerIpc(launchRepo: string | null = null): void {
   ipcMain.handle(IPC_CHANNELS.doctor, async () => {
     const events = await runnerClient.runToCompletion(['doctor']);
     const doctorEvent = events.find((event) => event.type === 'doctor');
@@ -65,6 +65,8 @@ export function registerIpc(): void {
     }
     return result.filePaths[0];
   });
+
+  ipcMain.handle(IPC_CHANNELS.getLaunchRepo, async () => launchRepo);
 
   ipcMain.handle(IPC_CHANNELS.gitBranch, async (_event, repoPath: string) => {
     return resolveGitBranch(repoPath);

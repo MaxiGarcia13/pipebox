@@ -104,6 +104,7 @@ export function usePipeboxSession() {
       }
     });
     void runDoctor();
+    void openLaunchRepo();
   });
 
   onUnmounted(() => {
@@ -126,12 +127,8 @@ export function usePipeboxSession() {
     };
   }
 
-  async function selectRepo() {
+  async function openRepo(nextPath: string) {
     statusMessage.value = '';
-    const nextPath = await window.pipebox.selectRepo();
-    if (!nextPath) {
-      return;
-    }
     repoPath.value = nextPath;
     branch.value = null;
     selectedWorkflow.value = null;
@@ -149,6 +146,22 @@ export function usePipeboxSession() {
     ]);
     workflows.value = list.workflows;
     branch.value = nextBranch;
+  }
+
+  async function selectRepo() {
+    const nextPath = await window.pipebox.selectRepo();
+    if (!nextPath) {
+      return;
+    }
+    await openRepo(nextPath);
+  }
+
+  async function openLaunchRepo() {
+    const nextPath = await window.pipebox.getLaunchRepo();
+    if (!nextPath) {
+      return;
+    }
+    await openRepo(nextPath);
   }
 
   async function runDoctor() {

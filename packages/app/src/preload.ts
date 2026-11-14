@@ -15,6 +15,7 @@ const pipeboxApi: PipeboxApi = {
   graphWorkflow: (options: GraphWorkflowOptions) =>
     ipcRenderer.invoke(IPC_CHANNELS.graphWorkflow, options),
   selectRepo: () => ipcRenderer.invoke(IPC_CHANNELS.selectRepo),
+  getLaunchRepo: () => ipcRenderer.invoke(IPC_CHANNELS.getLaunchRepo),
   gitBranch: (repoPath) => ipcRenderer.invoke(IPC_CHANNELS.gitBranch, repoPath),
   startRun: (options: StartRunOptions) =>
     ipcRenderer.invoke(IPC_CHANNELS.startRun, options),

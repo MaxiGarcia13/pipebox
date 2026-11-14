@@ -15,6 +15,7 @@ export interface PipeboxApi {
   listWorkflows: (repoPath: string) => Promise<WorkflowListEvent>;
   graphWorkflow: (options: GraphWorkflowOptions) => Promise<JobGraphEvent>;
   selectRepo: () => Promise<string | null>;
+  getLaunchRepo: () => Promise<string | null>;
   gitBranch: (repoPath: string) => Promise<string | null>;
   startRun: (options: StartRunOptions) => Promise<void>;
   stopRun: () => Promise<void>;

@@ -3,11 +3,14 @@ import path from 'node:path';
 import process from 'node:process';
 import { app, BrowserWindow } from 'electron';
 import started from 'electron-squirrel-startup';
+import { parseLaunchRepo } from './main/parse-launch-repo';
 import { registerIpc } from './main/register-ipc';
 
 if (started) {
   app.quit();
 }
+
+const launchRepo = parseLaunchRepo(process.argv);
 
 function resolveWindowIcon(): string | undefined {
   if (process.platform === 'darwin') {
@@ -46,7 +49,7 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
-  registerIpc();
+  registerIpc(launchRepo);
   createWindow();
 
   app.on('activate', () => {

@@ -14,17 +14,19 @@ Local CI/CD control panel for GitHub Actions: pick a repo, run workflows with Do
 
 ```bash
 go install github.com/MaxiGarcia13/pipebox/packages/runner/cmd/pipebox@latest
-pipebox version
+pipebox --version
 pipebox doctor
 ```
 
 This installs the `pipebox` CLI into `$GOBIN` (or `$GOPATH/bin`). `@latest` resolves the newest `packages/runner/v*` release. Pin a version with `@v0.1.0` (module version—not the git tag path prefix).
 
+The desktop app is separate: package it locally with `pnpm --filter @pipebox/app package`, install a future desktop release, or set `PIPEBOX_APP` to the Electron binary / `.app`. Then `pipebox` (or `pipebox --repo .`) opens the UI.
+
 ### Alternative — GitHub Release binary
 
 1. Download the asset for your OS/arch from [Releases](https://github.com/MaxiGarcia13/pipebox/releases)
 2. Put it on your `PATH`, or run `./pipebox install` to copy into a user bin dir
-3. Verify with `pipebox version` and `pipebox doctor`
+3. Verify with `pipebox --version` and `pipebox doctor`
 
 ### Alternative — build from source
 
@@ -34,11 +36,15 @@ pnpm runner:build
 ./packages/runner/pipebox install   # optional: copy onto PATH
 ```
 
-The desktop app is separate for now: `pnpm start` (builds the runner, then launches Electron).
+Local desktop: `pnpm start` (builds the runner, then launches Electron). After `pnpm --filter @pipebox/app package`, bare `pipebox` can find the app under `packages/app/out/`.
 
 ## CLI
 
 ```bash
+pipebox                      # open desktop UI
+pipebox --repo <path>        # open UI with that repo (e.g. --repo .)
+pipebox --help | -h
+pipebox --version | -v
 pipebox version
 pipebox doctor
 pipebox list --repo <path>
@@ -48,6 +54,8 @@ pipebox install
 ```
 
 `run` loads `.env` and any `.env.*` from the repo root (`.env` first, then alphabetical) when `--secret-file` is omitted. `install` copies the current binary into a user PATH directory.
+
+Desktop lookup order: `PIPEBOX_APP`, platform defaults (e.g. `/Applications/PipeBox.app`), then a packaged monorepo build under `packages/app/out/`.
 
 ## Stack
 
