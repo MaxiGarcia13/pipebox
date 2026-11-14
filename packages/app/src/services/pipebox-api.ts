@@ -19,5 +19,6 @@ export interface PipeboxApi {
   startRun: (options: StartRunOptions) => Promise<void>;
   stopRun: () => Promise<void>;
   saveArtifact: (options: SaveArtifactOptions) => Promise<string | null>;
+  reportIssue: () => Promise<void>;
   onEvent: (callback: (event: RunnerEvent) => void) => () => void;
 }

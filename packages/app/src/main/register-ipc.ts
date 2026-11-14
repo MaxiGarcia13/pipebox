@@ -6,6 +6,7 @@ import type {
 } from '../services/ipc-channels';
 import { BrowserWindow, dialog, ipcMain } from 'electron';
 import { IPC_CHANNELS } from '../services/ipc-channels';
+import { openReportIssue } from './open-report-issue';
 import { resolveGitBranch } from './resolve-git-branch';
 import { RunnerClient } from './runner-client';
 import { saveArtifact } from './save-artifact';
@@ -97,5 +98,9 @@ export function registerIpc(): void {
   ipcMain.handle(IPC_CHANNELS.saveArtifact, async (event, options: SaveArtifactOptions) => {
     const window = BrowserWindow.fromWebContents(event.sender);
     return saveArtifact(window, options);
+  });
+
+  ipcMain.handle(IPC_CHANNELS.reportIssue, async () => {
+    await openReportIssue();
   });
 }

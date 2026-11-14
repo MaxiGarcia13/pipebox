@@ -11,6 +11,10 @@ defineEmits<{
   openProject: [];
   refreshDoctor: [];
 }>();
+
+function reportIssue() {
+  void window.pipebox.reportIssue();
+}
 </script>
 
 <template>
@@ -33,6 +37,17 @@ defineEmits<{
       <MenubarContent>
         <MenubarItem @click="$emit('refreshDoctor')">
           Refresh Doctor
+        </MenubarItem>
+      </MenubarContent>
+    </MenubarMenu>
+
+    <MenubarMenu>
+      <MenubarTrigger>
+        Help
+      </MenubarTrigger>
+      <MenubarContent>
+        <MenubarItem @click="reportIssue">
+          Report Issue or Idea…
         </MenubarItem>
       </MenubarContent>
     </MenubarMenu>

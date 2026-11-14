@@ -7,6 +7,7 @@ export const IPC_CHANNELS = {
   startRun: 'pipebox:start-run',
   stopRun: 'pipebox:stop-run',
   saveArtifact: 'pipebox:save-artifact',
+  reportIssue: 'pipebox:report-issue',
   event: 'pipebox:event',
 } as const;
 

@@ -21,6 +21,7 @@ const pipeboxApi: PipeboxApi = {
   stopRun: () => ipcRenderer.invoke(IPC_CHANNELS.stopRun),
   saveArtifact: (options: SaveArtifactOptions) =>
     ipcRenderer.invoke(IPC_CHANNELS.saveArtifact, options),
+  reportIssue: () => ipcRenderer.invoke(IPC_CHANNELS.reportIssue),
   onEvent: (callback) => {
     const listener = (_event: Electron.IpcRendererEvent, data: RunnerEvent) => {
       callback(data);
