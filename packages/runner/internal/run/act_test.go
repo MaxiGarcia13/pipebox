@@ -91,8 +91,40 @@ func TestBuildActArgsPushWorkflow(t *testing.T) {
   if err != nil {
     t.Fatal(err)
   }
-  if slices.Contains(args, "workflow_dispatch") {
-    t.Fatalf("unexpected workflow_dispatch in %#v", args)
+  imageIndex := slices.Index(args, "pipebox-act:latest")
+  if imageIndex < 0 || imageIndex+1 >= len(args) || args[imageIndex+1] != "push" {
+    t.Fatalf("expected push after image, got %#v", args[imageIndex:])
+  }
+}
+
+func TestBuildActArgsPullRequestWorkflow(t *testing.T) {
+  t.Parallel()
+
+  repoPath := t.TempDir()
+  workflowsDir := filepath.Join(repoPath, ".github", "workflows")
+  if err := os.MkdirAll(workflowsDir, 0o700); err != nil {
+    t.Fatal(err)
+  }
+  if err := os.WriteFile(filepath.Join(workflowsDir, "ci.yml"), []byte(`
+on:
+  pull_request:
+  workflow_call:
+`), 0o600); err != nil {
+    t.Fatal(err)
+  }
+
+  args, err := buildActArgs(repoPath, Options{
+    Repo:         repoPath,
+    Workflow:     ".github/workflows/ci.yml",
+    ArtifactDir:  t.TempDir(),
+    ArtifactPort: 34567,
+  })
+  if err != nil {
+    t.Fatal(err)
+  }
+  imageIndex := slices.Index(args, "pipebox-act:latest")
+  if imageIndex < 0 || imageIndex+1 >= len(args) || args[imageIndex+1] != "pull_request" {
+    t.Fatalf("expected pull_request after image, got %#v", args[imageIndex:])
   }
 }
 

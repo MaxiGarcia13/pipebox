@@ -27,6 +27,7 @@ export interface Workflow {
   name: string;
   path: string;
   callable?: boolean;
+  events?: string[];
   inputs?: WorkflowInput[];
 }
 

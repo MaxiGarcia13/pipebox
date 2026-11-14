@@ -48,7 +48,7 @@ func buildActArgs(repoPath string, options Options) ([]string, error) {
     return nil, fmt.Errorf("resolve secret files: %w", err)
   }
 
-  callable, err := workflowIsCallable(repoPath, options.Workflow)
+  actEvent, err := resolveWorkflowActEvent(repoPath, options.Workflow)
   if err != nil {
     return nil, err
   }
@@ -95,10 +95,7 @@ func buildActArgs(repoPath string, options Options) ([]string, error) {
     actSecretArgs = append(actSecretArgs, "--secret-file", mountPath)
   }
 
-  args = append(args, actimage.Image)
-  if callable {
-    args = append(args, "workflow_dispatch")
-  }
+  args = append(args, actimage.Image, actEvent)
   // -P skips act's interactive first-run image survey (Medium defaults).
   // --use-new-action-cache: avoid shared worktree races between parallel jobs (nektos/act#6180).
   args = append(args,
@@ -128,20 +125,20 @@ func buildActArgs(repoPath string, options Options) ([]string, error) {
   return args, nil
 }
 
-func workflowIsCallable(repoPath, workflow string) (bool, error) {
+func resolveWorkflowActEvent(repoPath, workflow string) (string, error) {
   relativePath := workflow
   if filepath.IsAbs(workflow) {
     var err error
     relativePath, err = filepath.Rel(repoPath, workflow)
     if err != nil {
-      return false, fmt.Errorf("workflow must be inside the repo: %w", err)
+      return "", fmt.Errorf("workflow must be inside the repo: %w", err)
     }
   }
   meta, err := workflows.LoadDispatch(filepath.Join(repoPath, filepath.FromSlash(relativePath)))
   if err != nil {
-    return false, fmt.Errorf("detect workflow_dispatch: %w", err)
+    return "", fmt.Errorf("resolve workflow event: %w", err)
   }
-  return meta.Callable, nil
+  return workflows.ResolveActEvent(meta.Events), nil
 }
 
 func workspaceWorkflowPath(repoPath, workflow string) (string, error) {

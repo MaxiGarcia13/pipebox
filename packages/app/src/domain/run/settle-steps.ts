@@ -157,6 +157,16 @@ export function settleAfterRunFinished(
     return;
   }
 
+  const jobsCompletedOk = new Set(
+    steps
+      .filter((step) =>
+        isJobBookend(step.step)
+        && /complete job/i.test(step.step)
+        && step.status === 'passed',
+      )
+      .map((step) => step.job),
+  );
+
   for (const group of steps) {
     if (group.status === 'running') {
       if (runStatus === 'passed') {
@@ -164,6 +174,10 @@ export function settleAfterRunFinished(
         group.openDefault = false;
       } else if (runStatus === 'cancelled') {
         group.status = 'cancelled';
+        group.openDefault = false;
+      } else if (jobsCompletedOk.has(group.job)) {
+        // Another job failed the overall run; keep this job green.
+        group.status = 'passed';
         group.openDefault = false;
       } else {
         group.status = 'failed';

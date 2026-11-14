@@ -49,6 +49,7 @@ func List(repoPath string) (event.WorkflowList, error) {
       workflow.Name = meta.Name
     }
     workflow.Callable = meta.Callable
+    workflow.Events = meta.Events
     if meta.Inputs != nil {
       workflow.Inputs = meta.Inputs
     }

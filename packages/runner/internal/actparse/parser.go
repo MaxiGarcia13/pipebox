@@ -14,6 +14,8 @@ var (
   stepSuccessPattern = regexp.MustCompile(`(?i)^(?:✅\s*)?Success\s+-\s+(.+?)(?:\s+\[([^\]]+)\])?\s*$`)
   stepFailurePattern = regexp.MustCompile(`(?i)^(?:❌\s*)?Failure\s+-\s+(.+?)(?:\s+\[([^\]]+)\])?\s*$`)
   stepSkippedPattern = regexp.MustCompile(`(?i)^(?:🚧\s*)?Skipped\s+-\s+(.+?)(?:\s+\[([^\]]+)\])?\s*$`)
+  // act prints these without a [workflow/job] prefix after another job already finished.
+  globalActErrorPattern = regexp.MustCompile(`(?i)^Error:\s+Job\s+'.+'\s+failed`)
 )
 
 type Parser struct {
@@ -31,14 +33,36 @@ func (parser *Parser) HandleLine(rawLine string) []any {
     return nil
   }
 
-  job, rest := splitJobPrefix(line)
-  if job != "" {
-    parser.currentJob = job
+  if isGlobalActError(line) {
+    return []any{
+      event.Error{
+        Type:    event.TypeError,
+        Message: line,
+      },
+    }
   }
+
+  job, rest, hasJobPrefix := splitJobPrefix(line)
+  if !hasJobPrefix {
+    // act often omits [workflow/job] on `| …` continuations; keep those on the
+    // active step. Drop other unprefixed lines so parallel jobs don't cross-talk.
+    if strings.HasPrefix(line, "|") && parser.currentJob != "" && parser.currentStep != "" {
+      return []any{
+        event.Log{
+          Type: event.TypeLog,
+          Job:  parser.currentJob,
+          Step: parser.currentStep,
+          Line: line,
+        },
+      }
+    }
+    return nil
+  }
+  if job != parser.currentJob {
+    parser.currentStep = ""
+  }
+  parser.currentJob = job
   message := rest
-  if message == "" {
-    message = line
-  }
 
   if step, ok := matchStepStart(message); ok {
     parser.currentStep = step
@@ -64,6 +88,10 @@ func (parser *Parser) HandleLine(rawLine string) []any {
     }
   }
 
+  if parser.currentStep == "" {
+    return nil
+  }
+
   return []any{
     event.Log{
       Type: event.TypeLog,
@@ -74,13 +102,20 @@ func (parser *Parser) HandleLine(rawLine string) []any {
   }
 }
 
-func splitJobPrefix(line string) (job string, rest string) {
+func isGlobalActError(line string) bool {
+  if globalActErrorPattern.MatchString(line) {
+    return true
+  }
+  return strings.HasPrefix(line, "Error: Could not find any stages")
+}
+
+func splitJobPrefix(line string) (job string, rest string, ok bool) {
   matches := jobPrefixPattern.FindStringSubmatch(line)
   if matches == nil {
-    return "", line
+    return "", line, false
   }
 
-  return strings.TrimSpace(matches[2]), matches[3]
+  return strings.TrimSpace(matches[2]), matches[3], true
 }
 
 func matchStepStart(message string) (string, bool) {

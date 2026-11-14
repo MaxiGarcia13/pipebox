@@ -4,6 +4,8 @@ import (
   "os"
   "path/filepath"
   "testing"
+
+  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/event"
 )
 
 func TestLoadDispatchInputs(t *testing.T) {
@@ -128,6 +130,29 @@ func TestLoadDispatchNotCallable(t *testing.T) {
   if meta.Callable {
     t.Fatal("expected not callable")
   }
+  if len(meta.Events) != 1 || meta.Events[0] != "push" {
+    t.Fatalf("events: %#v", meta.Events)
+  }
+}
+
+func TestResolveActEvent(t *testing.T) {
+  t.Parallel()
+
+  if got := ResolveActEvent(nil); got != "push" {
+    t.Fatalf("empty: %q", got)
+  }
+  if got := ResolveActEvent([]string{"pull_request", "workflow_call"}); got != "pull_request" {
+    t.Fatalf("pr+call: %q", got)
+  }
+  if got := ResolveActEvent([]string{"workflow_call"}); got != "workflow_call" {
+    t.Fatalf("call: %q", got)
+  }
+  if got := ResolveActEvent([]string{"push", "pull_request", "workflow_dispatch"}); got != "workflow_dispatch" {
+    t.Fatalf("dispatch preferred: %q", got)
+  }
+  if got := ResolveActEvent([]string{"schedule"}); got != "schedule" {
+    t.Fatalf("fallback: %q", got)
+  }
 }
 
 func TestListEnrichesDispatch(t *testing.T) {
@@ -160,25 +185,20 @@ on:
     t.Fatalf("workflows: got %#v", list.Workflows)
   }
 
-  byID := map[string]struct {
-    name     string
-    callable bool
-    inputs   int
-  }{}
+  byID := map[string]event.Workflow{}
   for _, workflow := range list.Workflows {
-    byID[workflow.ID] = struct {
-      name     string
-      callable bool
-      inputs   int
-    }{name: workflow.Name, callable: workflow.Callable, inputs: len(workflow.Inputs)}
+    byID[workflow.ID] = workflow
   }
 
   deploy := byID["deploy"]
-  if deploy.name != "Deploy App" || !deploy.callable || deploy.inputs != 1 {
+  if deploy.Name != "Deploy App" || !deploy.Callable || len(deploy.Inputs) != 1 {
     t.Fatalf("deploy: %#v", deploy)
   }
   ci := byID["ci"]
-  if ci.name != "ci" || ci.callable || ci.inputs != 0 {
+  if ci.Name != "ci" || ci.Callable || len(ci.Inputs) != 0 {
     t.Fatalf("ci: %#v", ci)
+  }
+  if len(ci.Events) != 1 || ci.Events[0] != "push" {
+    t.Fatalf("ci events: %#v", ci.Events)
   }
 }

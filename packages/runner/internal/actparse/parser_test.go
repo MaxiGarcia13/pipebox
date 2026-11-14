@@ -103,3 +103,54 @@ func TestParserFailureAndSkip(t *testing.T) {
     t.Fatalf("expected no duration, got %d", stepSkipped.DurationMs)
   }
 }
+
+func TestParserGlobalJobFailedError(t *testing.T) {
+  parser := NewParser()
+  _ = parser.HandleLine("[CI/test] ⭐ Run Complete job")
+  _ = parser.HandleLine("[CI/test]   ✅  Success - Complete job")
+
+  items := parser.HandleLine("Error: Job 'lint' failed")
+  if len(items) != 1 {
+    t.Fatalf("items: %#v", items)
+  }
+  errEvent, ok := items[0].(event.Error)
+  if !ok || errEvent.Message != "Error: Job 'lint' failed" {
+    t.Fatalf("expected global error, got %#v", items[0])
+  }
+}
+
+func TestParserUnprefixedPipeContinuesActiveStep(t *testing.T) {
+  parser := NewParser()
+  _ = parser.HandleLine("[CI/lint] ⭐ Run Main Install")
+
+  items := parser.HandleLine("| Packages: +578")
+  logEvent, ok := items[0].(event.Log)
+  if !ok || logEvent.Job != "lint" || logEvent.Step != "Main Install" {
+    t.Fatalf("expected continuation log, got %#v", items)
+  }
+
+  if dropped := parser.HandleLine("Downloading something"); len(dropped) != 0 {
+    t.Fatalf("expected drop non-pipe unprefixed, got %#v", dropped)
+  }
+}
+
+func TestParserClearsStepOnJobSwitch(t *testing.T) {
+  parser := NewParser()
+  _ = parser.HandleLine("[CI/test] ⭐ Run Main Install")
+  _ = parser.HandleLine("[CI/test] | npm ci")
+
+  // Prefixed lint line without a new Run must not keep test's Install step.
+  if items := parser.HandleLine("[CI/lint] | stray"); len(items) != 0 {
+    t.Fatalf("expected drop until lint step starts, got %#v", items)
+  }
+
+  started := parser.HandleLine("[CI/lint] ⭐ Run Main Install")
+  if len(started) != 1 {
+    t.Fatalf("started: %#v", started)
+  }
+  logEvents := parser.HandleLine("[CI/lint] | pnpm install")
+  logEvent, ok := logEvents[0].(event.Log)
+  if !ok || logEvent.Job != "lint" || logEvent.Step != "Main Install" {
+    t.Fatalf("log: %#v", logEvents)
+  }
+}

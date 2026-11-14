@@ -14,6 +14,7 @@ import (
 type dispatchMeta struct {
   Name     string
   Callable bool
+  Events   []string
   Inputs   []event.WorkflowInput
 }
 
@@ -34,6 +35,7 @@ func LoadDispatch(workflowPath string) (dispatchMeta, error) {
   doc := root.Content[0]
   meta := dispatchMeta{
     Name:   scalarString(mapValue(doc, "name")),
+    Events: []string{},
     Inputs: []event.WorkflowInput{},
   }
 
@@ -41,6 +43,8 @@ func LoadDispatch(workflowPath string) (dispatchMeta, error) {
   if onNode == nil {
     onNode = mapValue(doc, "true")
   }
+  meta.Events = listOnEvents(onNode)
+
   dispatchNode := findWorkflowDispatch(onNode)
   if dispatchNode == nil {
     return meta, nil
@@ -70,6 +74,65 @@ func LoadDispatch(workflowPath string) (dispatchMeta, error) {
   }
   meta.Inputs = inputs
   return meta, nil
+}
+
+func listOnEvents(onNode *yaml.Node) []string {
+  if onNode == nil {
+    return []string{}
+  }
+  switch onNode.Kind {
+  case yaml.ScalarNode:
+    if onNode.Value == "" {
+      return []string{}
+    }
+    return []string{onNode.Value}
+  case yaml.SequenceNode:
+    events := make([]string, 0, len(onNode.Content))
+    for _, item := range onNode.Content {
+      if item.Kind == yaml.AliasNode {
+        item = item.Alias
+      }
+      if item != nil && item.Kind == yaml.ScalarNode && item.Value != "" {
+        events = append(events, item.Value)
+      }
+    }
+    return events
+  case yaml.MappingNode:
+    events := make([]string, 0, len(onNode.Content)/2)
+    for index := 0; index+1 < len(onNode.Content); index += 2 {
+      key := onNode.Content[index]
+      if key != nil && key.Kind == yaml.ScalarNode && key.Value != "" {
+        events = append(events, key.Value)
+      }
+    }
+    return events
+  case yaml.AliasNode:
+    return listOnEvents(onNode.Alias)
+  default:
+    return []string{}
+  }
+}
+
+func ResolveActEvent(events []string) string {
+  if len(events) == 0 {
+    return "push"
+  }
+  preferred := []string{
+    "workflow_dispatch",
+    "push",
+    "pull_request",
+    "workflow_call",
+  }
+  present := make(map[string]struct{}, len(events))
+  for _, eventName := range events {
+    present[eventName] = struct{}{}
+  }
+  for _, eventName := range preferred {
+    if _, ok := present[eventName]; ok {
+      return eventName
+    }
+  }
+  return events[0]
 }
 
 func findWorkflowDispatch(onNode *yaml.Node) *yaml.Node {

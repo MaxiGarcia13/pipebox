@@ -33,6 +33,7 @@ type Workflow struct {
   Name     string          `json:"name"`
   Path     string          `json:"path"`
   Callable bool            `json:"callable,omitempty"`
+  Events   []string        `json:"events,omitempty"`
   Inputs   []WorkflowInput `json:"inputs,omitempty"`
 }
 
