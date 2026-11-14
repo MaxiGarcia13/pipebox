@@ -31,6 +31,9 @@ const config: ForgeConfig = {
   makers: [
     new MakerSquirrel({
       name: 'PipeBox',
+      authors: 'Maximiliano Garcia Mortigliengo',
+      description:
+        'Local CI/CD control panel for running GitHub Actions with Dockerized act.',
       setupIcon: `${appIcon}.ico`,
     }),
     new MakerZIP({}, ['darwin', 'linux', 'win32']),
@@ -40,6 +43,8 @@ const config: ForgeConfig = {
         name: 'pipebox-app',
         productName: 'PipeBox',
         bin: 'PipeBox',
+        description:
+          'Local CI/CD control panel for running GitHub Actions with Dockerized act.',
         icon: `${appIcon}.png`,
       },
     }),

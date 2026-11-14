@@ -4,6 +4,8 @@
   "type": "module",
   "version": "0.3.0",
   "private": true,
+  "description": "Local CI/CD control panel for running GitHub Actions with Dockerized act.",
+  "author": "Maximiliano Garcia Mortigliengo",
   "main": ".vite/build/main.cjs",
   "scripts": {
     "start": "electron-forge start",
