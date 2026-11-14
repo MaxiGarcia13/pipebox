@@ -59,6 +59,20 @@ func extractZipFile(file *zip.File, destDir string) (err error) {
     }
   }()
 
+  // ZIP stores symlink targets as the entry body; restore them or Electron
+  // frameworks become tiny text files and dyld fails with "not valid mach-o".
+  if mode&os.ModeSymlink != 0 {
+    linkTarget, readErr := io.ReadAll(source)
+    if readErr != nil {
+      return fmt.Errorf("read symlink %s: %w", target, readErr)
+    }
+    _ = os.Remove(target)
+    if err := os.Symlink(string(linkTarget), target); err != nil {
+      return fmt.Errorf("symlink %s: %w", target, err)
+    }
+    return nil
+  }
+
   perm := mode.Perm()
   if perm == 0 {
     perm = 0o644
