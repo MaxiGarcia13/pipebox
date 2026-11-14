@@ -1,6 +1,55 @@
 # PipeBox
 
-Local CI/CD desktop control panel that wraps tools like **act** and Dockerized Jenkins into a clean visual interface. Select any local repository, trigger workflows or pipeline stages with one click, inject secrets from the project’s `.env` / `.env.*` files, and inspect real-time pass/fail step logs—without pushing test commits just to check YAML.
+Local CI/CD control panel for GitHub Actions: pick a repo, run workflows with Dockerized **act**, inject secrets from `.env` / `.env.*`, and watch step logs—without pushing test commits. Jenkins support comes later.
+
+Requires **Docker** only (PipeBox builds a local `pipebox-act` image—no local `act` binary).
+
+## Install
+
+### Prerequisites
+
+- **Go 1.22+** on `PATH` (for `go install`)
+- **Docker** running (for `doctor` / `run`)
+- After install, `$GOBIN` or `$GOPATH/bin` must be on your `PATH`
+
+### Recommended — `go install`
+
+```bash
+go install github.com/MaxiGarcia13/pipebox/packages/runner/cmd/pipebox@latest
+pipebox version
+pipebox doctor
+```
+
+This installs the `pipebox` CLI into `$GOBIN` (or `$GOPATH/bin`). `@latest` resolves the newest `packages/runner/v*` release. Pin a version with `@v0.1.0` (module version—not the git tag path prefix).
+
+### Alternative — GitHub Release binary
+
+1. Download the asset for your OS/arch from [Releases](https://github.com/MaxiGarcia13/pipebox/releases)
+2. Put it on your `PATH`, or run `./pipebox install` to copy into a user bin dir
+3. Verify with `pipebox version` and `pipebox doctor`
+
+### Alternative — build from source
+
+```bash
+pnpm runner:build
+# or: make -C packages/runner build
+./packages/runner/pipebox install   # optional: copy onto PATH
+```
+
+The desktop app is separate for now: `pnpm start` (builds the runner, then launches Electron).
+
+## CLI
+
+```bash
+pipebox version
+pipebox doctor
+pipebox list --repo <path>
+pipebox graph --repo <path> --workflow <file>
+pipebox run --repo <path> --workflow <file> [--job <id>] [--input KEY=VALUE] [--secret KEY=VALUE] [--secret-file <path>]
+pipebox install
+```
+
+`run` loads `.env` and any `.env.*` from the repo root (`.env` first, then alphabetical) when `--secret-file` is omitted. `install` copies the current binary into a user PATH directory.
 
 ## Stack
 
@@ -8,8 +57,6 @@ Local CI/CD desktop control panel that wraps tools like **act** and Dockerized J
 | ----------------- | ------------------------ | ------------------------------------------------------------------------ |
 | `packages/app`    | Desktop shell + UI       | Electron, Vue 3, Vite, Tailwind v4, [shadcn-vue](https://shadcn-vue.com) |
 | `packages/runner` | CI runner + terminal CLI | Go binary `pipebox`                                                      |
-
-Requires **Docker** only for local GitHub Actions runs (PipeBox builds a local `pipebox-act` image with the official act binary — no local `act` install). Jenkins support comes later.
 
 ## Architecture
 
@@ -24,24 +71,15 @@ flowchart LR
   Main -->|IPC_events| Vue
 ```
 
-The Go binary is both the app’s runner (spawned by Electron) and a **CLI** you can install on your `PATH`.
-
-## CLI
-
-```bash
-pipebox doctor
-pipebox list --repo <path>
-pipebox run --repo <path> --workflow <file>
-pipebox install
-```
-
-`run` loads `.env` and any `.env.*` files from the repo root (`.env` first, then alphabetical). Override with `--secret KEY=VALUE` or `--secret-file <path>`.
+The Go binary is both the app’s runner (spawned by Electron) and the CLI above.
 
 ## Develop
 
 ```bash
 pnpm install
-pnpm app:start
+pnpm start
+pnpm test
+pnpm lint
 pnpm runner:build
 pnpm runner:test
 pnpm runner:image
@@ -50,7 +88,7 @@ pnpm runner:lint:fix
 pnpm runner:doctor
 ```
 
-Or from `packages/runner`:
+From `packages/runner`:
 
 ```bash
 make build
