@@ -8,9 +8,49 @@
     />
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <title>PipeBox</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #282a36;
+        color: #f8f8f2;
+      }
+
+      #app {
+        min-height: 100%;
+      }
+
+      .splash {
+        box-sizing: border-box;
+        display: flex;
+        min-height: 100vh;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          sans-serif;
+        user-select: none;
+      }
+
+      .splash img {
+        width: 32px;
+        height: 32px;
+      }
+    </style>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <div class="splash" aria-busy="true" aria-label="Loading PipeBox">
+        <img src="./src/assets/logo-32.png" alt="" width="32" height="32" />
+      </div>
+    </div>
     <script type="module" src="/src/renderer.ts"></script>
   </body>
 </html>

@@ -25,16 +25,24 @@ function resolveWindowIcon(): string | undefined {
   return candidates.find((candidate) => existsSync(candidate));
 }
 
+const WINDOW_BACKGROUND = '#282a36';
+
 function createWindow() {
   const mainWindow = new BrowserWindow({
     width: 960,
     height: 720,
+    show: false,
+    backgroundColor: WINDOW_BACKGROUND,
     icon: resolveWindowIcon(),
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
     },
+  });
+
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show();
   });
 
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
