@@ -20,7 +20,7 @@ flowchart LR
 ## MVP vs later
 
 - **MVP:** GitHub Actions via Dockerized act, Electron UI, `pipebox` CLI, secrets from project `.env` / `.env.*`.
-- **Later:** Jenkins adapter, richer installers (Homebrew), package runner into Forge release.
+- **Later:** Jenkins adapter, richer installers (Homebrew), code signing / notarization.
 
 ## Commands
 
