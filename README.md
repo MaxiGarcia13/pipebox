@@ -8,7 +8,6 @@ Local CI/CD control panel for GitHub Actions: pick a repo, run workflows with Do
 
 - **Go 1.22+** on `PATH` (for `go install`)
 - **Docker** running (for `doctor` / `run`)
-- After install, `$GOBIN` or `$GOPATH/bin` must be on your `PATH`
 
 ### 1. CLI
 
