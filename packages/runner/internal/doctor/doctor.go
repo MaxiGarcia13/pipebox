@@ -3,8 +3,8 @@ package doctor
 import (
   "os/exec"
 
-  "pipebox/internal/actimage"
-  "pipebox/internal/event"
+  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/actimage"
+  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/event"
 )
 
 func Run() event.Doctor {

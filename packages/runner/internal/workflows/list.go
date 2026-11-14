@@ -6,7 +6,7 @@ import (
   "path/filepath"
   "strings"
 
-  "pipebox/internal/event"
+  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/event"
 )
 
 func List(repoPath string) (event.WorkflowList, error) {

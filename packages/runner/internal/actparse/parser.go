@@ -4,7 +4,7 @@ import (
   "regexp"
   "strings"
 
-  "pipebox/internal/event"
+  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/event"
 )
 
 var (

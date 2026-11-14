@@ -9,8 +9,8 @@ import (
   "runtime"
   "strconv"
 
-  "pipebox/internal/actimage"
-  "pipebox/internal/workflows"
+  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/actimage"
+  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/workflows"
 )
 
 func buildActCommand(ctx context.Context, options Options) (*exec.Cmd, error) {

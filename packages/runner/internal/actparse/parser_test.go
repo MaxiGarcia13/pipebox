@@ -3,7 +3,7 @@ package actparse
 import (
   "testing"
 
-  "pipebox/internal/event"
+  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/event"
 )
 
 func TestStripANSI(t *testing.T) {

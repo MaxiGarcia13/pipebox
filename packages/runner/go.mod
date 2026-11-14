@@ -1,4 +1,4 @@
-module pipebox
+module github.com/MaxiGarcia13/pipebox/packages/runner
 
 go 1.22
 

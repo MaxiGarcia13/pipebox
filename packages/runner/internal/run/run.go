@@ -14,10 +14,10 @@ import (
   "sync"
   "syscall"
 
-  "pipebox/internal/actimage"
-  "pipebox/internal/actparse"
-  "pipebox/internal/event"
-  "pipebox/internal/workflows"
+  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/actimage"
+  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/actparse"
+  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/event"
+  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/workflows"
 )
 
 type Options struct {

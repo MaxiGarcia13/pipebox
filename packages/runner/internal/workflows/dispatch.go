@@ -8,7 +8,7 @@ import (
 
   "go.yaml.in/yaml/v4"
 
-  "pipebox/internal/event"
+  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/event"
 )
 
 type dispatchMeta struct {
