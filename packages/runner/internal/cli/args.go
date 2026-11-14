@@ -27,6 +27,7 @@ var subcommands = map[string]struct{}{
   "run":     {},
   "install":          {},
   "install-desktop":  {},
+  "update":           {},
   "uninstall":        {},
   "version":          {},
 }

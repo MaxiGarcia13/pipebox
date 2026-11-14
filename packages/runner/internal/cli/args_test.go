@@ -63,6 +63,14 @@ func TestParseSubcommands(t *testing.T) {
   if len(result.CommandArgs) != 2 || result.CommandArgs[0] != "--repo" {
     t.Fatalf("got args %+v", result.CommandArgs)
   }
+
+  result = Parse([]string{"update", "--check"})
+  if result.Kind != KindSubcommand || result.Command != "update" {
+    t.Fatalf("got %+v", result)
+  }
+  if len(result.CommandArgs) != 1 || result.CommandArgs[0] != "--check" {
+    t.Fatalf("got args %+v", result.CommandArgs)
+  }
 }
 
 func TestParseUnknown(t *testing.T) {

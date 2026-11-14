@@ -107,6 +107,28 @@ func runSubcommand(command string, args []string) {
       os.Exit(1)
     }
     emitInstallLog(fmt.Sprintf("desktop installed to %s", desktopPath))
+  case "update":
+    checkOnly := hasFlag(args, "--check")
+    targetVersion, _ := flagValue(args, "--version")
+    result, err := install.Update(install.UpdateOptions{
+      CurrentVersion: version,
+      TargetVersion:  targetVersion,
+      CheckOnly:      checkOnly,
+    })
+    if err != nil {
+      emitError(err)
+      os.Exit(1)
+    }
+    if result.UpToDate {
+      emitInstallLog(fmt.Sprintf("already up to date (%s)", result.CurrentVersion))
+      return
+    }
+    if checkOnly {
+      emitInstallLog(fmt.Sprintf("update available: %s → %s", result.CurrentVersion, result.TargetVersion))
+      return
+    }
+    emitInstallLog(fmt.Sprintf("cli updated to %s (%s)", result.TargetVersion, result.CLIPath))
+    emitInstallLog(fmt.Sprintf("desktop installed to %s", result.DesktopPath))
   case "uninstall":
     cliPath, desktopPath, err := install.Uninstall()
     if err != nil {
@@ -126,6 +148,15 @@ func runSubcommand(command string, args []string) {
   default:
     fail(fmt.Errorf("unknown command %q", command))
   }
+}
+
+func hasFlag(args []string, name string) bool {
+  for _, arg := range args {
+    if arg == name {
+      return true
+    }
+  }
+  return false
 }
 
 func flagValue(args []string, name string) (string, error) {
@@ -193,11 +224,13 @@ Usage:
   pipebox run --repo <path> --workflow <file> [--job <id>] [--input KEY=VALUE] [--secret KEY=VALUE] [--secret-file <path>]
   pipebox install
   pipebox install-desktop
+  pipebox update [--check] [--version <v>]
   pipebox uninstall
 
 Desktop:
   bare pipebox (or pipebox --repo <path>) opens the desktop UI
   pipebox install / install-desktop fetches the UI from GitHub Releases
+  pipebox update downloads the latest CLI release binary + desktop app
   set PIPEBOX_APP to override the desktop path
 
 Secrets:

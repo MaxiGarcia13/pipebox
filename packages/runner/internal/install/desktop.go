@@ -7,7 +7,6 @@ import (
   "os"
   "path/filepath"
   "runtime"
-  "strings"
   "time"
 )
 
@@ -18,7 +17,7 @@ const (
 )
 
 func InstallDesktop(version string) (string, error) {
-  version = strings.TrimPrefix(version, "v")
+  version = normalizeVersion(version)
   if version == "" {
     return "", fmt.Errorf("missing version for desktop download")
   }
@@ -28,14 +27,7 @@ func InstallDesktop(version string) (string, error) {
     return "", err
   }
 
-  url := fmt.Sprintf(
-    "https://github.com/%s/%s/releases/download/%s%s/%s",
-    releaseOwner,
-    releaseRepo,
-    releaseTagPrefix,
-    version,
-    asset,
-  )
+  url := releaseAssetURL(version, asset)
 
   tmpDir, err := os.MkdirTemp("", "pipebox-desktop-*")
   if err != nil {
@@ -105,7 +97,7 @@ func downloadFile(url, dest string) (err error) {
   client := &http.Client{Timeout: 5 * time.Minute}
   resp, err := client.Get(url)
   if err != nil {
-    return fmt.Errorf("download desktop: %w", err)
+    return fmt.Errorf("download: %w", err)
   }
   defer func() {
     if closeErr := resp.Body.Close(); err == nil && closeErr != nil {
@@ -114,7 +106,7 @@ func downloadFile(url, dest string) (err error) {
   }()
 
   if resp.StatusCode != http.StatusOK {
-    return fmt.Errorf("download desktop: %s (%s)", resp.Status, url)
+    return fmt.Errorf("download: %s (%s)", resp.Status, url)
   }
 
   out, err := os.Create(dest)

@@ -30,6 +30,16 @@ Downloads the matching desktop app from [Releases](https://github.com/MaxiGarcia
 
 Or run `pipebox install` to copy the CLI into `~/.local/bin/pipebox` and fetch the desktop app in one go.
 
+### 3. Later updates
+
+```bash
+pipebox update              # download latest CLI release → ~/.local/bin + desktop
+pipebox update --check      # report whether a newer release exists
+pipebox update --version 0.4.1
+```
+
+No second `go install` needed once a `pipebox` binary is on your `PATH`.
+
 ### Verify
 
 ```bash
@@ -56,10 +66,9 @@ pipebox graph --repo <path> --workflow <file>
 pipebox run --repo <path> --workflow <file> [--job <id>] [--input KEY=VALUE] [--secret KEY=VALUE] [--secret-file <path>]
 pipebox install              # CLI → ~/.local/bin + fetch desktop
 pipebox install-desktop      # fetch desktop only
+pipebox update [--check] [--version <v>]  # fetch latest (or pinned) CLI + desktop
 pipebox uninstall
 ```
-
-`run` loads `.env` and any `.env.*` from the repo root (`.env` first, then alphabetical) when `--secret-file` is omitted. `install` copies the current binary into `~/.local/bin/pipebox` and downloads the desktop app for this CLI version; `uninstall` removes both.
 
 ## Stack
 
