@@ -100,9 +100,10 @@ type DoctorCheck struct {
 }
 
 type Doctor struct {
-  Type   string        `json:"type"`
-  OK     bool          `json:"ok"`
-  Checks []DoctorCheck `json:"checks"`
+  Type    string        `json:"type"`
+  OK      bool          `json:"ok"`
+  Version string        `json:"version"`
+  Checks  []DoctorCheck `json:"checks"`
 }
 
 type Artifact struct {

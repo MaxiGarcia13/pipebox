@@ -96,6 +96,7 @@ export interface DoctorCheck {
 export interface DoctorEvent {
   type: 'doctor';
   ok: boolean;
+  version: string;
   checks: DoctorCheck[];
 }
 

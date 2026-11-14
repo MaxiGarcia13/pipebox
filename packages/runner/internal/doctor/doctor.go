@@ -7,7 +7,7 @@ import (
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/event"
 )
 
-func Run() event.Doctor {
+func Run(version string) event.Doctor {
   checks := []event.DoctorCheck{
     lookPathCheck("docker"),
   }
@@ -24,9 +24,10 @@ func Run() event.Doctor {
   }
 
   return event.Doctor{
-    Type:   event.TypeDoctor,
-    OK:     ok,
-    Checks: checks,
+    Type:    event.TypeDoctor,
+    OK:      ok,
+    Version: version,
+    Checks:  checks,
   }
 }
 
