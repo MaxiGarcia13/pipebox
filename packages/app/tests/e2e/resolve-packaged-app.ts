@@ -5,15 +5,30 @@ import { fileURLToPath } from 'node:url';
 
 const appDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
+export type FixtureRepoName
+  = | 'empty'
+    | 'github-only'
+    | 'jenkins-only'
+    | 'mixed';
+
 export function resolveAppDir(): string {
   return appDir;
 }
 
-export function resolveGithubFixtureRepo(): string {
-  return path.resolve(
+export function resolveFixtureRepo(name: FixtureRepoName): string {
+  const repoPath = path.resolve(
     appDir,
-    '../runner/testdata/repos/github-only',
+    '../runner/testdata/repos',
+    name,
   );
+  if (!fs.existsSync(repoPath)) {
+    throw new Error(`Fixture repo not found: ${repoPath}`);
+  }
+  return repoPath;
+}
+
+export function resolveGithubFixtureRepo(): string {
+  return resolveFixtureRepo('github-only');
 }
 
 export function resolvePackagedExecutable(): string {
