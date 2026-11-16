@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Workflow } from '@/domain/runner-events';
 import { Play, Square } from 'lucide-vue-next';
+import ProviderIcon from '@/components/provider-icon.vue';
 import { Button } from '@/components/ui/button';
 
 defineProps<{
@@ -36,7 +37,7 @@ defineEmits<{
           No project open
         </p>
         <p class="text-xs text-muted-foreground">
-          Open a project to list its GitHub Actions workflows.
+          Open a project to list its CI workflows.
         </p>
       </div>
       <Button
@@ -52,7 +53,7 @@ defineEmits<{
       v-else-if="workflows.length === 0"
       class="p-4 text-sm text-muted-foreground"
     >
-      No workflow files found in this project
+      No workflows found in this project
     </p>
 
     <ul
@@ -61,7 +62,7 @@ defineEmits<{
     >
       <li
         v-for="workflow in workflows"
-        :key="workflow.path"
+        :key="`${workflow.provider}:${workflow.path}`"
       >
         <div
           class="group flex cursor-pointer items-center gap-2 p-2 text-sm transition-colors"
@@ -70,6 +71,7 @@ defineEmits<{
             : 'text-sidebar-foreground hover:bg-sidebar-accent/60'"
           @click="$emit('select', workflow.path)"
         >
+          <ProviderIcon :provider="workflow.provider" />
           <div class="min-w-0 flex-1">
             <p class="truncate font-medium">
               {{ workflow.name }}
