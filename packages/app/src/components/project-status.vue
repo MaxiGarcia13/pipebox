@@ -9,6 +9,7 @@ defineProps<{
 
 <template>
   <div
+    data-testid="project-status"
     class="flex max-w-md items-center gap-2 text-xs text-muted-foreground"
     :title="[repoPath, branch].filter(Boolean).join(' · ') || undefined"
   >

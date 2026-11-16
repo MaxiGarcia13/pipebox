@@ -13,18 +13,25 @@ defineEmits<{
 </script>
 
 <template>
-  <div class="flex items-center gap-4">
+  <div
+    data-testid="doctor-status"
+    class="flex items-center gap-4"
+  >
     <div class="flex shrink-0 items-center gap-2 text-sm font-medium">
       <span
         class="size-2 rounded-full"
         :class="doctor?.ok ? 'bg-chart-3' : 'bg-destructive'"
       />
       Doctor
-      <span class="text-muted-foreground">
+      <span
+        data-testid="doctor-label"
+        class="text-muted-foreground"
+      >
         {{ doctor ? (doctor.ok ? 'OK' : 'issues') : '…' }}
       </span>
 
       <Button
+        data-testid="doctor-refresh"
         variant="ghost"
         size="icon-xs"
         class="rounded-xl text-muted-foreground"

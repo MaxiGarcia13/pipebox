@@ -32,6 +32,7 @@ defineEmits<{
 
     <p
       v-if="statusMessage"
+      data-testid="status-message"
       class="min-w-0 flex-1 truncate text-sm text-destructive"
     >
       {{ statusMessage }}

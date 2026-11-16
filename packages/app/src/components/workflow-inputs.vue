@@ -31,7 +31,10 @@ function isChecked(value: string | undefined): boolean {
 </script>
 
 <template>
-  <div class="flex min-h-0 flex-1 flex-col">
+  <div
+    data-testid="workflow-inputs"
+    class="flex min-h-0 flex-1 flex-col"
+  >
     <div class="border-b border-border px-4 py-2">
       <h2 class="text-sm font-medium">
         Inputs
@@ -42,6 +45,8 @@ function isChecked(value: string | undefined): boolean {
       <div
         v-for="input in inputs"
         :key="input.id"
+        data-testid="workflow-input"
+        :data-input-id="input.id"
         class="flex flex-col gap-2"
       >
         <div class="flex items-center gap-2">

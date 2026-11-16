@@ -65,7 +65,10 @@ const isEmpty = computed(() =>
 </script>
 
 <template>
-  <div class="flex min-h-0 flex-1 flex-col">
+  <div
+    data-testid="event-log"
+    class="flex min-h-0 flex-1 flex-col"
+  >
     <div class="border-b border-border px-4 py-2">
       <h2 class="text-sm font-medium">
         Logs
@@ -74,6 +77,7 @@ const isEmpty = computed(() =>
 
     <p
       v-if="isEmpty"
+      data-testid="event-log-empty"
       class="p-4 text-sm text-muted-foreground"
     >
       Select a workflow to preview jobs and steps
@@ -102,6 +106,7 @@ const isEmpty = computed(() =>
 
         <ul
           v-if="runErrors.length > 0"
+          data-testid="event-log-errors"
           class="space-y-2 border-t border-border p-4 text-sm text-destructive"
         >
           <li
@@ -116,6 +121,7 @@ const isEmpty = computed(() =>
 
         <p
           v-if="runFinished"
+          data-testid="run-finished"
           class="border-t border-border px-4 py-2 text-sm text-muted-foreground"
         >
           run {{ runFinished.status }} (exit {{ runFinished.exitCode }})

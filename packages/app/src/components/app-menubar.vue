@@ -24,7 +24,10 @@ function reportIssue() {
         File
       </MenubarTrigger>
       <MenubarContent>
-        <MenubarItem @click="$emit('openProject')">
+        <MenubarItem
+          data-testid="menubar-open-project"
+          @click="$emit('openProject')"
+        >
           Open Project…
         </MenubarItem>
       </MenubarContent>
@@ -35,18 +38,24 @@ function reportIssue() {
         View
       </MenubarTrigger>
       <MenubarContent>
-        <MenubarItem @click="$emit('refreshDoctor')">
+        <MenubarItem
+          data-testid="menubar-refresh-doctor"
+          @click="$emit('refreshDoctor')"
+        >
           Refresh Doctor
         </MenubarItem>
       </MenubarContent>
     </MenubarMenu>
 
     <MenubarMenu>
-      <MenubarTrigger>
+      <MenubarTrigger data-testid="menubar-help">
         Help
       </MenubarTrigger>
       <MenubarContent>
-        <MenubarItem @click="reportIssue">
+        <MenubarItem
+          data-testid="menubar-report-issue"
+          @click="reportIssue"
+        >
           Report Issue or Idea…
         </MenubarItem>
       </MenubarContent>

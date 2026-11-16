@@ -11,12 +11,18 @@ const props = defineProps<{
 </script>
 
 <template>
-  <GithubIcon
-    v-if="provider === 'github'"
-    :class="cn('size-4 shrink-0', props.class)"
-  />
-  <JenkinsIcon
-    v-else
-    :class="cn('size-4 shrink-0', props.class)"
-  />
+  <span
+    data-testid="provider-icon"
+    :data-provider="provider"
+    :class="cn('inline-flex size-4 shrink-0 items-center justify-center', props.class)"
+  >
+    <GithubIcon
+      v-if="provider === 'github'"
+      class="size-4"
+    />
+    <JenkinsIcon
+      v-else
+      class="size-4"
+    />
+  </span>
 </template>

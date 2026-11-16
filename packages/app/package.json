@@ -15,6 +15,8 @@
     "make": "electron-forge make",
     "release": "electron-forge release",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "clean": "rm -rf .vite node_modules dist out resources"
   },
   "dependencies": {
@@ -41,7 +43,9 @@
     "@types/electron-squirrel-startup": "^1.0.2",
     "@types/node": "^26.6.6",
     "@vitejs/plugin-vue": "^6.0.10",
+    "@vue/test-utils": "^2.6.0",
     "electron": "45.3.1",
+    "happy-dom": "^21.0.4",
     "playwright": "^1.65.1",
     "tailwindcss": "^4.3.5",
     "typescript": "^6.0.3",

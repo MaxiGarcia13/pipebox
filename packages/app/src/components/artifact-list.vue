@@ -47,6 +47,7 @@ function defaultDownloadName(artifact: Artifact): string {
 <template>
   <section
     v-if="props.artifacts.length > 0"
+    data-testid="artifact-list"
     class="border-t border-border p-4"
   >
     <h3 class="text-sm font-medium">
@@ -56,6 +57,7 @@ function defaultDownloadName(artifact: Artifact): string {
       <li
         v-for="artifact in props.artifacts"
         :key="artifact.path"
+        data-testid="artifact-row"
         class="flex items-center justify-between gap-4"
       >
         <div class="min-w-0">
@@ -67,6 +69,7 @@ function defaultDownloadName(artifact: Artifact): string {
           </p>
         </div>
         <Button
+          data-testid="artifact-download"
           variant="outline"
           size="sm"
           class="rounded-xl"

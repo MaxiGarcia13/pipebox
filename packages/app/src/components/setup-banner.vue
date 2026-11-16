@@ -32,6 +32,7 @@ const message = computed(() => {
 <template>
   <div
     v-if="message"
+    data-testid="setup-banner"
     class="border-b border-border bg-secondary/40 px-4 py-2 text-sm text-foreground"
   >
     {{ message }}
