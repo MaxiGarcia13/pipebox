@@ -19,7 +19,7 @@ export default defineConfig({
   },
   test: {
     environment: 'happy-dom',
-    setupFiles: ['./tests/setup.ts'],
-    include: ['tests/**/*.spec.ts'],
+    setupFiles: ['./tests/unit/setup.ts'],
+    include: ['tests/unit/**/*.spec.ts'],
   },
 });

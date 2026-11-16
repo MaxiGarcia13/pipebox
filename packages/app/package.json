@@ -15,8 +15,9 @@
     "make": "electron-forge make",
     "release": "electron-forge release",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest",
+    "test:e2e": "pnpm package && playwright test -c playwright.config.ts",
     "clean": "rm -rf .vite node_modules dist out resources"
   },
   "dependencies": {
@@ -39,6 +40,7 @@
     "@electron-forge/plugin-fuses": "^8.0.1",
     "@electron-forge/plugin-vite": "^8.0.1",
     "@electron/fuses": "^2.1.3",
+    "@playwright/test": "^1.65.1",
     "@tailwindcss/vite": "^4.3.5",
     "@types/electron-squirrel-startup": "^1.0.2",
     "@types/node": "^26.6.6",
