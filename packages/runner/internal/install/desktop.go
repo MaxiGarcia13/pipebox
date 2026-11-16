@@ -69,27 +69,31 @@ func UninstallDesktop() (string, error) {
 }
 
 func desktopAssetName() (string, error) {
-  switch runtime.GOOS {
+  return desktopAssetNameFor(runtime.GOOS, runtime.GOARCH)
+}
+
+func desktopAssetNameFor(goos, goarch string) (string, error) {
+  switch goos {
   case "darwin":
     arch := "x64"
-    if runtime.GOARCH == "arm64" {
+    if goarch == "arm64" {
       arch = "arm64"
-    } else if runtime.GOARCH != "amd64" {
-      return "", fmt.Errorf("unsupported darwin arch %s", runtime.GOARCH)
+    } else if goarch != "amd64" {
+      return "", fmt.Errorf("unsupported darwin arch %s", goarch)
     }
     return fmt.Sprintf("PipeBox-darwin-%s.zip", arch), nil
   case "linux":
-    if runtime.GOARCH != "amd64" {
-      return "", fmt.Errorf("unsupported linux arch %s (need amd64)", runtime.GOARCH)
+    if goarch != "amd64" {
+      return "", fmt.Errorf("unsupported linux arch %s (need amd64)", goarch)
     }
     return "PipeBox-linux-amd64.zip", nil
   case "windows":
-    if runtime.GOARCH != "amd64" {
-      return "", fmt.Errorf("unsupported windows arch %s (need amd64)", runtime.GOARCH)
+    if goarch != "amd64" {
+      return "", fmt.Errorf("unsupported windows arch %s (need amd64)", goarch)
     }
     return "PipeBox-windows-x64.zip", nil
   default:
-    return "", fmt.Errorf("unsupported OS %s", runtime.GOOS)
+    return "", fmt.Errorf("unsupported OS %s", goos)
   }
 }
 

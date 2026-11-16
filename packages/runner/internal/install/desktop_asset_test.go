@@ -1,31 +1,36 @@
 package install
 
-import (
-  "runtime"
-  "strings"
-  "testing"
-)
+import "testing"
 
-func TestDesktopAssetName(t *testing.T) {
-  name, err := desktopAssetName()
-  if err != nil {
-    t.Fatalf("desktopAssetName: %v", err)
+func TestDesktopAssetNameFor(t *testing.T) {
+  cases := []struct {
+    goos, goarch, want string
+  }{
+    {goos: "darwin", goarch: "arm64", want: "PipeBox-darwin-arm64.zip"},
+    {goos: "darwin", goarch: "amd64", want: "PipeBox-darwin-x64.zip"},
+    {goos: "linux", goarch: "amd64", want: "PipeBox-linux-amd64.zip"},
+    {goos: "windows", goarch: "amd64", want: "PipeBox-windows-x64.zip"},
+    {goos: "linux", goarch: "arm64"},
+    {goos: "windows", goarch: "arm64"},
+    {goos: "darwin", goarch: "386"},
+    {goos: "freebsd", goarch: "amd64"},
   }
-  if !strings.HasPrefix(name, "PipeBox-") || !strings.HasSuffix(name, ".zip") {
-    t.Fatalf("unexpected asset name %q", name)
-  }
-  switch runtime.GOOS {
-  case "darwin":
-    if !strings.Contains(name, "darwin") {
-      t.Fatalf("expected darwin asset, got %q", name)
-    }
-  case "linux":
-    if name != "PipeBox-linux-amd64.zip" && runtime.GOARCH == "amd64" {
-      t.Fatalf("expected linux amd64 zip, got %q", name)
-    }
-  case "windows":
-    if name != "PipeBox-windows-x64.zip" && runtime.GOARCH == "amd64" {
-      t.Fatalf("expected windows x64 zip, got %q", name)
-    }
+
+  for _, tc := range cases {
+    t.Run(tc.goos+"/"+tc.goarch, func(t *testing.T) {
+      got, err := desktopAssetNameFor(tc.goos, tc.goarch)
+      if tc.want == "" {
+        if err == nil {
+          t.Fatalf("expected error, got %q", got)
+        }
+        return
+      }
+      if err != nil {
+        t.Fatalf("desktopAssetNameFor: %v", err)
+      }
+      if got != tc.want {
+        t.Fatalf("got %q want %q", got, tc.want)
+      }
+    })
   }
 }
