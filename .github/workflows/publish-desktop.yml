@@ -40,7 +40,9 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: lts/*
+          # Pin Node 22: cross-zip (via @electron-forge/maker-zip) calls
+          # fs.rmdir({ recursive }), which throws on Node 25+ (Windows zip only).
+          node-version: '22'
           cache: pnpm
 
       - name: Install Linux packaging tools
