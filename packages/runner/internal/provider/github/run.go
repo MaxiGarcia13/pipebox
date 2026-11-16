@@ -1,4 +1,4 @@
-package run
+package github
 
 import (
   "bufio"
@@ -14,10 +14,9 @@ import (
   "sync"
   "syscall"
 
-  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/actimage"
-  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/actparse"
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/event"
-  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/workflows"
+  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/provider/github/actimage"
+  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/provider/github/actparse"
 )
 
 type Options struct {
@@ -180,7 +179,7 @@ func streamLines(
 }
 
 func loadJobGraph(options Options) event.JobGraph {
-  graph, err := workflows.Graph(options.Repo, options.Workflow)
+  graph, err := Graph(options.Repo, options.Workflow)
   if err != nil {
     _ = event.EmitStdout(event.Error{
       Type:    event.TypeError,

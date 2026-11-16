@@ -1,4 +1,4 @@
-package run
+package github
 
 import (
   "context"
@@ -9,8 +9,7 @@ import (
   "runtime"
   "strconv"
 
-  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/actimage"
-  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/workflows"
+  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/provider/github/actimage"
 )
 
 const materializedWorkflowMount = "/tmp/pipebox-workflow.yml"
@@ -53,7 +52,7 @@ func buildActArgs(repoPath string, options Options) ([]string, func(), error) {
     absWorkflow = filepath.Join(repoPath, filepath.FromSlash(workflowPath))
   }
 
-  materialized, err := workflows.MaterializeLocalReusables(repoPath, absWorkflow)
+  materialized, err := MaterializeLocalReusables(repoPath, absWorkflow)
   if err != nil {
     return nil, nil, fmt.Errorf("materialize reusable workflows: %w", err)
   }
@@ -183,11 +182,11 @@ func resolveWorkflowActEvent(repoPath, workflow string) (string, error) {
       return "", fmt.Errorf("workflow must be inside the repo: %w", err)
     }
   }
-  meta, err := workflows.LoadDispatch(filepath.Join(repoPath, filepath.FromSlash(relativePath)))
+  meta, err := LoadDispatch(filepath.Join(repoPath, filepath.FromSlash(relativePath)))
   if err != nil {
     return "", fmt.Errorf("resolve workflow event: %w", err)
   }
-  return workflows.ResolveActEvent(meta.Events), nil
+  return ResolveActEvent(meta.Events), nil
 }
 
 func workspaceWorkflowPath(repoPath, workflow string) (string, error) {

@@ -3,7 +3,7 @@ package doctor
 import (
   "os/exec"
 
-  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/actimage"
+  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/provider/github/actimage"
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/event"
 )
 

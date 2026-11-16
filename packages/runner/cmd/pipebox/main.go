@@ -1,6 +1,7 @@
 package main
 
 import (
+  "context"
   "fmt"
   "os"
 
@@ -8,9 +9,8 @@ import (
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/doctor"
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/event"
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/install"
-  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/run"
+  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/provider"
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/uiopen"
-  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/workflows"
 )
 
 const version = "0.6.0"
@@ -45,7 +45,7 @@ func runSubcommand(command string, args []string) {
     if err != nil || repoPath == "" {
       fail(fmt.Errorf("usage: pipebox list --repo <path>"))
     }
-    result, err := workflows.List(repoPath)
+    result, err := provider.List(repoPath)
     if err != nil {
       emitError(err)
       os.Exit(1)
@@ -56,10 +56,16 @@ func runSubcommand(command string, args []string) {
   case "graph":
     repoPath, _ := flagValue(args, "--repo")
     workflowPath, _ := flagValue(args, "--workflow")
+    providerHint, _ := flagValue(args, "--provider")
     if repoPath == "" || workflowPath == "" {
-      fail(fmt.Errorf("usage: pipebox graph --repo <path> --workflow <file>"))
+      fail(fmt.Errorf("usage: pipebox graph --repo <path> --workflow <file> [--provider <id>]"))
     }
-    result, err := workflows.Graph(repoPath, workflowPath)
+    resolved, err := provider.Resolve(repoPath, workflowPath, providerHint)
+    if err != nil {
+      emitError(err)
+      os.Exit(1)
+    }
+    result, err := resolved.Graph(repoPath, workflowPath)
     if err != nil {
       emitError(err)
       os.Exit(1)
@@ -70,14 +76,20 @@ func runSubcommand(command string, args []string) {
   case "run":
     repoPath, _ := flagValue(args, "--repo")
     workflowPath, _ := flagValue(args, "--workflow")
+    providerHint, _ := flagValue(args, "--provider")
     job, _ := flagValue(args, "--job")
     secretFile, _ := flagValue(args, "--secret-file")
     secrets := flagValues(args, "--secret")
     inputs := flagValues(args, "--input")
     if repoPath == "" || workflowPath == "" {
-      fail(fmt.Errorf("usage: pipebox run --repo <path> --workflow <file> [--job <id>] [--input KEY=VALUE] [--secret KEY=VALUE] [--secret-file <path>]"))
+      fail(fmt.Errorf("usage: pipebox run --repo <path> --workflow <file> [--provider <id>] [--job <id>] [--input KEY=VALUE] [--secret KEY=VALUE] [--secret-file <path>]"))
     }
-    exitCode, err := run.Start(run.Options{
+    resolved, err := provider.Resolve(repoPath, workflowPath, providerHint)
+    if err != nil {
+      emitError(err)
+      os.Exit(1)
+    }
+    exitCode, err := resolved.Run(context.Background(), provider.RunOptions{
       Repo:       repoPath,
       Workflow:   workflowPath,
       Job:        job,
@@ -222,8 +234,8 @@ Usage:
   pipebox version
   pipebox doctor
   pipebox list --repo <path>
-  pipebox graph --repo <path> --workflow <file>
-  pipebox run --repo <path> --workflow <file> [--job <id>] [--input KEY=VALUE] [--secret KEY=VALUE] [--secret-file <path>]
+  pipebox graph --repo <path> --workflow <file> [--provider <id>]
+  pipebox run --repo <path> --workflow <file> [--provider <id>] [--job <id>] [--input KEY=VALUE] [--secret KEY=VALUE] [--secret-file <path>]
   pipebox install
   pipebox install-desktop
   pipebox update [--check] [--version <v>]

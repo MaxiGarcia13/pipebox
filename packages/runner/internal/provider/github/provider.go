@@ -7,8 +7,6 @@ import (
   "strings"
 
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/event"
-  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/run"
-  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/workflows"
 )
 
 const ID = event.ProviderGitHub
@@ -42,7 +40,7 @@ func (Provider) ID() string {
 }
 
 func (Provider) List(repo string) (event.WorkflowList, error) {
-  result, err := workflows.List(repo)
+  result, err := List(repo)
   if err != nil {
     return event.WorkflowList{}, err
   }
@@ -54,11 +52,11 @@ func (Provider) List(repo string) (event.WorkflowList, error) {
 }
 
 func (Provider) Graph(repo, workflow string) (event.JobGraph, error) {
-  return workflows.Graph(repo, workflow)
+  return Graph(repo, workflow)
 }
 
 func (Provider) Run(_ context.Context, repo, workflow, job string, secrets []string, secretFile string, inputs []string) (int, error) {
-  return run.Start(run.Options{
+  return Start(Options{
     Repo:       repo,
     Workflow:   workflow,
     Job:        job,
