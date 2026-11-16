@@ -22,7 +22,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: lts/*
           cache: pnpm
 
       - name: Install
@@ -45,7 +45,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: lts/*
           cache: pnpm
 
       # Plain install — golangci-lint-action is unreliable under act (exit 1 after add-path).
@@ -62,3 +62,44 @@ jobs:
 
       - name: Lint
         run: pnpm lint
+
+  e2e:
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: packages/runner/go.mod
+          cache-dependency-path: packages/runner/go.sum
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install
+
+      - name: Install Electron system deps
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y \
+            xvfb \
+            libgtk-3-0 \
+            libnotify4 \
+            libnss3 \
+            libxss1 \
+            libxtst6 \
+            libgbm1 \
+            libasound2t64 \
+            libatk-bridge2.0-0 \
+            libdrm2 \
+            xauth
+
+      - name: E2E
+        run: xvfb-run -a pnpm test:e2e

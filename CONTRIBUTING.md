@@ -18,7 +18,8 @@ pnpm start          # build runner + launch Electron app
 
 ```bash
 pnpm start
-pnpm test
+pnpm test              # Go runner tests + app unit (Vitest)
+pnpm test:e2e          # package Electron app + Playwright smoke
 pnpm lint
 pnpm lint:fix
 pnpm runner:build
