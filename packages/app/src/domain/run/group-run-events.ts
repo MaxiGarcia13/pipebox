@@ -12,22 +12,23 @@ import {
   demoteRunningBeforeLaterProgress,
   settleAfterRunFinished,
 } from './settle-steps';
-import { seededStepKeys } from './step-identity';
+import { buildJobAliasMap, seededStepKeys } from './step-identity';
 import { summarizeJobs } from './summarize-jobs';
 
 export function groupRunEvents(events: RunnerEvent[]): GroupedRun {
   const graphJobs = jobsFromGraph(events);
-  const seeded = seededStepKeys(graphJobs);
+  const aliases = buildJobAliasMap(graphJobs);
+  const seeded = seededStepKeys(graphJobs, aliases);
   const runStatus = runFinishedStatus(events);
   const runFinished = runStatus != null;
-  const steps = foldSteps(events, graphJobs, seeded);
-  cascadeAfterFailure(steps);
-  demoteRunningBeforeLaterProgress(steps, seeded);
-  closeExpandedParents(steps, seeded);
-  advancePendingSteps(steps, runFinished);
-  closeExpandedParents(steps, seeded);
+  const steps = foldSteps(events, graphJobs, seeded, aliases);
+  cascadeAfterFailure(steps, aliases);
+  demoteRunningBeforeLaterProgress(steps, seeded, aliases);
+  closeExpandedParents(steps, seeded, aliases);
+  advancePendingSteps(steps, runFinished, aliases);
+  closeExpandedParents(steps, seeded, aliases);
   settleAfterRunFinished(steps, runStatus);
-  const jobs = summarizeJobs(graphJobs, steps, runFinished);
+  const jobs = summarizeJobs(graphJobs, steps, runFinished, aliases);
   return { jobs, steps };
 }
 

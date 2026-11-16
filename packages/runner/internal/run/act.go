@@ -13,59 +13,88 @@ import (
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/workflows"
 )
 
-func buildActCommand(ctx context.Context, options Options) (*exec.Cmd, error) {
+const materializedWorkflowMount = "/tmp/pipebox-workflow.yml"
+
+func buildActCommand(ctx context.Context, options Options) (*exec.Cmd, func(), error) {
   if _, err := exec.LookPath("docker"); err != nil {
-    return nil, fmt.Errorf("docker not found on PATH")
+    return nil, nil, fmt.Errorf("docker not found on PATH")
   }
 
   if err := actimage.Ensure(); err != nil {
-    return nil, fmt.Errorf("act image: %w", err)
+    return nil, nil, fmt.Errorf("act image: %w", err)
   }
 
   repoPath, err := filepath.Abs(options.Repo)
   if err != nil {
-    return nil, fmt.Errorf("resolve repo path: %w", err)
+    return nil, nil, fmt.Errorf("resolve repo path: %w", err)
   }
 
-  args, err := buildActArgs(repoPath, options)
+  args, cleanup, err := buildActArgs(repoPath, options)
   if err != nil {
-    return nil, err
+    if cleanup != nil {
+      cleanup()
+    }
+    return nil, nil, err
   }
 
   cmd := exec.CommandContext(ctx, "docker", args...)
   cmd.Env = os.Environ()
-  return cmd, nil
+  return cmd, cleanup, nil
 }
 
-func buildActArgs(repoPath string, options Options) ([]string, error) {
+func buildActArgs(repoPath string, options Options) ([]string, func(), error) {
   workflowPath, err := workspaceWorkflowPath(repoPath, options.Workflow)
   if err != nil {
-    return nil, err
+    return nil, nil, err
+  }
+
+  absWorkflow := workflowPath
+  if !filepath.IsAbs(absWorkflow) {
+    absWorkflow = filepath.Join(repoPath, filepath.FromSlash(workflowPath))
+  }
+
+  materialized, err := workflows.MaterializeLocalReusables(repoPath, absWorkflow)
+  if err != nil {
+    return nil, nil, fmt.Errorf("materialize reusable workflows: %w", err)
+  }
+  cleanup := materialized.Cleanup
+  if cleanup == nil {
+    cleanup = func() {}
   }
 
   secretFiles, err := resolveSecretFiles(repoPath, options.SecretFile)
   if err != nil {
-    return nil, fmt.Errorf("resolve secret files: %w", err)
+    cleanup()
+    return nil, nil, fmt.Errorf("resolve secret files: %w", err)
   }
 
   actEvent, err := resolveWorkflowActEvent(repoPath, options.Workflow)
   if err != nil {
-    return nil, err
+    cleanup()
+    return nil, nil, err
   }
 
   dockerSock := dockerSocketPath()
   artifactDir, err := resolveArtifactDir(options.ArtifactDir)
   if err != nil {
-    return nil, err
+    cleanup()
+    return nil, nil, err
   }
   if options.ArtifactPort <= 0 {
-    return nil, fmt.Errorf("artifact port is required")
+    cleanup()
+    return nil, nil, fmt.Errorf("artifact port is required")
   }
   artifactPort := strconv.Itoa(options.ArtifactPort)
   // Job containers are siblings of the act container (docker.sock). Publish the
   // artifact server and point ACTIONS_RUNTIME_URL at host.docker.internal so
   // upload-artifact can reach it; 127.0.0.1 only works when act runs on the host.
   runtimeURL := fmt.Sprintf("http://host.docker.internal:%s/", artifactPort)
+
+  actWorkflowPath, workflowMountArgs, err := resolveActWorkflowPath(repoPath, materialized.Path)
+  if err != nil {
+    cleanup()
+    return nil, nil, err
+  }
 
   args := []string{
     "run",
@@ -79,12 +108,14 @@ func buildActArgs(repoPath string, options Options) ([]string, error) {
     "-v", fmt.Sprintf("%s:%s", artifactDir, artifactMountPath),
     "-w", "/workspace",
   }
+  args = append(args, workflowMountArgs...)
 
   actSecretArgs := make([]string, 0, len(secretFiles)*2+len(options.Secrets)*2)
   for index, secretFile := range secretFiles {
     workspacePath, inRepo, err := workspaceSecretPath(repoPath, secretFile)
     if err != nil {
-      return nil, fmt.Errorf("secret file path: %w", err)
+      cleanup()
+      return nil, nil, fmt.Errorf("secret file path: %w", err)
     }
     if inRepo {
       actSecretArgs = append(actSecretArgs, "--secret-file", "/workspace/"+workspacePath)
@@ -109,7 +140,7 @@ func buildActArgs(repoPath string, options Options) ([]string, error) {
     "--artifact-server-addr", artifactBindAddr,
     "--artifact-server-port", artifactPort,
     "--container-options", "--add-host=host.docker.internal:host-gateway",
-    "-W", workflowPath,
+    "-W", actWorkflowPath,
   )
   if options.Job != "" {
     args = append(args, "-j", options.Job)
@@ -122,7 +153,25 @@ func buildActArgs(repoPath string, options Options) ([]string, error) {
     args = append(args, "--input", input)
   }
 
-  return args, nil
+  return args, cleanup, nil
+}
+
+func resolveActWorkflowPath(repoPath, materializedPath string) (containerPath string, mountArgs []string, err error) {
+  absMaterialized, err := filepath.Abs(materializedPath)
+  if err != nil {
+    return "", nil, err
+  }
+  rel, relErr := filepath.Rel(repoPath, absMaterialized)
+  if relErr == nil && rel != ".." && !filepath.IsAbs(rel) && !startsWithDotDot(rel) {
+    return filepath.ToSlash(rel), nil, nil
+  }
+  return materializedWorkflowMount, []string{
+    "-v", fmt.Sprintf("%s:%s:ro", absMaterialized, materializedWorkflowMount),
+  }, nil
+}
+
+func startsWithDotDot(relative string) bool {
+  return relative == ".." || len(relative) >= 3 && relative[:3] == ".."+string(filepath.Separator)
 }
 
 func resolveWorkflowActEvent(repoPath, workflow string) (string, error) {

@@ -1,17 +1,23 @@
+import type { JobAliasMap } from './step-identity';
 import type { StepGroup, StepRunStatus } from './types';
 import type { RunStatus } from '@/domain/runner-events';
 import {
+  EMPTY_JOB_ALIASES,
   isJobBookend,
+
   sameJobLabel,
   stepIdentity,
 } from './step-identity';
 
-export function cascadeAfterFailure(steps: StepGroup[]): void {
+export function cascadeAfterFailure(
+  steps: StepGroup[],
+  aliases: JobAliasMap = EMPTY_JOB_ALIASES,
+): void {
   const jobLabels = [
     ...new Set(steps.map((step) => step.job)),
   ];
   for (const job of jobLabels) {
-    const jobSteps = steps.filter((step) => sameJobLabel(step.job, job));
+    const jobSteps = steps.filter((step) => sameJobLabel(step.job, job, aliases));
     let failed = false;
     for (const group of jobSteps) {
       if (failed) {
@@ -31,12 +37,13 @@ export function cascadeAfterFailure(steps: StepGroup[]): void {
 export function demoteRunningBeforeLaterProgress(
   steps: StepGroup[],
   seeded: Set<string>,
+  aliases: JobAliasMap = EMPTY_JOB_ALIASES,
 ): void {
   const jobLabels = [
     ...new Set(steps.map((step) => step.job)),
   ];
   for (const job of jobLabels) {
-    const jobSteps = steps.filter((step) => sameJobLabel(step.job, job));
+    const jobSteps = steps.filter((step) => sameJobLabel(step.job, job, aliases));
     for (let index = 0; index < jobSteps.length; index += 1) {
       const group = jobSteps[index]!;
       if (group.status !== 'running') {
@@ -71,6 +78,7 @@ export function demoteRunningBeforeLaterProgress(
 export function closeExpandedParents(
   steps: StepGroup[],
   seeded: Set<string>,
+  aliases: JobAliasMap = EMPTY_JOB_ALIASES,
 ): void {
   if (seeded.size === 0) {
     return;
@@ -80,7 +88,7 @@ export function closeExpandedParents(
     ...new Set(steps.map((step) => step.job)),
   ];
   for (const job of jobLabels) {
-    const jobSteps = steps.filter((step) => sameJobLabel(step.job, job));
+    const jobSteps = steps.filter((step) => sameJobLabel(step.job, job, aliases));
     // While a step is live, don't mark later empty parents/siblings passed.
     if (jobSteps.some((step) => step.status === 'running')) {
       continue;
@@ -105,7 +113,11 @@ export function closeExpandedParents(
   }
 }
 
-export function advancePendingSteps(steps: StepGroup[], runFinished: boolean): void {
+export function advancePendingSteps(
+  steps: StepGroup[],
+  runFinished: boolean,
+  aliases: JobAliasMap = EMPTY_JOB_ALIASES,
+): void {
   if (runFinished) {
     return;
   }
@@ -114,7 +126,7 @@ export function advancePendingSteps(steps: StepGroup[], runFinished: boolean): v
     ...new Set(steps.map((step) => step.job)),
   ];
   for (const job of jobLabels) {
-    const jobSteps = steps.filter((step) => sameJobLabel(step.job, job));
+    const jobSteps = steps.filter((step) => sameJobLabel(step.job, job, aliases));
     const runningSteps = jobSteps.filter((step) => step.status === 'running');
     if (runningSteps.length > 1) {
       // Keep the last running step; demote empty optimistic duplicates.

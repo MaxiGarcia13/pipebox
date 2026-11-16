@@ -1,11 +1,19 @@
+import type { JobAliasMap } from './step-identity';
 import type { JobRunStatus, JobSummary, StepGroup, StepRunStatus } from './types';
 import type { JobNode } from '@/domain/runner-events';
-import { sameJobLabel } from './step-identity';
+import {
+  buildJobAliasMap,
+  canonicalJobId,
+  EMPTY_JOB_ALIASES,
+
+  sameJobLabel,
+} from './step-identity';
 
 export function summarizeJobs(
   graphJobs: JobNode[],
   steps: StepGroup[],
   runFinished: boolean,
+  aliases: JobAliasMap = buildJobAliasMap(graphJobs),
 ): JobSummary[] {
   const summaries: JobSummary[] = graphJobs.map((job) => ({
     id: job.id,
@@ -18,10 +26,11 @@ export function summarizeJobs(
   for (const summary of summaries) {
     byMatch.set(summary.id, summary);
     byMatch.set(summary.name, summary);
+    byMatch.set(canonicalJobId(summary.id, aliases), summary);
   }
 
   for (const step of steps) {
-    let summary = byMatch.get(step.job);
+    let summary = byMatch.get(step.job) ?? byMatch.get(canonicalJobId(step.job, aliases));
     if (!summary) {
       // Graph present: skip unmatched labels (avoids duplicate root-column pills).
       if (graphJobs.length > 0) {
@@ -54,7 +63,7 @@ export function summarizeJobs(
       ) {
         continue;
       }
-      const jobSteps = steps.filter((step) => matchesJob(summary, step.job));
+      const jobSteps = steps.filter((step) => matchesJob(summary, step.job, aliases));
       if (jobSteps.some((step) => step.status === 'running')) {
         summary.status = 'running';
       }
@@ -76,8 +85,12 @@ export function defaultSelectedJobId(jobs: JobSummary[]): string | null {
   return withActivity?.id ?? jobs[0]?.id ?? null;
 }
 
-function matchesJob(job: JobSummary, label: string): boolean {
-  return sameJobLabel(job.id, label) || sameJobLabel(job.name, label);
+function matchesJob(
+  job: JobSummary,
+  label: string,
+  aliases: JobAliasMap = EMPTY_JOB_ALIASES,
+): boolean {
+  return sameJobLabel(job.id, label, aliases) || sameJobLabel(job.name, label, aliases);
 }
 
 function mergeJobStatus(current: JobRunStatus, stepStatus: StepRunStatus): JobRunStatus {

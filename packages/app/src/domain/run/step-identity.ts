@@ -1,7 +1,36 @@
 import type { JobNode } from '@/domain/runner-events';
 
-export function sameJobLabel(left: string, right: string): boolean {
-  return left === right;
+export type JobAliasMap = Map<string, string>;
+
+export const EMPTY_JOB_ALIASES: JobAliasMap = new Map();
+
+export function buildJobAliasMap(graphJobs: JobNode[]): JobAliasMap {
+  const aliases: JobAliasMap = new Map();
+  for (const job of graphJobs) {
+    aliases.set(job.id, job.id);
+    if (job.name !== '' && job.name !== job.id) {
+      aliases.set(job.name, job.id);
+    }
+  }
+  return aliases;
+}
+
+export function canonicalJobId(label: string, aliases: JobAliasMap): string {
+  return aliases.get(label) ?? label;
+}
+
+export function sameJobLabel(
+  left: string,
+  right: string,
+  aliases: JobAliasMap = EMPTY_JOB_ALIASES,
+): boolean {
+  if (left === right) {
+    return true;
+  }
+  if (aliases.size === 0) {
+    return false;
+  }
+  return canonicalJobId(left, aliases) === canonicalJobId(right, aliases);
 }
 
 export function normalizeStepName(name: string): string {
@@ -23,12 +52,17 @@ export function isJobBookend(step: string): boolean {
     || lower.includes('complete job');
 }
 
-export function seededStepKeys(graphJobs: JobNode[]): Set<string> {
+export function seededStepKeys(
+  graphJobs: JobNode[],
+  aliases: JobAliasMap = EMPTY_JOB_ALIASES,
+): Set<string> {
   const keys = new Set<string>();
   for (const job of graphJobs) {
+    const canonical = canonicalJobId(job.id, aliases);
     for (const step of job.steps ?? []) {
-      keys.add(stepIdentity(job.name, step));
+      keys.add(stepIdentity(canonical, step));
       keys.add(stepIdentity(job.id, step));
+      keys.add(stepIdentity(job.name, step));
     }
   }
   return keys;

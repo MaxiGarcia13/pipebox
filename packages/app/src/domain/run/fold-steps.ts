@@ -1,7 +1,11 @@
+import type { JobAliasMap } from './step-identity';
 import type { StepGroup } from './types';
 import type { JobNode, RunnerEvent } from '@/domain/runner-events';
 import {
+  buildJobAliasMap,
+  canonicalJobId,
   isJobBookend,
+
   normalizeStepName,
   sameJobLabel,
   stepIdentity,
@@ -12,14 +16,15 @@ export function foldSteps(
   events: RunnerEvent[],
   graphJobs: JobNode[],
   seeded: Set<string>,
+  aliases: JobAliasMap = buildJobAliasMap(graphJobs),
 ): StepGroup[] {
-  const groups = seedStepsFromGraph(graphJobs);
+  const groups = seedStepsFromGraph(graphJobs, aliases);
   const byKey = new Map(groups.map((group) => [group.key, group]));
 
   for (const event of events) {
     if (event.type === 'step_started') {
-      demoteOtherRunningSteps(groups, event.job, event.step, seeded);
-      const group = findOrInsertStep(groups, byKey, event.job, event.step);
+      demoteOtherRunningSteps(groups, event.job, event.step, seeded, aliases);
+      const group = findOrInsertStep(groups, byKey, event.job, event.step, aliases);
       group.status = 'running';
       group.openDefault = true;
       delete group.durationMs;
@@ -27,7 +32,7 @@ export function foldSteps(
     }
 
     if (event.type === 'step_finished') {
-      const group = findOrInsertStep(groups, byKey, event.job, event.step);
+      const group = findOrInsertStep(groups, byKey, event.job, event.step, aliases);
       group.status = event.status;
       group.durationMs = event.durationMs;
       group.openDefault = event.status === 'failed';
@@ -40,7 +45,7 @@ export function foldSteps(
       if (!job && !step) {
         continue;
       }
-      const group = findOrInsertStep(groups, byKey, job, step || '(log)');
+      const group = findOrInsertStep(groups, byKey, job, step || '(log)', aliases);
       group.lines.push(event.line);
       // Late/out-of-order act output after a premature pass must reopen the step.
       // Never reopen finished job bookends — global act lines often stick to them.
@@ -63,11 +68,12 @@ function demoteOtherRunningSteps(
   job: string,
   activeStep: string,
   seeded: Set<string>,
+  aliases: JobAliasMap,
 ): void {
   const normalizedActive = normalizeStepName(activeStep);
   const activeIsExpanded = isExpandedStep(job, activeStep, seeded);
   for (const group of steps) {
-    if (!sameJobLabel(group.job, job) || group.status !== 'running') {
+    if (!sameJobLabel(group.job, job, aliases) || group.status !== 'running') {
       continue;
     }
     if (normalizeStepName(group.step) === normalizedActive) {
@@ -90,13 +96,17 @@ function isExpandedStep(job: string, step: string, seeded: Set<string>): boolean
   return !seeded.has(stepIdentity(job, step));
 }
 
-function seedStepsFromGraph(graphJobs: JobNode[]): StepGroup[] {
+function seedStepsFromGraph(
+  graphJobs: JobNode[],
+  aliases: JobAliasMap,
+): StepGroup[] {
   const groups: StepGroup[] = [];
   for (const job of graphJobs) {
+    const jobId = canonicalJobId(job.id, aliases);
     for (const step of job.steps ?? []) {
       groups.push({
-        key: stepKey(job.name, step),
-        job: job.name,
+        key: stepKey(jobId, step),
+        job: jobId,
         step,
         status: 'pending',
         lines: [],
@@ -112,23 +122,25 @@ function findOrInsertStep(
   byKey: Map<string, StepGroup>,
   job: string,
   step: string,
+  aliases: JobAliasMap,
 ): StepGroup {
-  const existing = findStepGroup(groups, job, step);
+  const existing = findStepGroup(groups, job, step, aliases);
   if (existing) {
     return existing;
   }
 
-  const key = stepKey(job, step);
+  const jobId = canonicalJobId(job, aliases);
+  const key = stepKey(jobId, step);
   const group: StepGroup = {
     key,
-    job,
+    job: jobId,
     step,
     status: 'pending',
     lines: [],
     openDefault: false,
   };
   byKey.set(key, group);
-  insertStepGroup(groups, group);
+  insertStepGroup(groups, group, aliases);
   return group;
 }
 
@@ -136,16 +148,21 @@ function findStepGroup(
   groups: StepGroup[],
   job: string,
   step: string,
+  aliases: JobAliasMap,
 ): StepGroup | undefined {
   const normalizedStep = normalizeStepName(step);
   return groups.find((group) =>
-    sameJobLabel(group.job, job)
+    sameJobLabel(group.job, job, aliases)
     && normalizeStepName(group.step) === normalizedStep,
   );
 }
 
-function insertStepGroup(groups: StepGroup[], group: StepGroup): void {
-  const jobIndexes = indexesForJob(groups, group.job);
+function insertStepGroup(
+  groups: StepGroup[],
+  group: StepGroup,
+  aliases: JobAliasMap,
+): void {
+  const jobIndexes = indexesForJob(groups, group.job, aliases);
   if (jobIndexes.length === 0) {
     groups.push(group);
     return;
@@ -169,10 +186,14 @@ function insertStepGroup(groups: StepGroup[], group: StepGroup): void {
   groups.splice(jobIndexes[jobIndexes.length - 1]! + 1, 0, group);
 }
 
-function indexesForJob(groups: StepGroup[], job: string): number[] {
+function indexesForJob(
+  groups: StepGroup[],
+  job: string,
+  aliases: JobAliasMap,
+): number[] {
   const indexes: number[] = [];
   for (let index = 0; index < groups.length; index += 1) {
-    if (sameJobLabel(groups[index]!.job, job)) {
+    if (sameJobLabel(groups[index]!.job, job, aliases)) {
       indexes.push(index);
     }
   }

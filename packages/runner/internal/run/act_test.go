@@ -4,6 +4,7 @@ import (
   "os"
   "path/filepath"
   "slices"
+  "strings"
   "testing"
 )
 
@@ -26,13 +27,16 @@ on:
   }
 
   artifactDir := t.TempDir()
-  args, err := buildActArgs(repoPath, Options{
+  args, cleanup, err := buildActArgs(repoPath, Options{
     Repo:         repoPath,
     Workflow:     ".github/workflows/deploy.yml",
     Inputs:       []string{"tag=v1"},
     ArtifactDir:  artifactDir,
     ArtifactPort: 34567,
   })
+  if cleanup != nil {
+    defer cleanup()
+  }
   if err != nil {
     t.Fatal(err)
   }
@@ -82,12 +86,15 @@ func TestBuildActArgsPushWorkflow(t *testing.T) {
     t.Fatal(err)
   }
 
-  args, err := buildActArgs(repoPath, Options{
+  args, cleanup, err := buildActArgs(repoPath, Options{
     Repo:         repoPath,
     Workflow:     ".github/workflows/ci.yml",
     ArtifactDir:  t.TempDir(),
     ArtifactPort: 34567,
   })
+  if cleanup != nil {
+    defer cleanup()
+  }
   if err != nil {
     t.Fatal(err)
   }
@@ -113,18 +120,91 @@ on:
     t.Fatal(err)
   }
 
-  args, err := buildActArgs(repoPath, Options{
+  args, cleanup, err := buildActArgs(repoPath, Options{
     Repo:         repoPath,
     Workflow:     ".github/workflows/ci.yml",
     ArtifactDir:  t.TempDir(),
     ArtifactPort: 34567,
   })
+  if cleanup != nil {
+    defer cleanup()
+  }
   if err != nil {
     t.Fatal(err)
   }
   imageIndex := slices.Index(args, "pipebox-act:latest")
   if imageIndex < 0 || imageIndex+1 >= len(args) || args[imageIndex+1] != "pull_request" {
     t.Fatalf("expected pull_request after image, got %#v", args[imageIndex:])
+  }
+}
+
+func TestBuildActArgsMaterializesLocalReusable(t *testing.T) {
+  t.Parallel()
+
+  repoPath := t.TempDir()
+  workflowsDir := filepath.Join(repoPath, ".github", "workflows")
+  if err := os.MkdirAll(workflowsDir, 0o700); err != nil {
+    t.Fatal(err)
+  }
+  if err := os.WriteFile(filepath.Join(workflowsDir, "lint.yml"), []byte(`
+on:
+  workflow_call:
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo lint
+`), 0o600); err != nil {
+    t.Fatal(err)
+  }
+  if err := os.WriteFile(filepath.Join(workflowsDir, "ci.yml"), []byte(`
+on:
+  pull_request:
+jobs:
+  lint:
+    uses: ./.github/workflows/lint.yml
+`), 0o600); err != nil {
+    t.Fatal(err)
+  }
+
+  args, cleanup, err := buildActArgs(repoPath, Options{
+    Repo:         repoPath,
+    Workflow:     ".github/workflows/ci.yml",
+    ArtifactDir:  t.TempDir(),
+    ArtifactPort: 34567,
+  })
+  if cleanup != nil {
+    defer cleanup()
+  }
+  if err != nil {
+    t.Fatal(err)
+  }
+
+  if !containsPair(args, "-W", materializedWorkflowMount) {
+    t.Fatalf("expected materialized -W mount path, got %#v", args)
+  }
+  mounted := false
+  for index := 0; index+1 < len(args); index++ {
+    if args[index] == "-v" && strings.Contains(args[index+1], materializedWorkflowMount+":ro") {
+      mounted = true
+      hostPath := strings.Split(args[index+1], ":")[0]
+      data, readErr := os.ReadFile(hostPath)
+      if readErr != nil {
+        t.Fatal(readErr)
+      }
+      body := string(data)
+      if strings.Contains(body, "uses:") {
+        t.Fatalf("materialized workflow still has uses: %s", body)
+      }
+      if !strings.Contains(body, "echo lint") {
+        t.Fatalf("materialized workflow missing inlined steps: %s", body)
+      }
+      break
+    }
+  }
+  if !mounted {
+    t.Fatalf("missing materialized workflow mount in %#v", args)
   }
 }
 

@@ -90,7 +90,10 @@ func Start(options Options) (int, error) {
 }
 
 func runAct(ctx context.Context, options Options) (exitCode int, status string) {
-  cmd, err := buildActCommand(ctx, options)
+  cmd, cleanup, err := buildActCommand(ctx, options)
+  if cleanup != nil {
+    defer cleanup()
+  }
   if err != nil {
     _ = event.EmitStdout(event.Error{
       Type:    event.TypeError,
