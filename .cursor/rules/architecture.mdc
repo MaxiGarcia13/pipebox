@@ -13,6 +13,7 @@ alwaysApply: true
 ## Do not
 
 - Put act/log parsing in `packages/app` (not in Vue, preload, or main as a permanent home — main only spawns and forwards)
+- Put CI-provider parsing or detection in the app — runner owns providers; UI only consumes tagged NDJSON
 - Reinvent act; wrap the CLI and normalize output to NDJSON events
 - Expose a generic shell API through preload
 - Build ad-hoc UI primitives; use shadcn-vue under `packages/app/src/components/ui/`
@@ -21,14 +22,22 @@ alwaysApply: true
 
 ## Process boundaries
 
-- **Renderer:** typed runner events + shadcn-vue only
+- **Renderer:** typed runner events + shadcn-vue only (provider icons from `workflow.provider`)
 - **Preload:** narrow typed bridge
 - **Main:** spawn/kill `pipebox`, forward NDJSON → IPC, file dialogs
-- **Runner (`pipebox`):** discover workflows, run **Dockerized act** (local `pipebox-act` image built from `packages/runner/docker/act`), load project `.env` / `.env.*` as secrets, parse streams, emit events; CLI commands `doctor`, `list`, `run`, `install`
-- **v1 dependency:** Docker only — do not require a local `act` binary; do not depend on a public `ghcr.io/nektos/act` image (it is not publicly pullable)
+- **Runner (`pipebox`):** multi-provider discovery under `internal/provider/` — `Discover` / `List` / `Resolve`; GitHub implementation in `provider/github` (Dockerized act, local `pipebox-act` image from `packages/runner/docker/act`); Jenkins stub in `provider/jenkins` (not implemented); load project `.env` / `.env.*` as secrets; emit events; CLI commands `doctor`, `list`, `run`, `install`
+- **v1 dependency:** Docker only for GitHub — do not require a local `act` binary; do not depend on a public `ghcr.io/nektos/act` image (it is not publicly pullable)
+
+## Providers
+
+- A repo may expose **zero or more** providers (e.g. migration with both GitHub and Jenkins later)
+- Route `graph` / `run` **per selected workflow** via `provider` field or `--provider`, never a single repo-wide provider
+- GitHub-only knowledge (`.github` YAML, act, actparse, actimage) stays under `internal/provider/github/`
 
 ## Runner protocol (v1)
 
-Stdout is NDJSON (one object per line): `workflow_list`, `run_started`, `run_finished`, `step_started`, `step_finished`, `log`, `error`, `artifacts`.
+Stdout is NDJSON (one object per line): `workflow_list`, `run_started`, `run_finished`, `job_graph`, `step_started`, `step_finished`, `log`, `error`, `artifacts`.
+
+`workflow_list` includes `providers` and each workflow includes `provider` (`github` | `jenkins`).
 
 Mirror types in the app at `packages/app/src/domain/runner-events.ts` (types-only copy of Go structs).
