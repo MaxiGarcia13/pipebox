@@ -11,7 +11,7 @@ defineProps<{
     :class="$props.class"
     aria-hidden="true"
   >
-    <g fill="#181616">
+    <g fill="#ffffff">
       <path
         fill-rule="evenodd"
         clip-rule="evenodd"
