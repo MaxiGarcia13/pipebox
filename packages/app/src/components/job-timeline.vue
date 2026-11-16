@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { JobSummary } from '@/domain/run';
-import { ChevronRight } from 'lucide-vue-next';
 import { computed } from 'vue';
+import JobGraphConnector from '@/components/job-graph-connector.vue';
 import RunStatusIcon from '@/components/run-status-icon.vue';
 import { groupJobsByColumn } from '@/domain/run';
 import { formatDuration } from '@/utils';
@@ -23,7 +23,7 @@ const columns = computed(() => groupJobsByColumn(props.jobs));
     v-if="columns.length > 0"
     class="overflow-x-auto border-b border-border p-4"
   >
-    <div class="flex min-w-full items-stretch gap-4">
+    <div class="flex min-w-full items-center">
       <template
         v-for="(column, columnIndex) in columns"
         :key="columnIndex"
@@ -33,7 +33,7 @@ const columns = computed(() => groupJobsByColumn(props.jobs));
             v-for="job in column"
             :key="job.id"
             type="button"
-            class="flex w-full max-w-64 min-w-48 cursor-pointer items-center gap-2 rounded-xl border bg-card p-2 text-left text-sm shadow-sm transition-colors hover:bg-muted/40"
+            class="flex h-10 w-full max-w-64 min-w-48 shrink-0 cursor-pointer items-center gap-2 rounded-xl border bg-card p-2 text-left text-sm shadow-sm transition-colors hover:bg-muted/40"
             :class="selectedId === job.id
               ? 'border-primary ring-2 ring-ring/40'
               : 'border-border'"
@@ -52,13 +52,11 @@ const columns = computed(() => groupJobsByColumn(props.jobs));
           </button>
         </div>
 
-        <div
+        <JobGraphConnector
           v-if="columnIndex < columns.length - 1"
-          class="flex shrink-0 items-center"
-          aria-hidden="true"
-        >
-          <ChevronRight class="size-4 text-muted-foreground" />
-        </div>
+          :from="column"
+          :to="columns[columnIndex + 1] ?? []"
+        />
       </template>
     </div>
   </div>
