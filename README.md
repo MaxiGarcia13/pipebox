@@ -83,35 +83,14 @@ flowchart LR
   Vue[Vue_renderer] -->|IPC| Preload[preload_bridge]
   Preload --> Main[Electron_main]
   Main -->|spawn_stdin_stdout| Runner[Go_runner]
-  Runner -->|docker_run| ActImage[nektos_act_image]
+  Runner -->|docker_run| ActImage[pipebox_act_image]
   ActImage --> Docker[Docker]
   Runner -->|NDJSON_events| Main
   Main -->|IPC_events| Vue
 ```
 
-The Go binary is both the app’s runner (spawned by Electron) and the CLI above.
+The Go binary is both the app’s runner (spawned by Electron) and the CLI above. Provider discovery and boundaries: [AGENTS.md](AGENTS.md).
 
 ## Develop
 
-```bash
-pnpm install
-pnpm start
-pnpm test
-pnpm lint
-pnpm runner:build
-pnpm runner:test
-pnpm runner:image
-pnpm runner:lint
-pnpm runner:lint:fix
-pnpm runner:doctor
-```
-
-From `packages/runner`:
-
-```bash
-make build
-./pipebox doctor
-./pipebox list --repo /path/to/repo
-```
-
-See [AGENTS.md](AGENTS.md) for package boundaries and agent conventions.
+See [CONTRIBUTING.md](CONTRIBUTING.md).

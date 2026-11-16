@@ -35,12 +35,4 @@ The app renders a unified workflow list using `workflow.provider` (brand icons);
 
 ## Commands
 
-```bash
-pnpm app:start         # Electron app
-pnpm runner:build      # Go CLI → packages/runner/pipebox
-pnpm runner:test       # Go tests
-pnpm runner:image      # build local pipebox-act Docker image
-pnpm runner:lint       # golangci-lint
-pnpm runner:lint:fix  # golangci-lint --fix
-pnpm runner:doctor
-```
+See [CONTRIBUTING.md](CONTRIBUTING.md).
