@@ -1,0 +1,22 @@
+name: CI
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target env
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+        default: staging
+      dry_run:
+        description: Dry run
+        type: boolean
+        default: false
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo ok
