@@ -22,6 +22,8 @@ func List(repoPath string) (event.WorkflowList, error) {
     return event.WorkflowList{}, fmt.Errorf("read workflows: %w", err)
   }
 
+  providers := []string{event.ProviderGitHub}
+
   workflows := make([]event.Workflow, 0)
   for _, entry := range entries {
     if entry.IsDir() {
@@ -35,10 +37,11 @@ func List(repoPath string) (event.WorkflowList, error) {
     id := strings.TrimSuffix(name, filepath.Ext(name))
     relativePath := filepath.Join(".github", "workflows", name)
     workflow := event.Workflow{
-      ID:     id,
-      Name:   id,
-      Path:   relativePath,
-      Inputs: []event.WorkflowInput{},
+      ID:       id,
+      Name:     id,
+      Path:     relativePath,
+      Provider: event.ProviderGitHub,
+      Inputs:   []event.WorkflowInput{},
     }
 
     meta, err := LoadDispatch(filepath.Join(workflowsDir, name))
@@ -59,6 +62,7 @@ func List(repoPath string) (event.WorkflowList, error) {
 
   return event.WorkflowList{
     Type:      event.TypeWorkflowList,
+    Providers: providers,
     Workflows: workflows,
   }, nil
 }

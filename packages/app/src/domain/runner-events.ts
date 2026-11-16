@@ -12,6 +12,7 @@ export type RunnerEventType
 
 export type StepStatus = 'passed' | 'failed' | 'skipped' | 'cancelled';
 export type RunStatus = 'passed' | 'failed' | 'cancelled';
+export type WorkflowProvider = 'github' | 'jenkins';
 
 export interface WorkflowInput {
   id: string;
@@ -26,6 +27,7 @@ export interface Workflow {
   id: string;
   name: string;
   path: string;
+  provider: WorkflowProvider;
   callable?: boolean;
   events?: string[];
   inputs?: WorkflowInput[];
@@ -33,6 +35,7 @@ export interface Workflow {
 
 export interface WorkflowListEvent {
   type: 'workflow_list';
+  providers?: WorkflowProvider[];
   workflows: Workflow[];
 }
 

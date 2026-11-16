@@ -17,6 +17,9 @@ const (
   TypeError        = "error"
   TypeDoctor       = "doctor"
   TypeArtifacts    = "artifacts"
+
+  ProviderGitHub  = "github"
+  ProviderJenkins = "jenkins"
 )
 
 type WorkflowInput struct {
@@ -32,6 +35,7 @@ type Workflow struct {
   ID       string          `json:"id"`
   Name     string          `json:"name"`
   Path     string          `json:"path"`
+  Provider string          `json:"provider"`
   Callable bool            `json:"callable,omitempty"`
   Events   []string        `json:"events,omitempty"`
   Inputs   []WorkflowInput `json:"inputs,omitempty"`
@@ -39,6 +43,7 @@ type Workflow struct {
 
 type WorkflowList struct {
   Type      string     `json:"type"`
+  Providers []string   `json:"providers,omitempty"`
   Workflows []Workflow `json:"workflows"`
 }
 
