@@ -6,17 +6,32 @@ func TestParseOpenUI(t *testing.T) {
   t.Parallel()
 
   result := Parse(nil)
-  if result.Kind != KindOpenUI || result.Repo != "" {
+  if result.Kind != KindOpenUI || result.Repo != "" || result.NewWindow {
     t.Fatalf("got %+v", result)
   }
 
   result = Parse([]string{"--repo", "."})
-  if result.Kind != KindOpenUI || result.Repo != "." {
+  if result.Kind != KindOpenUI || result.Repo != "." || result.NewWindow {
     t.Fatalf("got %+v", result)
   }
 
   result = Parse([]string{"--repo=./demo"})
-  if result.Kind != KindOpenUI || result.Repo != "./demo" {
+  if result.Kind != KindOpenUI || result.Repo != "./demo" || result.NewWindow {
+    t.Fatalf("got %+v", result)
+  }
+
+  result = Parse([]string{"-n"})
+  if result.Kind != KindOpenUI || result.Repo != "" || !result.NewWindow {
+    t.Fatalf("got %+v", result)
+  }
+
+  result = Parse([]string{"--new", "--repo", "/tmp/proj"})
+  if result.Kind != KindOpenUI || result.Repo != "/tmp/proj" || !result.NewWindow {
+    t.Fatalf("got %+v", result)
+  }
+
+  result = Parse([]string{"--repo=.", "-n"})
+  if result.Kind != KindOpenUI || result.Repo != "." || !result.NewWindow {
     t.Fatalf("got %+v", result)
   }
 }

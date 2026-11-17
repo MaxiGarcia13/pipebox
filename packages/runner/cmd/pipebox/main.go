@@ -23,7 +23,7 @@ func main() {
   case cli.KindVersion:
     fmt.Println(version)
   case cli.KindOpenUI:
-    if err := uiopen.Open(parsed.Repo); err != nil {
+    if err := uiopen.Open(parsed.Repo, parsed.NewWindow); err != nil {
       fmt.Fprintf(os.Stderr, "pipebox: %v\n", err)
       os.Exit(1)
     }
@@ -229,6 +229,7 @@ func printUsage() {
 Usage:
   pipebox
   pipebox --repo <path>
+  pipebox -n | --new [--repo <path>]
   pipebox --help | -h
   pipebox --version | -v
   pipebox version
@@ -242,7 +243,8 @@ Usage:
   pipebox uninstall
 
 Desktop:
-  bare pipebox (or pipebox --repo <path>) opens the desktop UI
+  bare pipebox (or pipebox --repo <path>) opens the desktop UI (reuses a running app)
+  -n / --new opens a new window instead of reusing
   pipebox install / install-desktop fetches the UI from GitHub Releases
   pipebox update replaces managed CLI installs (~/.local/bin and go install bin) + desktop app
   set PIPEBOX_APP to override the desktop path

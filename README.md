@@ -43,8 +43,9 @@ No second `go install` needed once a `pipebox` binary is on your `PATH`.
 
 ```bash
 pipebox doctor
-pipebox                 # open desktop UI
+pipebox                 # open desktop UI (reuse if already running)
 pipebox --repo .        # open UI with this repo
+pipebox -n --repo .     # open a new window with this repo
 ```
 
 Builds are unsigned for now. On macOS, if Gatekeeper blocks the app: right-click `PipeBox.app` → Open → Open. On Windows, accept the SmartScreen prompt if shown.
@@ -54,8 +55,9 @@ Desktop lookup order: `PIPEBOX_APP`, user install (`~/Applications/PipeBox.app`,
 ## CLI
 
 ```bash
-pipebox                      # open desktop UI
-pipebox --repo <path>        # open UI with that repo (e.g. --repo .)
+pipebox                      # open desktop UI (reuse if already running)
+pipebox --repo <path>        # open / switch to that repo (e.g. --repo .)
+pipebox -n | --new [--repo <path>]  # new window instead of reusing
 pipebox --help | -h
 pipebox --version | -v
 pipebox version

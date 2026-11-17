@@ -17,6 +17,7 @@ type Args struct {
   Command     string
   CommandArgs []string
   Repo        string
+  NewWindow   bool
   Err         error
 }
 
@@ -56,6 +57,7 @@ func Parse(args []string) Args {
   }
 
   repo := ""
+  newWindow := false
   for index := 0; index < len(args); index++ {
     arg := args[index]
     switch {
@@ -63,6 +65,8 @@ func Parse(args []string) Args {
       return Args{Kind: KindHelp}
     case arg == "-v" || arg == "--version" || arg == "version":
       return Args{Kind: KindVersion}
+    case arg == "-n" || arg == "--new":
+      newWindow = true
     case arg == "--repo":
       if index+1 >= len(args) {
         return Args{
@@ -82,5 +86,5 @@ func Parse(args []string) Args {
     }
   }
 
-  return Args{Kind: KindOpenUI, Repo: repo}
+  return Args{Kind: KindOpenUI, Repo: repo, NewWindow: newWindow}
 }

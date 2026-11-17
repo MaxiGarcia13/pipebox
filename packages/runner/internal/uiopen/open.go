@@ -9,7 +9,7 @@ import (
   "strings"
 )
 
-func Open(repoPath string) error {
+func Open(repoPath string, newWindow bool) error {
   appPath, err := ResolveApp()
   if err != nil {
     return err
@@ -29,6 +29,9 @@ func Open(repoPath string) error {
       return fmt.Errorf("--repo is not a directory: %s", absRepo)
     }
     args = append(args, "--repo", absRepo)
+  }
+  if newWindow {
+    args = append(args, "--new")
   }
 
   return startApp(appPath, args)
