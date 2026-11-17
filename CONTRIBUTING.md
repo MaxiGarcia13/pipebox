@@ -2,8 +2,9 @@
 
 ## Prerequisites
 
-- **Node.js** with **pnpm** (`packageManager` in root `package.json`)
-- **Go 1.22+** on `PATH`
+- **Node.js 26+** and **pnpm** (`engines` / `packageManager` in root `package.json`)
+- **Go 1.22+** on `PATH` (see `packages/runner/go.mod`)
+- **golangci-lint** on `PATH` (for `pnpm lint` / `pnpm runner:lint`; CI uses v2.15.0)
 - **Docker** running (GitHub workflows via the local `pipebox-act` image)
 
 ## Setup
