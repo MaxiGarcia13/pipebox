@@ -10,10 +10,11 @@ import { openReportIssue } from './open-report-issue';
 import { resolveGitBranch } from './resolve-git-branch';
 import { RunnerClient } from './runner-client';
 import { saveArtifact } from './save-artifact';
+import { takeWindowLaunchRepo } from './window-launch-repo';
 
 const runnerClient = new RunnerClient();
 
-export function registerIpc(launchRepo: string | null = null): void {
+export function registerIpc(): void {
   ipcMain.handle(IPC_CHANNELS.doctor, async () => {
     const events = await runnerClient.runToCompletion(['doctor']);
     const doctorEvent = events.find((event) => event.type === 'doctor');
@@ -66,7 +67,9 @@ export function registerIpc(launchRepo: string | null = null): void {
     return result.filePaths[0];
   });
 
-  ipcMain.handle(IPC_CHANNELS.getLaunchRepo, async () => launchRepo);
+  ipcMain.handle(IPC_CHANNELS.getLaunchRepo, async (event) => {
+    return takeWindowLaunchRepo(event.sender.id);
+  });
 
   ipcMain.handle(IPC_CHANNELS.gitBranch, async (_event, repoPath: string) => {
     return resolveGitBranch(repoPath);

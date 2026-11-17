@@ -4,6 +4,7 @@ export const IPC_CHANNELS = {
   graphWorkflow: 'pipebox:graph-workflow',
   selectRepo: 'pipebox:select-repo',
   getLaunchRepo: 'pipebox:get-launch-repo',
+  openRepo: 'pipebox:open-repo',
   gitBranch: 'pipebox:git-branch',
   startRun: 'pipebox:start-run',
   stopRun: 'pipebox:stop-run',

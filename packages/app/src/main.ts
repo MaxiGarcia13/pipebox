@@ -3,14 +3,20 @@ import path from 'node:path';
 import process from 'node:process';
 import { app, BrowserWindow } from 'electron';
 import started from 'electron-squirrel-startup';
-import { parseLaunchRepo } from './main/parse-launch-repo';
+import { parseLaunchArgs } from './main/parse-launch-args';
 import { registerIpc } from './main/register-ipc';
+import {
+  clearWindowLaunchRepo,
+  setWindowLaunchRepo,
+} from './main/window-launch-repo';
+import { IPC_CHANNELS } from './services/ipc-channels';
 
-if (started) {
+const launchArgs = parseLaunchArgs(process.argv);
+const gotSingleInstanceLock = !started && app.requestSingleInstanceLock();
+
+if (started || !gotSingleInstanceLock) {
   app.quit();
 }
-
-const launchRepo = parseLaunchRepo(process.argv);
 
 function resolveWindowIcon(): string | undefined {
   if (process.platform === 'darwin') {
@@ -27,7 +33,11 @@ function resolveWindowIcon(): string | undefined {
 
 const WINDOW_BACKGROUND = '#282a36';
 
-function createWindow() {
+interface CreateWindowOptions {
+  repo?: string | null;
+}
+
+function createWindow(options: CreateWindowOptions = {}) {
   const mainWindow = new BrowserWindow({
     width: 960,
     height: 720,
@@ -41,6 +51,12 @@ function createWindow() {
     },
   });
 
+  const webContentsId = mainWindow.webContents.id;
+  setWindowLaunchRepo(webContentsId, options.repo ?? null);
+  mainWindow.on('closed', () => {
+    clearWindowLaunchRepo(webContentsId);
+  });
+
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
   });
@@ -52,21 +68,62 @@ function createWindow() {
       path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`),
     );
   }
+
+  return mainWindow;
 }
 
-app.whenReady().then(() => {
-  registerIpc(launchRepo);
-  createWindow();
+function focusWindow(window: BrowserWindow) {
+  if (window.isMinimized()) {
+    window.restore();
+  }
+  window.show();
+  window.focus();
+}
 
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+function resolveTargetWindow(): BrowserWindow | null {
+  return BrowserWindow.getFocusedWindow()
+    ?? BrowserWindow.getAllWindows().at(-1)
+    ?? null;
+}
+
+function deliverOpenRepo(window: BrowserWindow, repo: string) {
+  window.webContents.send(IPC_CHANNELS.openRepo, repo);
+}
+
+if (gotSingleInstanceLock) {
+  app.on('second-instance', (_event, commandLine) => {
+    const next = parseLaunchArgs(commandLine);
+    if (next.newWindow) {
+      createWindow({ repo: next.repo });
+      return;
+    }
+
+    const window = resolveTargetWindow();
+    if (!window) {
+      createWindow({ repo: next.repo });
+      return;
+    }
+
+    focusWindow(window);
+    if (next.repo) {
+      deliverOpenRepo(window, next.repo);
     }
   });
-});
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
-});
+  app.whenReady().then(() => {
+    registerIpc();
+    createWindow({ repo: launchArgs.repo });
+
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) {
+        createWindow();
+      }
+    });
+  });
+
+  app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') {
+      app.quit();
+    }
+  });
+}
