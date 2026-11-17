@@ -154,11 +154,29 @@ Remove the local CLI install and desktop app:
 pipebox uninstall
 ```
 
-Print a shell completion script (`bash` and `fish` also work; `install` / `update` write these automatically):
+### Shell completions
+
+After `go install` or `pipebox install`, enable Tab completion once in your shell config:
+
+**zsh** — add to `~/.zshrc`:
 
 ```bash
-pipebox completion zsh
+eval "$(pipebox completion zsh)"
 ```
+
+**bash** — add to `~/.bashrc`:
+
+```bash
+eval "$(pipebox completion bash)"
+```
+
+**fish** — write the script (or use `pipebox install`, which places it for you):
+
+```fish
+pipebox completion fish > ~/.config/fish/completions/pipebox.fish
+```
+
+Then open a new terminal tab (or `source` your rc file).
 
 ## How it works
 

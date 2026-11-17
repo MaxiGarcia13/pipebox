@@ -181,7 +181,8 @@ func DefaultCatalog() Catalog {
       "  pass workflow_dispatch inputs with --input KEY=VALUE (repeatable)",
       "",
       "Completions:",
-      "  eval \"$(pipebox completion zsh)\"   # or bash / fish; also installed by pipebox install",
+      "  add to your shell rc after install: eval \"$(pipebox completion zsh)\"  # or bash",
+      "  fish: pipebox completion fish > ~/.config/fish/completions/pipebox.fish",
     },
   }
 }
