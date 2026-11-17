@@ -1,6 +1,6 @@
 # PipeBox
 
-Local CI/CD control panel — desktop UI + CLI. Secrets from `.env`. No push required.
+Local CI/CD control panel for GitHub Actions (Jenkins coming) — run and debug pipelines locally with visual step logs. No git push required.
 
 ![PipeBox demo](docs/demo.gif)
 
