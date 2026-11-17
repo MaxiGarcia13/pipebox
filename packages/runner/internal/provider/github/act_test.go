@@ -72,6 +72,9 @@ on:
   if !containsPair(args, "-e", "ACTIONS_RUNTIME_URL=http://host.docker.internal:34567/") {
     t.Fatalf("missing ACTIONS_RUNTIME_URL in %#v", args)
   }
+  if !containsPair(args, "-e", "ACT_DISABLE_VERSION_CHECK=1") {
+    t.Fatalf("missing ACT_DISABLE_VERSION_CHECK in %#v", args)
+  }
 }
 
 func TestBuildActArgsPushWorkflow(t *testing.T) {
