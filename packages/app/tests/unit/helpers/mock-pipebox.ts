@@ -37,6 +37,7 @@ export interface MockPipeboxOptions {
 export interface MockPipeboxHandle {
   api: PipeboxApi;
   emit: (event: RunnerEvent) => void;
+  emitOpenRepo: (repoPath: string) => void;
   setDoctor: (next: DoctorEvent) => void;
   doctorCalls: ReturnType<typeof vi.fn>;
   selectRepoCalls: ReturnType<typeof vi.fn>;
@@ -60,6 +61,7 @@ export function createMockPipebox(
   options: MockPipeboxOptions = {},
 ): MockPipeboxHandle {
   const listeners = new Set<(event: RunnerEvent) => void>();
+  const openRepoListeners = new Set<(repoPath: string) => void>();
   const doctorCalls = vi.fn();
   const selectRepoCalls = vi.fn();
   const startRunCalls = vi.fn();
@@ -89,6 +91,12 @@ export function createMockPipebox(
   function emit(event: RunnerEvent) {
     for (const listener of listeners) {
       listener(event);
+    }
+  }
+
+  function emitOpenRepo(repoPath: string) {
+    for (const listener of openRepoListeners) {
+      listener(repoPath);
     }
   }
 
@@ -153,11 +161,18 @@ export function createMockPipebox(
         listeners.delete(callback);
       };
     },
+    onOpenRepo: (callback) => {
+      openRepoListeners.add(callback);
+      return () => {
+        openRepoListeners.delete(callback);
+      };
+    },
   };
 
   return {
     api,
     emit,
+    emitOpenRepo,
     setDoctor: (next) => {
       doctorResult = next;
     },

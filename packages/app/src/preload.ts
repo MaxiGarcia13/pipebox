@@ -32,6 +32,15 @@ const pipeboxApi: PipeboxApi = {
       ipcRenderer.removeListener(IPC_CHANNELS.event, listener);
     };
   },
+  onOpenRepo: (callback) => {
+    const listener = (_event: Electron.IpcRendererEvent, repoPath: string) => {
+      callback(repoPath);
+    };
+    ipcRenderer.on(IPC_CHANNELS.openRepo, listener);
+    return () => {
+      ipcRenderer.removeListener(IPC_CHANNELS.openRepo, listener);
+    };
+  },
 };
 
 contextBridge.exposeInMainWorld('pipebox', pipeboxApi);

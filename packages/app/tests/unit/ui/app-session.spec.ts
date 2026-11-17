@@ -51,6 +51,20 @@ describe('app session UI', () => {
     expect(wrapper.get('[data-testid="workflow-name"]').text()).toBe('CI');
   });
 
+  it('opens a repo pushed from main after mount', async () => {
+    const { wrapper, mock } = await mountApp({
+      launchRepo: FIXTURE_REPO_GITHUB,
+    });
+
+    expect(wrapper.get('[data-testid="workflow-name"]').text()).toBe('CI');
+
+    mock.emitOpenRepo(FIXTURE_REPO_JENKINS);
+    await flushPromises();
+
+    expect(wrapper.get('[data-testid="workflow-name"]').text()).toBe('Jenkins pipeline');
+    expect(wrapper.get('[data-testid="project-status"]').text()).toContain('main');
+  });
+
   it('lists jenkins workflows with jenkins icon', async () => {
     const { wrapper } = await mountApp({
       launchRepo: FIXTURE_REPO_JENKINS,

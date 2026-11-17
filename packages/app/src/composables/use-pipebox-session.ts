@@ -69,8 +69,11 @@ export function usePipeboxSession() {
   const statusMessage = ref('');
   const inputValues = ref<Record<string, string>>({});
   const inputValuesWorkflow = ref<string | null>(null);
+  const pendingRepo = ref<string | null>(null);
+  const switchProjectOpen = ref(false);
 
-  let unsubscribe: (() => void) | undefined;
+  let unsubscribeEvents: (() => void) | undefined;
+  let unsubscribeOpenRepo: (() => void) | undefined;
 
   const viewingRun = computed(() =>
     selectedWorkflow.value != null
@@ -93,7 +96,10 @@ export function usePipeboxSession() {
   });
 
   onMounted(() => {
-    unsubscribe = window.pipebox.onEvent((event) => {
+    unsubscribeOpenRepo = window.pipebox.onOpenRepo((nextPath) => {
+      void requestOpenRepo(nextPath);
+    });
+    unsubscribeEvents = window.pipebox.onEvent((event) => {
       if (event.type === 'run_finished' && hasRunFinished(runEvents.value)) {
         return;
       }
@@ -108,7 +114,8 @@ export function usePipeboxSession() {
   });
 
   onUnmounted(() => {
-    unsubscribe?.();
+    unsubscribeOpenRepo?.();
+    unsubscribeEvents?.();
   });
 
   function ensureInputValues(workflowPath: string) {
@@ -137,7 +144,6 @@ export function usePipeboxSession() {
     previewWorkflow.value = null;
     runEvents.value = [];
     previewEvents.value = [];
-    isRunning.value = false;
     inputValues.value = {};
     inputValuesWorkflow.value = null;
     const [list, nextBranch] = await Promise.all([
@@ -148,12 +154,24 @@ export function usePipeboxSession() {
     branch.value = nextBranch;
   }
 
+  async function requestOpenRepo(nextPath: string) {
+    if (!nextPath || nextPath === repoPath.value) {
+      return;
+    }
+    if (isRunning.value) {
+      pendingRepo.value = nextPath;
+      switchProjectOpen.value = true;
+      return;
+    }
+    await openRepo(nextPath);
+  }
+
   async function selectRepo() {
     const nextPath = await window.pipebox.selectRepo();
     if (!nextPath) {
       return;
     }
-    await openRepo(nextPath);
+    await requestOpenRepo(nextPath);
   }
 
   async function openLaunchRepo() {
@@ -161,7 +179,23 @@ export function usePipeboxSession() {
     if (!nextPath) {
       return;
     }
+    await requestOpenRepo(nextPath);
+  }
+
+  async function confirmSwitchProject() {
+    const nextPath = pendingRepo.value;
+    pendingRepo.value = null;
+    switchProjectOpen.value = false;
+    if (!nextPath) {
+      return;
+    }
+    await stopRun();
     await openRepo(nextPath);
+  }
+
+  function cancelSwitchProject() {
+    pendingRepo.value = null;
+    switchProjectOpen.value = false;
   }
 
   async function runDoctor() {
@@ -272,5 +306,8 @@ export function usePipeboxSession() {
     runDoctor,
     startRun,
     stopRun,
+    switchProjectOpen,
+    confirmSwitchProject,
+    cancelSwitchProject,
   };
 }

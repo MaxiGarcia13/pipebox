@@ -22,4 +22,5 @@ export interface PipeboxApi {
   saveArtifact: (options: SaveArtifactOptions) => Promise<string | null>;
   reportIssue: () => Promise<void>;
   onEvent: (callback: (event: RunnerEvent) => void) => () => void;
+  onOpenRepo: (callback: (repoPath: string) => void) => () => void;
 }
