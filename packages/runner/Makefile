@@ -14,8 +14,9 @@ test:
 	go test ./...
 
 # gofmt uses tabs; this repo uses 2-space indent (.editorconfig).
+# printf: $'\t' is not POSIX. dash keeps it as the pattern "$t".
 lint-indent:
-	@if grep -RIn --include='*.go' $$'\t' .; then \
+	@if grep -RInF --include='*.go' "$$(printf '\t')" .; then \
 		echo >&2 "error: Go files must use 2-space indent (no tabs; see .editorconfig)"; \
 		exit 1; \
 	fi
