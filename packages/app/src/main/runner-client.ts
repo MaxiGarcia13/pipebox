@@ -6,23 +6,30 @@ import { resolvePipeboxPath } from './resolve-pipebox-path';
 
 type EventHandler = (event: RunnerEvent) => void;
 
+export async function runToCompletion(args: string[]): Promise<RunnerEvent[]> {
+  const events: RunnerEvent[] = [];
+  await spawnRunner(args, (event) => {
+    events.push(event);
+  });
+  return events;
+}
+
 export class RunnerClient {
   private activeProcess: ChildProcess | null = null;
-
-  async runToCompletion(args: string[]): Promise<RunnerEvent[]> {
-    const events: RunnerEvent[] = [];
-    await this.spawn(args, (event) => {
-      events.push(event);
-    });
-    return events;
-  }
 
   start(args: string[], onEvent: EventHandler): Promise<number> {
     if (this.activeProcess) {
       throw new Error('A run is already in progress');
     }
-    return this.spawn(args, onEvent).finally(() => {
-      this.activeProcess = null;
+    return spawnRunner(args, onEvent, {
+      onSpawn: (child) => {
+        this.activeProcess = child;
+      },
+      onEnd: (child) => {
+        if (this.activeProcess === child) {
+          this.activeProcess = null;
+        }
+      },
     });
   }
 
@@ -30,52 +37,62 @@ export class RunnerClient {
     if (!this.activeProcess) {
       return;
     }
-    this.activeProcess.kill('SIGTERM');
+    const child = this.activeProcess;
     this.activeProcess = null;
+    child.kill('SIGTERM');
   }
 
   get isRunning(): boolean {
     return this.activeProcess !== null;
   }
+}
 
-  private spawn(args: string[], onEvent: EventHandler): Promise<number> {
-    const binaryPath = resolvePipeboxPath();
-    const child = spawn(binaryPath, args, {
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
-    this.activeProcess = child;
+interface SpawnHooks {
+  onSpawn?: (child: ChildProcess) => void;
+  onEnd?: (child: ChildProcess) => void;
+}
 
-    if (child.stdout) {
-      const stdout = readline.createInterface({ input: child.stdout });
-      stdout.on('line', (line) => {
-        const event = parseRunnerEvent(line);
-        if (event) {
-          onEvent(event);
-        }
-      });
-    }
+function spawnRunner(
+  args: string[],
+  onEvent: EventHandler,
+  hooks: SpawnHooks = {},
+): Promise<number> {
+  const binaryPath = resolvePipeboxPath();
+  const child = spawn(binaryPath, args, {
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  hooks.onSpawn?.(child);
 
-    if (child.stderr) {
-      const stderr = readline.createInterface({ input: child.stderr });
-      stderr.on('line', (line) => {
-        if (!line.trim()) {
-          return;
-        }
-        onEvent({ type: 'error', message: line });
-      });
-    }
-
-    return new Promise((resolve, reject) => {
-      child.on('error', (error) => {
-        this.activeProcess = null;
-        reject(error);
-      });
-      child.on('close', (code) => {
-        this.activeProcess = null;
-        resolve(code ?? 0);
-      });
+  if (child.stdout) {
+    const stdout = readline.createInterface({ input: child.stdout });
+    stdout.on('line', (line) => {
+      const event = parseRunnerEvent(line);
+      if (event) {
+        onEvent(event);
+      }
     });
   }
+
+  if (child.stderr) {
+    const stderr = readline.createInterface({ input: child.stderr });
+    stderr.on('line', (line) => {
+      if (!line.trim()) {
+        return;
+      }
+      onEvent({ type: 'error', message: line });
+    });
+  }
+
+  return new Promise((resolve, reject) => {
+    child.on('error', (error) => {
+      hooks.onEnd?.(child);
+      reject(error);
+    });
+    child.on('close', (code) => {
+      hooks.onEnd?.(child);
+      resolve(code ?? 0);
+    });
+  });
 }
 
 function parseRunnerEvent(line: string): RunnerEvent | null {

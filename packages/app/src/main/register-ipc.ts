@@ -8,15 +8,14 @@ import { BrowserWindow, dialog, ipcMain } from 'electron';
 import { IPC_CHANNELS } from '../services/ipc-channels';
 import { openReportIssue } from './open-report-issue';
 import { resolveGitBranch } from './resolve-git-branch';
-import { RunnerClient } from './runner-client';
+import { runToCompletion } from './runner-client';
 import { saveArtifact } from './save-artifact';
 import { takeWindowLaunchRepo } from './window-launch-repo';
-
-const runnerClient = new RunnerClient();
+import { runnerFor } from './window-runners';
 
 export function registerIpc(): void {
   ipcMain.handle(IPC_CHANNELS.doctor, async () => {
-    const events = await runnerClient.runToCompletion(['doctor']);
+    const events = await runToCompletion(['doctor']);
     const doctorEvent = events.find((event) => event.type === 'doctor');
     if (!doctorEvent || doctorEvent.type !== 'doctor') {
       throw new Error('doctor did not return a doctor event');
@@ -25,7 +24,7 @@ export function registerIpc(): void {
   });
 
   ipcMain.handle(IPC_CHANNELS.listWorkflows, async (_event, repoPath: string) => {
-    const events = await runnerClient.runToCompletion([
+    const events = await runToCompletion([
       'list',
       '--repo',
       repoPath,
@@ -38,7 +37,7 @@ export function registerIpc(): void {
   });
 
   ipcMain.handle(IPC_CHANNELS.graphWorkflow, async (_event, options: GraphWorkflowOptions) => {
-    const events = await runnerClient.runToCompletion([
+    const events = await runToCompletion([
       'graph',
       '--repo',
       options.repoPath,
@@ -91,13 +90,14 @@ export function registerIpc(): void {
     }
 
     const window = BrowserWindow.fromWebContents(event.sender);
-    void runnerClient.start(args, (runnerEvent) => {
+    const runner = runnerFor(event.sender);
+    void runner.start(args, (runnerEvent) => {
       window?.webContents.send(IPC_CHANNELS.event, runnerEvent);
     });
   });
 
-  ipcMain.handle(IPC_CHANNELS.stopRun, async () => {
-    runnerClient.stop();
+  ipcMain.handle(IPC_CHANNELS.stopRun, async (event) => {
+    runnerFor(event.sender).stop();
   });
 
   ipcMain.handle(IPC_CHANNELS.saveArtifact, async (event, options: SaveArtifactOptions) => {
