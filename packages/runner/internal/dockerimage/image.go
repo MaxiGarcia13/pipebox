@@ -1,11 +1,17 @@
 package dockerimage
 
 import (
+  "bufio"
   "fmt"
+  "io"
   "os"
   "os/exec"
   "path/filepath"
   "runtime"
+  "strings"
+  "sync"
+
+  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/event"
 )
 
 type Config struct {
@@ -39,12 +45,46 @@ func Build(config Config) error {
     "-t", config.Image,
     dockerfileDir,
   )
-  cmd.Stdout = os.Stderr
-  cmd.Stderr = os.Stderr
-  if err := cmd.Run(); err != nil {
-    return fmt.Errorf("build %s: %w", config.Image, err)
+  stdout, err := cmd.StdoutPipe()
+  if err != nil {
+    return fmt.Errorf("stdout pipe: %w", err)
+  }
+  stderr, err := cmd.StderrPipe()
+  if err != nil {
+    return fmt.Errorf("stderr pipe: %w", err)
+  }
+
+  if err := cmd.Start(); err != nil {
+    return fmt.Errorf("start docker build: %w", err)
+  }
+
+  var waitGroup sync.WaitGroup
+  waitGroup.Add(2)
+  go streamBuildLines(&waitGroup, stdout)
+  go streamBuildLines(&waitGroup, stderr)
+
+  waitErr := cmd.Wait()
+  waitGroup.Wait()
+  if waitErr != nil {
+    return fmt.Errorf("build %s: %w", config.Image, waitErr)
   }
   return nil
+}
+
+func streamBuildLines(waitGroup *sync.WaitGroup, reader io.Reader) {
+  defer waitGroup.Done()
+  scanner := bufio.NewScanner(reader)
+  scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
+  for scanner.Scan() {
+    line := strings.TrimRight(scanner.Text(), "\r")
+    if strings.TrimSpace(line) == "" {
+      continue
+    }
+    _ = event.EmitStdout(event.Log{
+      Type: event.TypeLog,
+      Line: line,
+    })
+  }
 }
 
 func ResolveDockerfileDir(config Config) (string, error) {

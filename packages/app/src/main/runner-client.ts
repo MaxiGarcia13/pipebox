@@ -79,7 +79,9 @@ function spawnRunner(
       if (!line.trim()) {
         return;
       }
-      onEvent({ type: 'error', message: line });
+      // Progress / diagnostics often land on stderr (e.g. docker build). Keep them
+      // as unscoped logs so the UI does not paint them as failures.
+      onEvent({ type: 'log', line });
     });
   }
 

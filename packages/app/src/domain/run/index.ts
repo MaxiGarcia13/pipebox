@@ -9,3 +9,4 @@ export type {
   StepGroup,
   StepRunStatus,
 } from './types';
+export { unscopedLogLines } from './unscoped-logs';

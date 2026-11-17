@@ -8,6 +8,7 @@ import {
   defaultSelectedJobId,
   groupRunEvents,
   stepsForJob,
+  unscopedLogLines,
 } from '@/domain/run';
 
 const props = defineProps<{
@@ -59,6 +60,8 @@ const runErrors = computed(() =>
   props.events.filter((event): event is ErrorEvent => event.type === 'error'),
 );
 
+const systemLogs = computed(() => unscopedLogLines(props.events));
+
 const isEmpty = computed(() =>
   !props.isRunning && props.events.length === 0,
 );
@@ -98,11 +101,17 @@ const isEmpty = computed(() =>
         />
 
         <p
-          v-if="visibleSteps.length === 0 && !isRunning"
+          v-if="visibleSteps.length === 0 && !isRunning && systemLogs.length === 0"
           class="p-4 text-sm text-muted-foreground"
         >
           No steps for this job yet
         </p>
+
+        <pre
+          v-if="systemLogs.length > 0"
+          data-testid="event-log-system"
+          class="overflow-x-auto border-t border-border p-4 font-mono text-xs leading-relaxed text-muted-foreground"
+        >{{ systemLogs.join('\n') }}</pre>
 
         <ul
           v-if="runErrors.length > 0"

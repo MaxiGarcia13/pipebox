@@ -22,6 +22,9 @@ const message = computed(() => {
   if (checks.act_image && !checks.act_image.ok) {
     return 'Act image is not built yet. The first workflow run will build pipebox-act locally.';
   }
+  if (checks.jenkins_image && !checks.jenkins_image.ok) {
+    return 'Jenkins image is not built yet. The first workflow run will build pipebox-jenkins locally.';
+  }
   if (!props.doctor.ok) {
     return 'Doctor reported issues. Fix Docker setup before running workflows.';
   }
