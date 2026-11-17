@@ -2,7 +2,6 @@ package jenkins
 
 import (
   "context"
-  "fmt"
   "os"
   "path/filepath"
 
@@ -53,8 +52,15 @@ func (Provider) Graph(repo, workflow string) (event.JobGraph, error) {
   return Graph(repo, workflow)
 }
 
-func (Provider) Run(_ context.Context, _, _, _ string, _ []string, _ string, _ []string) (int, error) {
-  return 1, fmt.Errorf("jenkins provider not implemented")
+func (Provider) Run(_ context.Context, repo, workflow, job string, secrets []string, secretFile string, inputs []string) (int, error) {
+  return Start(Options{
+    Repo:       repo,
+    Workflow:   workflow,
+    Job:        job,
+    Secrets:    secrets,
+    SecretFile: secretFile,
+    Inputs:     inputs,
+  })
 }
 
 func IsJenkinsfilePath(workflow string) bool {

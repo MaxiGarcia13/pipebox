@@ -1,12 +1,13 @@
-package github
+package envfile
 
 import (
   "os"
   "path/filepath"
+  "strings"
   "testing"
 )
 
-func TestResolveSecretFilesFindsEnvVariants(t *testing.T) {
+func TestResolveFindsEnvVariants(t *testing.T) {
   t.Parallel()
 
   repoPath := t.TempDir()
@@ -19,7 +20,7 @@ func TestResolveSecretFilesFindsEnvVariants(t *testing.T) {
     t.Fatal(err)
   }
 
-  files, err := resolveSecretFiles(repoPath, "")
+  files, err := Resolve(repoPath, "")
   if err != nil {
     t.Fatal(err)
   }
@@ -38,7 +39,7 @@ func TestResolveSecretFilesFindsEnvVariants(t *testing.T) {
   }
 }
 
-func TestResolveSecretFilesExplicitOverride(t *testing.T) {
+func TestResolveExplicitOverride(t *testing.T) {
   t.Parallel()
 
   repoPath := t.TempDir()
@@ -50,7 +51,7 @@ func TestResolveSecretFilesExplicitOverride(t *testing.T) {
     t.Fatal(err)
   }
 
-  files, err := resolveSecretFiles(repoPath, explicit)
+  files, err := Resolve(repoPath, explicit)
   if err != nil {
     t.Fatal(err)
   }
@@ -59,7 +60,7 @@ func TestResolveSecretFilesExplicitOverride(t *testing.T) {
   }
 }
 
-func TestIsEnvFileName(t *testing.T) {
+func TestIsName(t *testing.T) {
   t.Parallel()
 
   cases := map[string]bool{
@@ -71,8 +72,26 @@ func TestIsEnvFileName(t *testing.T) {
     ".envrc":          false,
   }
   for name, want := range cases {
-    if got := isEnvFileName(name); got != want {
+    if got := IsName(name); got != want {
       t.Fatalf("%q: got %v, want %v", name, got, want)
     }
+  }
+}
+
+func TestLoad(t *testing.T) {
+  t.Parallel()
+
+  repo := t.TempDir()
+  path := filepath.Join(repo, ".env")
+  if err := os.WriteFile(path, []byte("A=1\nB=2\n"), 0o644); err != nil {
+    t.Fatal(err)
+  }
+  pairs, err := Load([]string{path}, []string{"C=3"})
+  if err != nil {
+    t.Fatal(err)
+  }
+  joined := strings.Join(pairs, ",")
+  if !strings.Contains(joined, "A=1") || !strings.Contains(joined, "C=3") {
+    t.Fatalf("pairs: %#v", pairs)
   }
 }

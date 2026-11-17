@@ -6,14 +6,6 @@ import (
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/event"
 )
 
-func TestStripANSI(t *testing.T) {
-  input := "\x1b[36m[ci/build]\x1b[0m hello"
-  got := StripANSI(input)
-  if got != "[ci/build] hello" {
-    t.Fatalf("got %q", got)
-  }
-}
-
 func TestParserStepLifecycle(t *testing.T) {
   parser := NewParser()
 

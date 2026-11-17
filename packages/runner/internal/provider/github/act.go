@@ -6,9 +6,10 @@ import (
   "os"
   "os/exec"
   "path/filepath"
-  "runtime"
   "strconv"
 
+  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/dockerimage"
+  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/envfile"
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/provider/github/actimage"
 )
 
@@ -61,7 +62,7 @@ func buildActArgs(repoPath string, options Options) ([]string, func(), error) {
     cleanup = func() {}
   }
 
-  secretFiles, err := resolveSecretFiles(repoPath, options.SecretFile)
+  secretFiles, err := envfile.Resolve(repoPath, options.SecretFile)
   if err != nil {
     cleanup()
     return nil, nil, fmt.Errorf("resolve secret files: %w", err)
@@ -73,7 +74,7 @@ func buildActArgs(repoPath string, options Options) ([]string, func(), error) {
     return nil, nil, err
   }
 
-  dockerSock := dockerSocketPath()
+  dockerSock := dockerimage.SocketPath()
   artifactDir, err := resolveArtifactDir(options.ArtifactDir)
   if err != nil {
     cleanup()
@@ -112,7 +113,7 @@ func buildActArgs(repoPath string, options Options) ([]string, func(), error) {
 
   actSecretArgs := make([]string, 0, len(secretFiles)*2+len(options.Secrets)*2)
   for index, secretFile := range secretFiles {
-    workspacePath, inRepo, err := workspaceSecretPath(repoPath, secretFile)
+    workspacePath, inRepo, err := envfile.WorkspacePath(repoPath, secretFile)
     if err != nil {
       cleanup()
       return nil, nil, fmt.Errorf("secret file path: %w", err)
@@ -199,13 +200,6 @@ func workspaceWorkflowPath(repoPath, workflow string) (string, error) {
     return filepath.ToSlash(relativePath), nil
   }
   return filepath.ToSlash(workflow), nil
-}
-
-func dockerSocketPath() string {
-  if runtime.GOOS == "windows" {
-    return "//var/run/docker.sock"
-  }
-  return "/var/run/docker.sock"
 }
 
 func resolveArtifactDir(artifactDir string) (string, error) {

@@ -4,6 +4,7 @@ import (
   "regexp"
   "strings"
 
+  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/ansi"
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/event"
 )
 
@@ -28,7 +29,7 @@ func NewParser() *Parser {
 }
 
 func (parser *Parser) HandleLine(rawLine string) []any {
-  line := strings.TrimSpace(StripANSI(rawLine))
+  line := strings.TrimSpace(ansi.Strip(rawLine))
   if line == "" {
     return nil
   }

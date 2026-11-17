@@ -4,6 +4,8 @@ import (
   "os"
   "path/filepath"
   "testing"
+
+  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/dockerimage"
 )
 
 func TestResolveDockerfileDirFromEnv(t *testing.T) {
@@ -13,9 +15,9 @@ func TestResolveDockerfileDirFromEnv(t *testing.T) {
   }
   t.Setenv("PIPEBOX_JENKINS_DOCKERFILE_DIR", dir)
 
-  got, err := resolveDockerfileDir()
+  got, err := dockerimage.ResolveDockerfileDir(config)
   if err != nil {
-    t.Fatalf("resolveDockerfileDir: %v", err)
+    t.Fatalf("ResolveDockerfileDir: %v", err)
   }
   if got != dir {
     t.Fatalf("got %q want %q", got, dir)
@@ -25,7 +27,7 @@ func TestResolveDockerfileDirFromEnv(t *testing.T) {
 func TestResolveDockerfileDirEnvMissingDockerfile(t *testing.T) {
   dir := t.TempDir()
   t.Setenv("PIPEBOX_JENKINS_DOCKERFILE_DIR", dir)
-  if _, err := resolveDockerfileDir(); err == nil {
+  if _, err := dockerimage.ResolveDockerfileDir(config); err == nil {
     t.Fatal("expected error")
   }
 }
