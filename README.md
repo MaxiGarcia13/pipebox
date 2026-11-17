@@ -25,6 +25,28 @@ Install the desktop app:
 pipebox install-desktop
 ```
 
+Enable Tab completion once in your shell config:
+
+**zsh** — add to `~/.zshrc`:
+
+```bash
+eval "$(pipebox completion zsh)"
+```
+
+**bash** — add to `~/.bashrc`:
+
+```bash
+eval "$(pipebox completion bash)"
+```
+
+**fish**:
+
+```fish
+pipebox completion fish > ~/.config/fish/completions/pipebox.fish
+```
+
+Then open a new terminal tab (or `source` your rc file).
+
 Check setup:
 
 ```bash
@@ -153,30 +175,6 @@ Remove the local CLI install and desktop app:
 ```bash
 pipebox uninstall
 ```
-
-### Shell completions
-
-After `go install` or `pipebox install`, enable Tab completion once in your shell config:
-
-**zsh** — add to `~/.zshrc`:
-
-```bash
-eval "$(pipebox completion zsh)"
-```
-
-**bash** — add to `~/.bashrc`:
-
-```bash
-eval "$(pipebox completion bash)"
-```
-
-**fish** — write the script (or use `pipebox install`, which places it for you):
-
-```fish
-pipebox completion fish > ~/.config/fish/completions/pipebox.fish
-```
-
-Then open a new terminal tab (or `source` your rc file).
 
 ## How it works
 
