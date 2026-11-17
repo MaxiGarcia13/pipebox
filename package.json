@@ -19,6 +19,9 @@
     "docker",
     "devops"
   ],
+  "engines": {
+    "node": ">=26"
+  },
   "scripts": {
     "prepare": "simple-git-hooks",
     "lint": "eslint . && pnpm -r --if-present run lint && pnpm runner:lint",
