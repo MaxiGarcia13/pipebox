@@ -34,14 +34,26 @@ func List(repoPath string) (event.WorkflowList, error) {
     if !isJenkinsfileName(name) {
       continue
     }
-    workflows = append(workflows, event.Workflow{
+    workflow := event.Workflow{
       ID:       name,
       Name:     name,
       Path:     filepath.ToSlash(name),
       Provider: event.ProviderJenkins,
       Events:   []string{"pipeline"},
       Inputs:   []event.WorkflowInput{},
-    })
+    }
+
+    data, err := os.ReadFile(filepath.Join(repoPath, name))
+    if err != nil {
+      return event.WorkflowList{}, fmt.Errorf("read %s: %w", name, err)
+    }
+    inputs := LoadParams(string(data))
+    if inputs == nil {
+      inputs = []event.WorkflowInput{}
+    }
+    workflow.Inputs = inputs
+    workflow.Callable = len(inputs) > 0
+    workflows = append(workflows, workflow)
   }
 
   providers := []string{}

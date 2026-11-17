@@ -49,8 +49,8 @@ func (Provider) List(repo string) (event.WorkflowList, error) {
   return result, nil
 }
 
-func (Provider) Graph(_, _ string) (event.JobGraph, error) {
-  return event.JobGraph{}, fmt.Errorf("jenkins provider not implemented")
+func (Provider) Graph(repo, workflow string) (event.JobGraph, error) {
+  return Graph(repo, workflow)
 }
 
 func (Provider) Run(_ context.Context, _, _, _ string, _ []string, _ string, _ []string) (int, error) {
