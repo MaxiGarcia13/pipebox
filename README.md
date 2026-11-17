@@ -1,95 +1,153 @@
 # PipeBox
 
-Local CI/CD control panel for GitHub Actions: pick a repo, run workflows with Dockerized **act**, inject secrets from `.env` / `.env.*`, and watch step logs—without pushing test commits. Jenkins support comes later.
+Local CI/CD control panel — desktop UI + CLI. Secrets from `.env`. No push required.
 
-## Install
+![PipeBox demo](docs/demo.gif)
 
-### Prerequisites
+Run CI workflows locally with Dockerized [act](https://github.com/nektos/act), inject secrets from `.env` / `.env.*`, and watch step logs — without pushing test commits.
 
-- **Go 1.22+** on `PATH` (for `go install`)
-- **Docker** running (for `doctor` / `run`)
+| Provider       | Status                                       |
+| -------------- | -------------------------------------------- |
+| GitHub Actions | Ready — run locally via Dockerized act       |
+| Jenkins        | In progress — adapter stub, not runnable yet |
 
-### 1. CLI
+## Quick start
+
+**Needs:** Docker running · Go 1.22+ on `PATH`
+
+Install the CLI:
 
 ```bash
 go install github.com/MaxiGarcia13/pipebox/packages/runner/cmd/pipebox@latest
 ```
 
-Puts `pipebox` on your `PATH` (`$GOBIN` or `$GOPATH/bin`). `@latest` resolves the newest `packages/runner/v*` release. Pin with `@v0.1.0` (module version—not the git tag path prefix).
-
-Or download the CLI binary for your OS/arch from [Releases](https://github.com/MaxiGarcia13/pipebox/releases) and put it on your `PATH`.
-
-### 2. Desktop app
+Install the desktop app:
 
 ```bash
 pipebox install-desktop
 ```
 
-Downloads the matching desktop app from [Releases](https://github.com/MaxiGarcia13/pipebox/releases) into a user-local folder (no admin/sudo).
-
-Or run `pipebox install` to copy the CLI into `~/.local/bin/pipebox` and fetch the desktop app in one go.
-
-### 3. Later updates
+Check setup:
 
 ```bash
-pipebox update              # download latest CLI release → ~/.local/bin + desktop
-pipebox update --check      # report whether a newer release exists
+pipebox doctor
+```
+
+Open the UI on this repo:
+
+```bash
+pipebox --repo .
+```
+
+Or download the CLI binary for your OS/arch from [Releases](https://github.com/MaxiGarcia13/pipebox/releases) and put it on your `PATH`.
+
+Builds are unsigned for now. On macOS, if Gatekeeper blocks the app: right-click `PipeBox.app` → Open → Open. On Windows, accept the SmartScreen prompt if shown.
+
+## What you get
+
+- Browse workflows for a local repo
+- Run jobs with Dockerized act (no local `act` binary)
+- Inject secrets from `.env` / `.env.*`
+- Live step logs in the desktop UI — or pure CLI (`list` / `graph` / `run`)
+
+## Updates
+
+Check for a newer release:
+
+```bash
+pipebox update --check
+```
+
+Install the latest CLI + desktop:
+
+```bash
+pipebox update
+```
+
+Pin a version:
+
+```bash
 pipebox update --version 0.4.1
 ```
 
 No second `go install` needed once a `pipebox` binary is on your `PATH`.
 
-### Verify
-
-```bash
-pipebox doctor
-pipebox                 # open desktop UI (reuse if already running)
-pipebox --repo .        # open UI with this repo
-pipebox -n --repo .     # open a new window with this repo
-```
-
-Builds are unsigned for now. On macOS, if Gatekeeper blocks the app: right-click `PipeBox.app` → Open → Open. On Windows, accept the SmartScreen prompt if shown.
-
-Desktop lookup order: `PIPEBOX_APP`, user install (`~/Applications/PipeBox.app`, `%LOCALAPPDATA%\PipeBox\PipeBox.exe`, `~/.local/share/pipebox-app/PipeBox`), system installs (`/Applications`, `/opt/pipebox-app`), then a packaged monorepo build under `packages/app/out/`.
+Or run `pipebox install` to copy the CLI into `~/.local/bin/pipebox` and fetch the desktop app in one go.
 
 ## CLI
 
+Open the desktop UI (reuse if already running):
+
 ```bash
-pipebox                      # open desktop UI (reuse if already running)
-pipebox --repo <path>        # open / switch to that repo (e.g. --repo .)
-pipebox -n | --new [--repo <path>]  # new window instead of reusing
-pipebox --help | -h
-pipebox --version | -v
-pipebox version
+pipebox
+```
+
+Open / switch to a repo:
+
+```bash
+pipebox --repo <path>
+```
+
+Open a new window:
+
+```bash
+pipebox -n --repo <path>
+```
+
+Other commands:
+
+```bash
+pipebox --help
+```
+
+```bash
+pipebox --version
+```
+
+```bash
 pipebox doctor
-pipebox list --repo <path>
-pipebox graph --repo <path> --workflow <file>
-pipebox run --repo <path> --workflow <file> [--job <id>] [--input KEY=VALUE] [--secret KEY=VALUE] [--secret-file <path>]
-pipebox install              # CLI → ~/.local/bin + fetch desktop + shell completions
-pipebox install-desktop      # fetch desktop only
-pipebox update [--check] [--version <v>]  # fetch latest (or pinned) CLI + desktop
-pipebox uninstall
-pipebox completion zsh       # print completion script (also bash / fish)
 ```
-
-### Shell completions
-
-`pipebox install` / `pipebox update` write completion scripts for zsh, bash, and fish. Open a new terminal tab after installing.
-
-If you installed only with `go install`, enable completions in the current shell:
 
 ```bash
-eval "$(pipebox completion zsh)"    # or bash / fish
+pipebox list --repo <path>
 ```
 
-## Stack
+```bash
+pipebox graph --repo <path> --workflow <file>
+```
+
+```bash
+pipebox run --repo <path> --workflow <file> [--job <id>] [--input KEY=VALUE] [--secret KEY=VALUE] [--secret-file <path>]
+```
+
+```bash
+pipebox install
+```
+
+```bash
+pipebox install-desktop
+```
+
+```bash
+pipebox update [--check] [--version <v>]
+```
+
+```bash
+pipebox uninstall
+```
+
+```bash
+pipebox completion zsh
+```
+
+(`completion` also supports `bash` and `fish`. `pipebox install` / `pipebox update` write completion scripts automatically.)
+
+## How it works
 
 | Package           | Role                     | Tech                                                                     |
 | ----------------- | ------------------------ | ------------------------------------------------------------------------ |
 | `packages/app`    | Desktop shell + UI       | Electron, Vue 3, Vite, Tailwind v4, [shadcn-vue](https://shadcn-vue.com) |
 | `packages/runner` | CI runner + terminal CLI | Go binary `pipebox`                                                      |
-
-## Architecture
 
 ```mermaid
 flowchart LR
