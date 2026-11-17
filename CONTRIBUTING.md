@@ -35,6 +35,9 @@ From `packages/runner`:
 ```bash
 make build
 ./pipebox doctor
+./pipebox                    # open desktop UI (reuses a running app)
+./pipebox --repo /path/to/repo
+./pipebox -n --repo /path/to/repo   # new window
 ./pipebox list --repo /path/to/repo
 ```
 
