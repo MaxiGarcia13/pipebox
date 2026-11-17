@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { parseLaunchArgs } from '@/main/parse-launch-args';
+import {
+  parseLaunchArgs,
+  resolveLaunchArgs,
+} from '@/main/parse-launch-args';
 
 describe('parseLaunchArgs', () => {
   it('returns empty defaults', () => {
@@ -40,6 +43,44 @@ describe('parseLaunchArgs', () => {
     expect(parseLaunchArgs(['--repo', '-n'])).toEqual({
       repo: null,
       newWindow: true,
+    });
+  });
+
+  it('keeps --repo= across Chromium-inserted switches', () => {
+    expect(parseLaunchArgs([
+      '/Apps/PipeBox',
+      '--repo=/tmp/project',
+      '--allow-file-access-from-files',
+      '--original-process-start-time=1',
+    ])).toEqual({
+      repo: '/tmp/project',
+      newWindow: false,
+    });
+  });
+});
+
+describe('resolveLaunchArgs', () => {
+  it('prefers additionalData from the second instance', () => {
+    expect(resolveLaunchArgs(
+      { repo: '/tmp/from-lock', newWindow: true },
+      ['--repo=/tmp/from-argv'],
+    )).toEqual({
+      repo: '/tmp/from-lock',
+      newWindow: true,
+    });
+  });
+
+  it('falls back to commandLine when additionalData is missing', () => {
+    expect(resolveLaunchArgs(undefined, ['--repo=/tmp/from-argv', '--new'])).toEqual({
+      repo: '/tmp/from-argv',
+      newWindow: true,
+    });
+  });
+
+  it('ignores malformed additionalData', () => {
+    expect(resolveLaunchArgs({ repo: 1 }, ['--repo=/tmp/ok'])).toEqual({
+      repo: '/tmp/ok',
+      newWindow: false,
     });
   });
 });

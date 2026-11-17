@@ -15,9 +15,10 @@ func Open(repoPath string, newWindow bool) error {
     return err
   }
 
-  args := []string{}
+  absRepo := ""
   if repoPath != "" {
-    absRepo, absErr := filepath.Abs(repoPath)
+    var absErr error
+    absRepo, absErr = filepath.Abs(repoPath)
     if absErr != nil {
       return fmt.Errorf("resolve --repo: %w", absErr)
     }
@@ -28,13 +29,22 @@ func Open(repoPath string, newWindow bool) error {
     if !info.IsDir() {
       return fmt.Errorf("--repo is not a directory: %s", absRepo)
     }
-    args = append(args, "--repo", absRepo)
+  }
+
+  return startApp(appPath, launchArgs(absRepo, newWindow))
+}
+
+// Chromium keeps --name=value as one switch; the two-token form --name value is
+// split on second-instance and breaks Electron argv parsing.
+func launchArgs(absRepo string, newWindow bool) []string {
+  args := make([]string, 0, 2)
+  if absRepo != "" {
+    args = append(args, "--repo="+absRepo)
   }
   if newWindow {
     args = append(args, "--new")
   }
-
-  return startApp(appPath, args)
+  return args
 }
 
 func startApp(appPath string, args []string) error {

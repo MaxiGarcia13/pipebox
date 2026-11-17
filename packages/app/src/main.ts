@@ -3,7 +3,10 @@ import path from 'node:path';
 import process from 'node:process';
 import { app, BrowserWindow } from 'electron';
 import started from 'electron-squirrel-startup';
-import { parseLaunchArgs } from './main/parse-launch-args';
+import {
+  parseLaunchArgs,
+  resolveLaunchArgs,
+} from './main/parse-launch-args';
 import { registerIpc } from './main/register-ipc';
 import {
   clearWindowLaunchRepo,
@@ -12,7 +15,8 @@ import {
 import { IPC_CHANNELS } from './services/ipc-channels';
 
 const launchArgs = parseLaunchArgs(process.argv);
-const gotSingleInstanceLock = !started && app.requestSingleInstanceLock();
+const gotSingleInstanceLock = !started
+  && app.requestSingleInstanceLock(launchArgs);
 
 if (started || !gotSingleInstanceLock) {
   app.quit();
@@ -91,8 +95,8 @@ function deliverOpenRepo(window: BrowserWindow, repo: string) {
 }
 
 if (gotSingleInstanceLock) {
-  app.on('second-instance', (_event, commandLine) => {
-    const next = parseLaunchArgs(commandLine);
+  app.on('second-instance', (_event, commandLine, _workingDirectory, additionalData) => {
+    const next = resolveLaunchArgs(additionalData, commandLine);
     if (next.newWindow) {
       createWindow({ repo: next.repo });
       return;

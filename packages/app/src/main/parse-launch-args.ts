@@ -33,3 +33,23 @@ export function parseLaunchArgs(argv: string[]): LaunchArgs {
 
   return { repo, newWindow };
 }
+
+export function resolveLaunchArgs(
+  additionalData: unknown,
+  commandLine: string[],
+): LaunchArgs {
+  if (isLaunchArgs(additionalData)) {
+    return additionalData;
+  }
+  return parseLaunchArgs(commandLine);
+}
+
+function isLaunchArgs(value: unknown): value is LaunchArgs {
+  if (value === null || typeof value !== 'object') {
+    return false;
+  }
+  const record = value as Record<string, unknown>;
+  const repo = record.repo;
+  return (repo === null || typeof repo === 'string')
+    && typeof record.newWindow === 'boolean';
+}
