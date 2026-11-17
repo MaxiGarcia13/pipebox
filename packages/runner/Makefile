@@ -1,8 +1,9 @@
 BINARY := pipebox
 CMD := ./cmd/pipebox
 ACT_IMAGE := pipebox-act:latest
+JENKINS_IMAGE := pipebox-jenkins:latest
 
-.PHONY: build clean test lint lint-indent lint-fix doctor image
+.PHONY: build clean test lint lint-indent lint-fix doctor image image-act image-jenkins
 
 build:
 	go build -o $(BINARY) $(CMD)
@@ -34,5 +35,10 @@ lint-fix: expand-go-tabs
 doctor: build
 	./$(BINARY) doctor
 
-image:
+image: image-act image-jenkins
+
+image-act:
 	docker build -t $(ACT_IMAGE) ./docker/act
+
+image-jenkins:
+	docker build -t $(JENKINS_IMAGE) ./docker/jenkins

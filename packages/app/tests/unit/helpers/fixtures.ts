@@ -19,11 +19,12 @@ export const okDoctor: DoctorEvent = {
     { name: 'docker', ok: true, path: '/usr/bin/docker' },
     { name: 'docker_daemon', ok: true, detail: 'reachable' },
     { name: 'act_image', ok: true, detail: 'pipebox-act:latest' },
+    { name: 'jenkins_image', ok: true, detail: 'pipebox-jenkins:latest' },
   ],
 };
 
 export function doctorWithFailedCheck(
-  name: 'docker' | 'docker_daemon' | 'act_image',
+  name: 'docker' | 'docker_daemon' | 'act_image' | 'jenkins_image',
 ): DoctorEvent {
   const checks = okDoctor.checks.map((check) =>
     check.name === name

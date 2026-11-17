@@ -117,14 +117,23 @@ func TestDoctorEmitsDoctorEvent(t *testing.T) {
     t.Fatal("expected checks")
   }
   foundDocker := false
+  daemonOK := false
+  foundJenkinsImage := false
   for _, check := range doctor.Checks {
-    if check.Name == "docker" {
+    switch check.Name {
+    case "docker":
       foundDocker = true
-      break
+    case "docker_daemon":
+      daemonOK = check.OK
+    case "jenkins_image":
+      foundJenkinsImage = true
     }
   }
   if !foundDocker {
     t.Fatalf("expected docker check, got %#v", doctor.Checks)
+  }
+  if daemonOK && !foundJenkinsImage {
+    t.Fatalf("expected jenkins_image check when daemon is up, got %#v", doctor.Checks)
   }
 }
 

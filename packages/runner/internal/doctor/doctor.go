@@ -5,6 +5,7 @@ import (
 
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/event"
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/provider/github/actimage"
+  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/provider/jenkins/jfrimage"
 )
 
 func Run(version string) event.Doctor {
@@ -19,7 +20,7 @@ func Run(version string) event.Doctor {
     if !daemonCheck.OK {
       ok = false
     } else {
-      checks = append(checks, actImageCheck())
+      checks = append(checks, actImageCheck(), jenkinsImageCheck())
     }
   }
 
@@ -75,5 +76,20 @@ func actImageCheck() event.DoctorCheck {
     Name:   "act_image",
     OK:     true,
     Detail: actimage.Image,
+  }
+}
+
+func jenkinsImageCheck() event.DoctorCheck {
+  if !jfrimage.Exists() {
+    return event.DoctorCheck{
+      Name:   "jenkins_image",
+      OK:     false,
+      Detail: jfrimage.Image + " missing (built on first run)",
+    }
+  }
+  return event.DoctorCheck{
+    Name:   "jenkins_image",
+    OK:     true,
+    Detail: jfrimage.Image,
   }
 }
