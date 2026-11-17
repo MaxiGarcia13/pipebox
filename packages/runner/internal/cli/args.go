@@ -21,19 +21,11 @@ type Args struct {
   Err         error
 }
 
-var subcommands = map[string]struct{}{
-  "doctor":  {},
-  "list":    {},
-  "graph":   {},
-  "run":     {},
-  "install":          {},
-  "install-desktop":  {},
-  "update":           {},
-  "uninstall":        {},
-  "version":          {},
+func Parse(args []string) Args {
+  return ParseCatalog(DefaultCatalog(), args)
 }
 
-func Parse(args []string) Args {
+func ParseCatalog(catalog Catalog, args []string) Args {
   if len(args) == 0 {
     return Args{Kind: KindOpenUI}
   }
@@ -48,7 +40,7 @@ func Parse(args []string) Args {
     return Args{Kind: KindVersion, Command: "version"}
   }
 
-  if _, ok := subcommands[first]; ok {
+  if catalog.IsSubcommand(first) {
     return Args{
       Kind:        KindSubcommand,
       Command:     first,

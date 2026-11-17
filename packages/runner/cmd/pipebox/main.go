@@ -4,6 +4,7 @@ import (
   "context"
   "fmt"
   "os"
+  "strings"
 
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/cli"
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/doctor"
@@ -112,6 +113,7 @@ func runSubcommand(command string, args []string) {
     }
     emitInstallLog(fmt.Sprintf("cli installed to %s", result.CLIPath))
     emitInstallLog(fmt.Sprintf("desktop installed to %s", result.DesktopPath))
+    emitInstallLog("shell completions installed; open a new terminal tab to use them")
   case "install-desktop":
     desktopPath, err := install.InstallDesktop(version)
     if err != nil {
@@ -141,6 +143,7 @@ func runSubcommand(command string, args []string) {
     }
     emitInstallLog(fmt.Sprintf("cli updated to %s (%s)", result.TargetVersion, result.CLIPath))
     emitInstallLog(fmt.Sprintf("desktop installed to %s", result.DesktopPath))
+    emitInstallLog("shell completions updated; open a new terminal tab to use them")
   case "uninstall":
     cliPaths, desktopPath, err := install.Uninstall()
     if err != nil {
@@ -158,6 +161,26 @@ func runSubcommand(command string, args []string) {
       emitInstallLog("desktop not installed")
     } else {
       emitInstallLog(fmt.Sprintf("uninstalled desktop %s", desktopPath))
+    }
+  case "completion":
+    if len(args) != 1 {
+      fail(fmt.Errorf("usage: pipebox completion <zsh|bash|fish>"))
+    }
+    script, err := cli.CompletionScript(args[0])
+    if err != nil {
+      fail(err)
+    }
+    fmt.Print(script)
+  case "__complete":
+    completeArgs := args
+    if len(completeArgs) > 0 && completeArgs[0] == "--" {
+      completeArgs = completeArgs[1:]
+    }
+    for _, candidate := range cli.Complete(completeArgs, cli.CompleteOptions{
+      Catalog:  cli.DefaultCatalog(),
+      Resolver: cli.ProviderResolver{},
+    }) {
+      fmt.Println(candidate)
     }
   default:
     fail(fmt.Errorf("unknown command %q", command))
@@ -224,34 +247,5 @@ func fail(err error) {
 }
 
 func printUsage() {
-  fmt.Fprintln(os.Stderr, `pipebox — local CI runner CLI
-
-Usage:
-  pipebox
-  pipebox --repo <path>
-  pipebox -n | --new [--repo <path>]
-  pipebox --help | -h
-  pipebox --version | -v
-  pipebox version
-  pipebox doctor
-  pipebox list --repo <path>
-  pipebox graph --repo <path> --workflow <file> [--provider <id>]
-  pipebox run --repo <path> --workflow <file> [--provider <id>] [--job <id>] [--input KEY=VALUE] [--secret KEY=VALUE] [--secret-file <path>]
-  pipebox install
-  pipebox install-desktop
-  pipebox update [--check] [--version <v>]
-  pipebox uninstall
-
-Desktop:
-  bare pipebox (or pipebox --repo <path>) opens the desktop UI (reuses a running app)
-  -n / --new opens a new window instead of reusing
-  pipebox install / install-desktop fetches the UI from GitHub Releases
-  pipebox update replaces managed CLI installs (~/.local/bin and go install bin) + desktop app
-  set PIPEBOX_APP to override the desktop path
-
-Secrets:
-  run loads .env and .env.* from the repo when --secret-file is omitted
-
-Inputs:
-  pass workflow_dispatch inputs with --input KEY=VALUE (repeatable)`)
+  fmt.Fprintln(os.Stderr, strings.TrimRight(cli.Usage(), "\n"))
 }

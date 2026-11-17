@@ -65,10 +65,21 @@ pipebox doctor
 pipebox list --repo <path>
 pipebox graph --repo <path> --workflow <file>
 pipebox run --repo <path> --workflow <file> [--job <id>] [--input KEY=VALUE] [--secret KEY=VALUE] [--secret-file <path>]
-pipebox install              # CLI → ~/.local/bin + fetch desktop
+pipebox install              # CLI → ~/.local/bin + fetch desktop + shell completions
 pipebox install-desktop      # fetch desktop only
 pipebox update [--check] [--version <v>]  # fetch latest (or pinned) CLI + desktop
 pipebox uninstall
+pipebox completion zsh       # print completion script (also bash / fish)
+```
+
+### Shell completions
+
+`pipebox install` / `pipebox update` write completion scripts for zsh, bash, and fish. Open a new terminal tab after installing.
+
+If you installed only with `go install`, enable completions in the current shell:
+
+```bash
+eval "$(pipebox completion zsh)"    # or bash / fish
 ```
 
 ## Stack

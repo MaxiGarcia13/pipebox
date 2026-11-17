@@ -18,6 +18,10 @@ func Run(version string) (Result, error) {
     return Result{}, err
   }
 
+  if _, err := InstallCompletions(); err != nil {
+    return Result{CLIPath: cliPath}, fmt.Errorf("cli installed to %s, but completions failed: %w", cliPath, err)
+  }
+
   desktopPath, err := InstallDesktop(version)
   if err != nil {
     return Result{CLIPath: cliPath}, fmt.Errorf("cli installed to %s, but desktop failed: %w", cliPath, err)
@@ -61,6 +65,10 @@ func Uninstall() (cliPaths []string, desktopPath string, err error) {
     if removeErr := os.Remove(path); removeErr != nil {
       return cliPaths, "", fmt.Errorf("remove cli %s: %w", path, removeErr)
     }
+  }
+
+  if _, err := UninstallCompletions(); err != nil {
+    return cliPaths, "", err
   }
 
   desktopPath, err = UninstallDesktop()

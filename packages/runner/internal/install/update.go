@@ -47,6 +47,10 @@ func Update(options UpdateOptions) (UpdateResult, error) {
   }
   result.CLIPath = cliPath
 
+  if _, err := InstallCompletions(); err != nil {
+    return result, fmt.Errorf("cli updated to %s, but completions failed: %w", cliPath, err)
+  }
+
   desktopPath, err := InstallDesktop(target)
   if err != nil {
     return result, fmt.Errorf("cli updated to %s, but desktop failed: %w", cliPath, err)
