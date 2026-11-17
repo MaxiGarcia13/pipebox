@@ -94,51 +94,71 @@ pipebox -n --repo <path>
 
 Other commands:
 
+Show help:
+
 ```bash
 pipebox --help
 ```
+
+Print the CLI version:
 
 ```bash
 pipebox --version
 ```
 
+Check Docker and local setup:
+
 ```bash
 pipebox doctor
 ```
+
+List workflows in a repo:
 
 ```bash
 pipebox list --repo <path>
 ```
 
+Print the job graph for a workflow:
+
 ```bash
 pipebox graph --repo <path> --workflow <file>
 ```
+
+Run a workflow (optional job, inputs, and secrets):
 
 ```bash
 pipebox run --repo <path> --workflow <file> [--job <id>] [--input KEY=VALUE] [--secret KEY=VALUE] [--secret-file <path>]
 ```
 
+Install CLI to `~/.local/bin`, fetch the desktop app, and write shell completions:
+
 ```bash
 pipebox install
 ```
+
+Fetch the desktop app only:
 
 ```bash
 pipebox install-desktop
 ```
 
+Update CLI + desktop (`--check` to report only, `--version` to pin):
+
 ```bash
 pipebox update [--check] [--version <v>]
 ```
+
+Remove the local CLI install and desktop app:
 
 ```bash
 pipebox uninstall
 ```
 
+Print a shell completion script (`bash` and `fish` also work; `install` / `update` write these automatically):
+
 ```bash
 pipebox completion zsh
 ```
-
-(`completion` also supports `bash` and `fish`. `pipebox install` / `pipebox update` write completion scripts automatically.)
 
 ## How it works
 
