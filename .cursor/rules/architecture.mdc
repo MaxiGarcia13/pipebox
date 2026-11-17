@@ -25,14 +25,15 @@ alwaysApply: true
 - **Renderer:** typed runner events + shadcn-vue only (provider icons from `workflow.provider`)
 - **Preload:** narrow typed bridge
 - **Main:** spawn/kill `pipebox`, forward NDJSON → IPC, file dialogs
-- **Runner (`pipebox`):** multi-provider discovery under `internal/provider/` — `Discover` / `List` / `Resolve`; GitHub implementation in `provider/github` (Dockerized act, local `pipebox-act` image from `packages/runner/docker/act`); Jenkins stub in `provider/jenkins` (not implemented); load project `.env` / `.env.*` as secrets; emit events; CLI commands `doctor`, `list`, `run`, `install`
-- **v1 dependency:** Docker only for GitHub — do not require a local `act` binary; do not depend on a public `ghcr.io/nektos/act` image (it is not publicly pullable)
+- **Runner (`pipebox`):** multi-provider discovery under `internal/provider/` — `Discover` / `List` / `Resolve`; GitHub in `provider/github` (Dockerized act, local `pipebox-act` from `packages/runner/docker/act`); Jenkins in `provider/jenkins` (Dockerized jenkinsfile-runner, local `pipebox-jenkins` from `packages/runner/docker/jenkins`); load project `.env` / `.env.*` as secrets; emit events; CLI commands `doctor`, `list`, `run`, `install`
+- **v1 dependency:** Docker only — no local `act` or jenkinsfile-runner binary; do not depend on a public `ghcr.io/nektos/act` image (it is not publicly pullable); Jenkins image is built FROM public `ghcr.io/jenkinsci/jenkinsfile-runner` and tagged locally as `pipebox-jenkins`
 
 ## Providers
 
-- A repo may expose **zero or more** providers (e.g. migration with both GitHub and Jenkins later)
+- A repo may expose **zero or more** providers (e.g. migration with both GitHub and Jenkins)
 - Route `graph` / `run` **per selected workflow** via `provider` field or `--provider`, never a single repo-wide provider
 - GitHub-only knowledge (`.github` YAML, act, actparse, actimage) stays under `internal/provider/github/`
+- Jenkins-only knowledge (`Jenkinsfile`, jfrparse, jfrimage, Declarative scan) stays under `internal/provider/jenkins/`
 
 ## Runner protocol (v1)
 

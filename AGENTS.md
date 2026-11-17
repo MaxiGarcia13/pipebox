@@ -1,8 +1,8 @@
 # PipeBox — agent notes
 
-Local CI/CD desktop control panel: run CI workflows locally (GitHub Actions via **Dockerized act** today; Jenkins stub for later) so users can pick a repo, run workflows, inject secrets from project `.env` / `.env.*`, and watch step logs without pushing test commits.
+Local CI/CD desktop control panel: run CI workflows locally (GitHub Actions via **Dockerized act**; Jenkins via **Dockerized jenkinsfile-runner**) so users can pick a repo, run workflows, inject secrets from project `.env` / `.env.*`, and watch step logs without pushing test commits.
 
-v1 requires **Docker only** for GitHub — no local `act` binary.
+v1 requires **Docker only** for both providers — no local `act` or jenkinsfile-runner binary.
 
 ## Architecture
 
@@ -13,9 +13,11 @@ flowchart LR
   Main -->|spawn_stdin_stdout| Runner[Go_runner]
   Runner --> Discover[provider_Discover]
   Discover --> GH[provider_github]
-  Discover --> JK[provider_jenkins_stub]
+  Discover --> JK[provider_jenkins]
   GH -->|docker_run| ActImage[pipebox_act_image]
+  JK -->|docker_run| JfrImage[pipebox_jenkins_image]
   ActImage --> Docker[Docker]
+  JfrImage --> Docker
   Runner -->|NDJSON_events| Main
   Main -->|IPC_events| Vue
 ```
@@ -23,15 +25,15 @@ flowchart LR
 Provider code lives under `packages/runner/internal/provider/`:
 
 - `Discover` / `List` / `Resolve` — multi-provider; route runs per workflow
-- `github/` — list/graph/run via act (moved from former `workflows` / `run` / `actparse` / `actimage`)
-- `jenkins/` — empty stub (`Present` false); no real detection or run yet
+- `github/` — list/graph/run via act (`actparse` / `actimage`; image from `packages/runner/docker/act`)
+- `jenkins/` — list/graph/run via jenkinsfile-runner (`jfrparse` / `jfrimage`; image from `packages/runner/docker/jenkins`)
 
 The app renders a unified workflow list using `workflow.provider` (brand icons); it does not detect or parse CI files.
 
 ## MVP vs later
 
-- **MVP:** GitHub Actions via Dockerized act, Electron UI, `pipebox` CLI, secrets from project `.env` / `.env.*`, provider seams + Jenkins stub.
-- **Later:** Real Jenkins adapter, richer installers (Homebrew), code signing / notarization.
+- **MVP:** GitHub Actions + Jenkins via owned Docker images, Electron UI, `pipebox` CLI, secrets from project `.env` / `.env.*`.
+- **Later:** Richer installers (Homebrew), code signing / notarization, broader Jenkins plugin packs.
 
 ## Commands
 

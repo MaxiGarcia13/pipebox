@@ -5,13 +5,13 @@
 - **Node.js 26+** and **pnpm** (`engines` / `packageManager` in root `package.json`)
 - **Go 1.22+** on `PATH` (see `packages/runner/go.mod`)
 - **golangci-lint** on `PATH` (for `pnpm lint` / `pnpm runner:lint`; CI uses v2.15.0)
-- **Docker** running (GitHub workflows via the local `pipebox-act` image)
+- **Docker** running (GitHub via `pipebox-act`; Jenkins via `pipebox-jenkins`)
 
 ## Setup
 
 ```bash
 pnpm install
-pnpm runner:image   # once: build local pipebox-act image
+pnpm runner:image   # once: build local pipebox-act + pipebox-jenkins images
 pnpm start          # build runner + launch Electron app
 ```
 

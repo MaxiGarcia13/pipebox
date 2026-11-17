@@ -12,12 +12,15 @@ test('empty fixture shows no workflows', async () => {
   }
 });
 
-test('jenkins-only fixture lists no workflows until Present is implemented', async () => {
+test('jenkins-only fixture lists Jenkinsfile workflow', async () => {
   const { electronApp, window } = await launchAppWithRepo('jenkins-only');
   try {
-    await expect(window.getByTestId('workflow-list-none')).toBeVisible();
     await expect(window.getByTestId('project-status')).toContainText('jenkins-only');
-    await expect(window.getByTestId('workflow-list')).toHaveCount(0);
+    await expect(window.getByTestId('workflow-list')).toBeVisible();
+    const row = window.getByTestId('workflow-row');
+    await expect(row).toHaveAttribute('data-provider', 'jenkins');
+    await expect(row).toHaveAttribute('data-workflow-path', 'Jenkinsfile');
+    await expect(row.getByTestId('workflow-name')).toHaveText('Jenkinsfile');
   } finally {
     await electronApp.close();
   }

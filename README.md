@@ -1,13 +1,13 @@
 # PipeBox
 
-Local CI/CD control panel for GitHub Actions (Jenkins coming) — run and debug pipelines locally with visual step logs. No git push required.
+Local CI/CD control panel for GitHub Actions and Jenkins — run and debug pipelines locally with visual step logs. No git push required.
 
 ![PipeBox demo](docs/demo.gif)
 
-| Provider       | Status                                                                  |
-| -------------- | ----------------------------------------------------------------------- |
-| GitHub Actions | Ready — run locally via Dockerized [act](https://github.com/nektos/act) |
-| Jenkins        | In progress — adapter stub, not runnable yet                            |
+| Provider       | Status                                                                                                                       |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| GitHub Actions | Ready — run locally via Dockerized [act](https://github.com/nektos/act) (`pipebox-act`)                                      |
+| Jenkins        | Ready — run locally via Dockerized [jenkinsfile-runner](https://github.com/jenkinsci/jenkinsfile-runner) (`pipebox-jenkins`) |
 
 ## Quick start
 
@@ -65,8 +65,8 @@ Builds are unsigned for now. On macOS, if Gatekeeper blocks the app: right-click
 
 ## What you get
 
-- Browse workflows for a local repo
-- Run jobs with Dockerized act (no local `act` binary)
+- Browse GitHub Actions and Jenkins workflows for a local repo
+- Run jobs with Dockerized act / jenkinsfile-runner (no host `act` or JFR binary)
 - Inject secrets from `.env` / `.env.*`
 - Live step logs in the desktop UI — or pure CLI (`list` / `graph` / `run`)
 
