@@ -178,7 +178,7 @@ func TestListEmpty(t *testing.T) {
   }
 }
 
-func TestListJenkinsOnlyDocumentsStub(t *testing.T) {
+func TestListJenkinsOnly(t *testing.T) {
   stdout, stderr, code := runPipebox(t, "list", "--repo", repoPath(t, "jenkins-only"))
   if code != 0 {
     t.Fatalf("exit %d stderr=%q stdout=%q", code, stderr, stdout)
@@ -188,35 +188,43 @@ func TestListJenkinsOnlyDocumentsStub(t *testing.T) {
   if list.Type != event.TypeWorkflowList {
     t.Fatalf("type: got %q", list.Type)
   }
-  // jenkins.Present is stubbed false — Jenkinsfile alone yields no workflows.
-  if len(list.Workflows) != 0 {
-    t.Fatalf("expected no workflows until jenkins Present is implemented, got %#v", list.Workflows)
+  if len(list.Workflows) != 1 {
+    t.Fatalf("workflows: %#v", list.Workflows)
   }
-  for _, provider := range list.Providers {
-    if provider == event.ProviderJenkins {
-      t.Fatalf("unexpected jenkins provider: %#v", list.Providers)
-    }
+  workflow := list.Workflows[0]
+  if workflow.Path != "Jenkinsfile" || workflow.Provider != event.ProviderJenkins {
+    t.Fatalf("workflow: %#v", workflow)
+  }
+  if len(list.Providers) != 1 || list.Providers[0] != event.ProviderJenkins {
+    t.Fatalf("providers: %#v", list.Providers)
   }
 }
 
-func TestListMixedGitHubOnlyUntilJenkinsPresent(t *testing.T) {
+func TestListMixedGitHubAndJenkins(t *testing.T) {
   stdout, stderr, code := runPipebox(t, "list", "--repo", repoPath(t, "mixed"))
   if code != 0 {
     t.Fatalf("exit %d stderr=%q stdout=%q", code, stderr, stdout)
   }
 
   list := decodeLine[event.WorkflowList](t, stdout)
-  if len(list.Workflows) != 1 {
+  if len(list.Workflows) != 2 {
     t.Fatalf("workflows: %#v", list.Workflows)
   }
-  workflow := list.Workflows[0]
-  if workflow.Name != "Mixed CI" || workflow.Provider != event.ProviderGitHub {
-    t.Fatalf("workflow: %#v", workflow)
+
+  byProvider := map[string]event.Workflow{}
+  for _, workflow := range list.Workflows {
+    byProvider[workflow.Provider] = workflow
   }
-  for _, provider := range list.Providers {
-    if provider == event.ProviderJenkins {
-      t.Fatalf("unexpected jenkins provider: %#v", list.Providers)
-    }
+  githubWorkflow, ok := byProvider[event.ProviderGitHub]
+  if !ok || githubWorkflow.Name != "Mixed CI" {
+    t.Fatalf("github workflow: %#v", list.Workflows)
+  }
+  jenkinsWorkflow, ok := byProvider[event.ProviderJenkins]
+  if !ok || jenkinsWorkflow.Path != "Jenkinsfile" {
+    t.Fatalf("jenkins workflow: %#v", list.Workflows)
+  }
+  if len(list.Providers) != 2 {
+    t.Fatalf("providers: %#v", list.Providers)
   }
 }
 

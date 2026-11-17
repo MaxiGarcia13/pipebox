@@ -6,6 +6,7 @@ import (
   "strings"
 
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/event"
+  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/provider/jenkins"
 )
 
 func Resolve(repo, workflow, providerHint string) (Provider, error) {
@@ -28,6 +29,14 @@ func Resolve(repo, workflow, providerHint string) (Provider, error) {
     item, ok := byID[event.ProviderGitHub]
     if !ok {
       return nil, fmt.Errorf("github provider not available in %s", repo)
+    }
+    return item, nil
+  }
+
+  if jenkins.IsJenkinsfilePath(workflow) {
+    item, ok := byID[event.ProviderJenkins]
+    if !ok {
+      return nil, fmt.Errorf("jenkins provider not available in %s", repo)
     }
     return item, nil
   }
