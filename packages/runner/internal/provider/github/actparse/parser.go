@@ -10,7 +10,7 @@ import (
 var (
   jobPrefixPattern = regexp.MustCompile(`^\[([^/\]]+)/([^\]]+)\]\s*(.*)$`)
   // Anchored: npm logs often contain "Run `npm …`" mid-line and must not become steps.
-  stepStartPattern = regexp.MustCompile(`(?i)^(?:⭐\s*)?Run\s+(.+)$`)
+  stepStartPattern   = regexp.MustCompile(`(?i)^(?:⭐\s*)?Run\s+(.+)$`)
   stepSuccessPattern = regexp.MustCompile(`(?i)^(?:✅\s*)?Success\s+-\s+(.+?)(?:\s+\[([^\]]+)\])?\s*$`)
   stepFailurePattern = regexp.MustCompile(`(?i)^(?:❌\s*)?Failure\s+-\s+(.+?)(?:\s+\[([^\]]+)\])?\s*$`)
   stepSkippedPattern = regexp.MustCompile(`(?i)^(?:🚧\s*)?Skipped\s+-\s+(.+?)(?:\s+\[([^\]]+)\])?\s*$`)

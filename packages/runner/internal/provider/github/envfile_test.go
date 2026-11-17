@@ -63,12 +63,12 @@ func TestIsEnvFileName(t *testing.T) {
   t.Parallel()
 
   cases := map[string]bool{
-    ".env":             true,
-    ".env.local":       true,
-    ".env.production":  true,
-    ".environment":     false,
-    "env":              false,
-    ".envrc":           false,
+    ".env":            true,
+    ".env.local":      true,
+    ".env.production": true,
+    ".environment":    false,
+    "env":             false,
+    ".envrc":          false,
   }
   for name, want := range cases {
     if got := isEnvFileName(name); got != want {

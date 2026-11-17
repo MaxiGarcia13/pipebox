@@ -16,7 +16,8 @@ const (
   releaseTagPrefix = "packages/runner/v"
 )
 
-func InstallDesktop(version string) (string, error) {
+func InstallDesktop(version string, progress Progress) (string, error) {
+  progress = resolveProgress(progress)
   version = normalizeVersion(version)
   if version == "" {
     return "", fmt.Errorf("missing version for desktop download")
@@ -35,11 +36,13 @@ func InstallDesktop(version string) (string, error) {
   }
   defer func() { _ = os.RemoveAll(tmpDir) }()
 
+  progress.Step("Downloading desktop…")
   zipPath := filepath.Join(tmpDir, asset)
-  if err := downloadFile(url, zipPath); err != nil {
+  if err := downloadFile(url, zipPath, "desktop", progress); err != nil {
     return "", err
   }
 
+  progress.Step("Installing desktop…")
   extractDir := filepath.Join(tmpDir, "extract")
   if err := os.MkdirAll(extractDir, 0o755); err != nil {
     return "", fmt.Errorf("extract dir: %w", err)
@@ -97,7 +100,8 @@ func desktopAssetNameFor(goos, goarch string) (string, error) {
   }
 }
 
-func downloadFile(url, dest string) (err error) {
+func downloadFile(url, dest, label string, progress Progress) (err error) {
+  progress = resolveProgress(progress)
   client := &http.Client{Timeout: 5 * time.Minute}
   resp, err := client.Get(url)
   if err != nil {
@@ -123,7 +127,9 @@ func downloadFile(url, dest string) (err error) {
     }
   }()
 
-  if _, err := io.Copy(out, resp.Body); err != nil {
+  total := resp.ContentLength
+  body := progress.Track(label, total, resp.Body)
+  if _, err := io.Copy(out, body); err != nil {
     return fmt.Errorf("write download: %w", err)
   }
   return nil

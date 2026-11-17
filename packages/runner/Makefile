@@ -24,7 +24,11 @@ lint-indent:
 lint: lint-indent
 	golangci-lint run ./...
 
-lint-fix: lint-indent
+# Expand tabs → 2 spaces (gofmt/editor may reintroduce tabs).
+expand-go-tabs:
+	@python3 -c 'from pathlib import Path; [p.write_text(p.read_text().replace(chr(9), "  ")) for p in Path(".").rglob("*.go")]'
+
+lint-fix: expand-go-tabs
 	golangci-lint run --fix ./...
 
 doctor: build

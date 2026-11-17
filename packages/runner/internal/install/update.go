@@ -11,6 +11,7 @@ type UpdateOptions struct {
   CurrentVersion string
   TargetVersion  string
   CheckOnly      bool
+  Progress       Progress
 }
 
 type UpdateResult struct {
@@ -22,9 +23,11 @@ type UpdateResult struct {
 }
 
 func Update(options UpdateOptions) (UpdateResult, error) {
+  progress := resolveProgress(options.Progress)
   current := normalizeVersion(options.CurrentVersion)
   target := normalizeVersion(options.TargetVersion)
   if target == "" {
+    progress.Step("Checking for updates…")
     latest, err := LatestVersion()
     if err != nil {
       return UpdateResult{}, err
@@ -41,17 +44,19 @@ func Update(options UpdateOptions) (UpdateResult, error) {
     return result, nil
   }
 
-  cliPath, err := installCLIFromRelease(target)
+  progress.Step(fmt.Sprintf("Updating CLI to %s…", target))
+  cliPath, err := installCLIFromRelease(target, progress)
   if err != nil {
     return result, err
   }
   result.CLIPath = cliPath
 
+  progress.Step("Updating shell completions…")
   if _, err := InstallCompletions(); err != nil {
     return result, fmt.Errorf("cli updated to %s, but completions failed: %w", cliPath, err)
   }
 
-  desktopPath, err := InstallDesktop(target)
+  desktopPath, err := InstallDesktop(target, progress)
   if err != nil {
     return result, fmt.Errorf("cli updated to %s, but desktop failed: %w", cliPath, err)
   }
@@ -59,7 +64,8 @@ func Update(options UpdateOptions) (UpdateResult, error) {
   return result, nil
 }
 
-func installCLIFromRelease(version string) (string, error) {
+func installCLIFromRelease(version string, progress Progress) (string, error) {
+  progress = resolveProgress(progress)
   asset, err := cliAssetName(version)
   if err != nil {
     return "", err
@@ -77,10 +83,11 @@ func installCLIFromRelease(version string) (string, error) {
   defer func() { _ = os.RemoveAll(tmpDir) }()
 
   tmpPath := filepath.Join(tmpDir, asset)
-  if err := downloadFile(releaseAssetURL(version, asset), tmpPath); err != nil {
+  if err := downloadFile(releaseAssetURL(version, asset), tmpPath, "cli", progress); err != nil {
     return "", err
   }
 
+  progress.Step("Installing CLI…")
   updated := make([]string, 0, len(targets))
   for _, path := range targets {
     if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {

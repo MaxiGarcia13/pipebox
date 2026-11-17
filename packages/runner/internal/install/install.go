@@ -12,17 +12,21 @@ type Result struct {
   DesktopPath string
 }
 
-func Run(version string) (Result, error) {
+func Run(version string, progress Progress) (Result, error) {
+  progress = resolveProgress(progress)
+
+  progress.Step("Installing CLI…")
   cliPath, err := installCLI()
   if err != nil {
     return Result{}, err
   }
 
+  progress.Step("Installing shell completions…")
   if _, err := InstallCompletions(); err != nil {
     return Result{CLIPath: cliPath}, fmt.Errorf("cli installed to %s, but completions failed: %w", cliPath, err)
   }
 
-  desktopPath, err := InstallDesktop(version)
+  desktopPath, err := InstallDesktop(version, progress)
   if err != nil {
     return Result{CLIPath: cliPath}, fmt.Errorf("cli installed to %s, but desktop failed: %w", cliPath, err)
   }

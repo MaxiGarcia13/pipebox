@@ -101,7 +101,7 @@ func buildActArgs(repoPath string, options Options) ([]string, func(), error) {
     "-t",
     "-p", fmt.Sprintf("%s:%s", artifactPort, artifactPort),
     "--add-host", "host.docker.internal:host-gateway",
-    "-e", "ACTIONS_RUNTIME_URL="+runtimeURL,
+    "-e", "ACTIONS_RUNTIME_URL=" + runtimeURL,
     "-v", fmt.Sprintf("%s:/workspace", repoPath),
     "-v", fmt.Sprintf("%s:/var/run/docker.sock", dockerSock),
     "-v", fmt.Sprintf("%s:%s", artifactDir, artifactMountPath),

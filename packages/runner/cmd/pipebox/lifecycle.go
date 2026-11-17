@@ -6,76 +6,81 @@ import (
 
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/cli"
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/install"
+  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/termui"
 )
 
 func runLifecycle(command string, args []string) {
+  ui := termui.New(os.Stdout, os.Stderr)
   switch command {
   case "install":
-    result, err := install.Run(version)
+    result, err := install.Run(version, ui)
     if err != nil {
-      emitError(err)
+      ui.Err(err)
       os.Exit(1)
     }
-    emitInstallLog(fmt.Sprintf("cli installed to %s", result.CLIPath))
-    emitInstallLog(fmt.Sprintf("desktop installed to %s", result.DesktopPath))
-    emitInstallLog("shell completions installed; open a new terminal tab to use them")
+    ui.Ok(fmt.Sprintf("CLI installed (%s)", result.CLIPath))
+    ui.Ok(fmt.Sprintf("Desktop installed (%s)", result.DesktopPath))
+    ui.Ok("Shell completions installed")
+    ui.Info("Open a new terminal tab to use completions.")
   case "install-desktop":
-    desktopPath, err := install.InstallDesktop(version)
+    desktopPath, err := install.InstallDesktop(version, ui)
     if err != nil {
-      emitError(err)
+      ui.Err(err)
       os.Exit(1)
     }
-    emitInstallLog(fmt.Sprintf("desktop installed to %s", desktopPath))
+    ui.Ok(fmt.Sprintf("Desktop installed (%s)", desktopPath))
   case "update":
-    runUpdate(args)
+    runUpdate(ui, args)
   case "uninstall":
-    runUninstall()
+    runUninstall(ui)
   }
 }
 
-func runUpdate(args []string) {
+func runUpdate(ui *termui.UI, args []string) {
   result, err := install.Update(install.UpdateOptions{
     CurrentVersion: version,
     TargetVersion:  cli.FlagValue(args, "--version"),
     CheckOnly:      cli.HasFlag(args, "--check"),
+    Progress:       ui,
   })
   if err != nil {
-    emitError(err)
+    ui.Err(err)
     os.Exit(1)
   }
   if result.UpToDate {
-    emitInstallLog(fmt.Sprintf("already up to date (%s)", result.CurrentVersion))
+    ui.Info(fmt.Sprintf("Already up to date (%s)", result.CurrentVersion))
     return
   }
   if cli.HasFlag(args, "--check") {
-    emitInstallLog(fmt.Sprintf(
-      "update available: %s → %s",
+    ui.Info(fmt.Sprintf(
+      "Update available: %s → %s",
       result.CurrentVersion,
       result.TargetVersion,
     ))
     return
   }
-  emitInstallLog(fmt.Sprintf("cli updated to %s (%s)", result.TargetVersion, result.CLIPath))
-  emitInstallLog(fmt.Sprintf("desktop installed to %s", result.DesktopPath))
-  emitInstallLog("shell completions updated; open a new terminal tab to use them")
+  ui.Ok(fmt.Sprintf("CLI updated to %s (%s)", result.TargetVersion, result.CLIPath))
+  ui.Ok(fmt.Sprintf("Desktop installed (%s)", result.DesktopPath))
+  ui.Ok("Shell completions updated")
+  ui.Info("Open a new terminal tab to use completions.")
 }
 
-func runUninstall() {
+func runUninstall(ui *termui.UI) {
   cliPaths, desktopPath, err := install.Uninstall()
   if err != nil {
-    emitError(err)
+    ui.Err(err)
     os.Exit(1)
   }
   if len(cliPaths) == 0 {
-    emitInstallLog("cli not installed")
+    ui.Info("CLI not installed")
   } else {
     for _, cliPath := range cliPaths {
-      emitInstallLog(fmt.Sprintf("uninstalled cli %s", cliPath))
+      ui.Ok(fmt.Sprintf("Uninstalled CLI (%s)", cliPath))
     }
   }
   if desktopPath == "" {
-    emitInstallLog("desktop not installed")
+    ui.Info("Desktop not installed")
   } else {
-    emitInstallLog(fmt.Sprintf("uninstalled desktop %s", desktopPath))
+    ui.Ok(fmt.Sprintf("Uninstalled desktop (%s)", desktopPath))
   }
 }
