@@ -13,10 +13,10 @@ const (
 )
 
 type Flag struct {
-  Names     []string
-  ValueKind ValueKind
+  Names      []string
+  ValueKind  ValueKind
   Repeatable bool
-  Usage     string
+  Usage      string
 }
 
 type Command struct {
