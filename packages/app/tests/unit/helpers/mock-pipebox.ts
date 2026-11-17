@@ -23,6 +23,8 @@ export interface MockPipeboxOptions {
   doctor?: DoctorEvent;
   launchRepo?: string | null;
   selectRepoPath?: string | null | (() => string | null | Promise<string | null>);
+  /** Sequential return values for selectRepo (overrides selectRepoPath when set). */
+  selectRepoPaths?: Array<string | null>;
   listsByRepo?: Record<string, WorkflowListEvent>;
   graphsByWorkflow?: Record<string, JobGraphEvent>;
   branchesByRepo?: Record<string, string | null>;
@@ -121,6 +123,12 @@ export function createMockPipebox(
     },
     selectRepo: async () => {
       selectRepoCalls();
+      if (options.selectRepoPaths) {
+        const next = options.selectRepoPaths.shift();
+        return next === undefined
+          ? null
+          : next;
+      }
       const next = options.selectRepoPath;
       if (typeof next === 'function') {
         return next();

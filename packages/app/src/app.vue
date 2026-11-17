@@ -4,6 +4,7 @@ import EventLog from '@/components/event-log.vue';
 import ProjectStatus from '@/components/project-status.vue';
 import RunToolbar from '@/components/run-toolbar.vue';
 import SetupBanner from '@/components/setup-banner.vue';
+import SwitchProjectDialog from '@/components/switch-project-dialog.vue';
 import WorkbenchShell from '@/components/workbench-shell.vue';
 import WorkflowInputs from '@/components/workflow-inputs.vue';
 import WorkflowList from '@/components/workflow-list.vue';
@@ -28,10 +29,18 @@ const {
   runDoctor,
   startRun,
   stopRun,
+  switchProjectOpen,
+  confirmSwitchProject,
+  cancelSwitchProject,
 } = usePipeboxSession();
 </script>
 
 <template>
+  <SwitchProjectDialog
+    v-model:open="switchProjectOpen"
+    @confirm="confirmSwitchProject"
+    @cancel="cancelSwitchProject"
+  />
   <WorkbenchShell>
     <template #toolbar>
       <RunToolbar
