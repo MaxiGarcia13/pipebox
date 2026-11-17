@@ -4,12 +4,10 @@ Local CI/CD control panel for GitHub Actions (Jenkins coming) — run and debug 
 
 ![PipeBox demo](docs/demo.gif)
 
-Run CI workflows locally with Dockerized [act](https://github.com/nektos/act), inject secrets from `.env` / `.env.*`, and watch step logs — without pushing test commits.
-
-| Provider       | Status                                       |
-| -------------- | -------------------------------------------- |
-| GitHub Actions | Ready — run locally via Dockerized act       |
-| Jenkins        | In progress — adapter stub, not runnable yet |
+| Provider       | Status                                                                  |
+| -------------- | ----------------------------------------------------------------------- |
+| GitHub Actions | Ready — run locally via Dockerized [act](https://github.com/nektos/act) |
+| Jenkins        | In progress — adapter stub, not runnable yet                            |
 
 ## Quick start
 
