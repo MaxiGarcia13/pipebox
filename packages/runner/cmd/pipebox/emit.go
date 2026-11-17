@@ -34,3 +34,7 @@ func fail(err error) {
 func printUsage() {
   fmt.Fprintln(os.Stderr, strings.TrimRight(cli.Usage(), "\n"))
 }
+
+func printCommandUsage(command string) {
+  fmt.Fprintln(os.Stderr, strings.TrimRight(cli.CommandUsage(command), "\n"))
+}

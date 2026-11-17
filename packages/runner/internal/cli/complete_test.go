@@ -134,12 +134,50 @@ func TestUsageIncludesCommands(t *testing.T) {
   t.Parallel()
 
   usage := Usage()
-  if !containsAll(usage, "pipebox doctor", "pipebox run", "pipebox completion") {
-    t.Fatalf("usage missing commands:\n%s", usage)
+  if !containsAll(usage, "Commands:", "Flags:") {
+    t.Fatalf("usage missing Commands/Flags sections:\n%s", usage)
   }
-  if containsAll(usage, "__complete") {
+  if !containsAll(usage, "doctor", "run", "completion", "-h, --help", "-n, --new", "--repo string") {
+    t.Fatalf("usage missing command/flag rows:\n%s", usage)
+  }
+  if !hasSpacedRow(usage, "doctor", "Run environment diagnostics") {
+    t.Fatalf("doctor row missing scraper spacing:\n%s", usage)
+  }
+  if !hasSpacedRow(usage, "-h, --help", "Show help") {
+    t.Fatalf("help flag row missing scraper spacing:\n%s", usage)
+  }
+  if strings.Contains(usage, "__complete") {
     t.Fatal("hidden __complete should not appear in usage")
   }
+}
+
+func TestCommandUsageIncludesFlags(t *testing.T) {
+  t.Parallel()
+
+  usage := CommandUsage("run")
+  if !containsAll(usage, "Usage:", "pipebox run [flags]", "Flags:") {
+    t.Fatalf("command usage missing layout:\n%s", usage)
+  }
+  if !hasSpacedRow(usage, "--workflow string", "Workflow file") {
+    t.Fatalf("workflow flag row missing scraper spacing:\n%s", usage)
+  }
+  if !hasSpacedRow(usage, "--input stringArray", "workflow_dispatch input KEY=VALUE") {
+    t.Fatalf("input flag row missing scraper spacing:\n%s", usage)
+  }
+}
+
+func hasSpacedRow(text, token, description string) bool {
+  for _, line := range strings.Split(text, "\n") {
+    trimmed := strings.TrimLeft(line, " ")
+    if !strings.HasPrefix(trimmed, token) {
+      continue
+    }
+    rest := strings.TrimPrefix(trimmed, token)
+    if strings.HasPrefix(rest, "  ") && strings.Contains(rest, description) {
+      return true
+    }
+  }
+  return false
 }
 
 func assertContains(t *testing.T, values []string, want ...string) {

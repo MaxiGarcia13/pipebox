@@ -30,6 +30,11 @@ func main() {
 }
 
 func runSubcommand(command string, args []string) {
+  if command != "__complete" && cli.WantsHelp(args) {
+    printCommandUsage(command)
+    return
+  }
+
   switch command {
   case "doctor":
     runDoctor()

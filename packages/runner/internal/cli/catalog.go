@@ -37,61 +37,61 @@ func DefaultCatalog() Catalog {
   repoFlag := Flag{
     Names:     []string{"--repo"},
     ValueKind: ValuePath,
-    Usage:     "repository path",
+    Usage:     "Repository path",
   }
   workflowFlag := Flag{
     Names:     []string{"--workflow"},
     ValueKind: ValueWorkflow,
-    Usage:     "workflow file",
+    Usage:     "Workflow file",
   }
   providerFlag := Flag{
     Names:     []string{"--provider"},
     ValueKind: ValueProvider,
-    Usage:     "provider id",
+    Usage:     "Provider id",
   }
 
   return Catalog{
     RootFlags: []Flag{
       {
-        Names:     []string{"--repo"},
-        ValueKind: ValuePath,
-        Usage:     "open desktop UI for this repository",
-      },
-      {
-        Names:     []string{"-n", "--new"},
-        ValueKind: ValueNone,
-        Usage:     "open a new desktop window",
-      },
-      {
         Names:     []string{"-h", "--help", "help"},
         ValueKind: ValueNone,
-        Usage:     "show help",
+        Usage:     "Show help",
       },
       {
         Names:     []string{"-v", "--version"},
         ValueKind: ValueNone,
-        Usage:     "show version",
+        Usage:     "Print version",
+      },
+      {
+        Names:     []string{"-n", "--new"},
+        ValueKind: ValueNone,
+        Usage:     "Open a new desktop window",
+      },
+      {
+        Names:     []string{"--repo"},
+        ValueKind: ValuePath,
+        Usage:     "Repository path",
       },
     },
     Commands: []Command{
       {
         Name:        "doctor",
-        Usage:       "check local dependencies",
+        Usage:       "Run environment diagnostics",
         TakesNoArgs: true,
       },
       {
         Name:  "list",
-        Usage: "list workflows in a repository",
+        Usage: "List workflows in a repo",
         Flags: []Flag{repoFlag},
       },
       {
         Name:  "graph",
-        Usage: "print the job graph for a workflow",
+        Usage: "Show workflow graph",
         Flags: []Flag{repoFlag, workflowFlag, providerFlag},
       },
       {
         Name:  "run",
-        Usage: "run a workflow locally",
+        Usage: "Run a workflow",
         Flags: []Flag{
           repoFlag,
           workflowFlag,
@@ -99,7 +99,7 @@ func DefaultCatalog() Catalog {
           {
             Names:     []string{"--job"},
             ValueKind: ValueJob,
-            Usage:     "job id",
+            Usage:     "Job id",
           },
           {
             Names:      []string{"--input"},
@@ -111,54 +111,54 @@ func DefaultCatalog() Catalog {
             Names:      []string{"--secret"},
             ValueKind:  ValueOpaque,
             Repeatable: true,
-            Usage:      "secret KEY=VALUE",
+            Usage:      "Secret KEY=VALUE",
           },
           {
             Names:     []string{"--secret-file"},
             ValueKind: ValuePath,
-            Usage:     "env file with secrets",
+            Usage:     "Secrets file path",
           },
         },
       },
       {
         Name:        "install",
-        Usage:       "install CLI to ~/.local/bin and fetch the desktop app",
+        Usage:       "Install managed CLI + desktop app",
         TakesNoArgs: true,
       },
       {
         Name:        "install-desktop",
-        Usage:       "fetch the desktop app only",
+        Usage:       "Install desktop app only",
         TakesNoArgs: true,
       },
       {
         Name:  "update",
-        Usage: "update managed CLI and desktop app",
+        Usage: "Update CLI and desktop app",
         Flags: []Flag{
           {
             Names:     []string{"--check"},
             ValueKind: ValueNone,
-            Usage:     "report whether an update is available",
+            Usage:     "Report whether an update is available",
           },
           {
             Names:     []string{"--version"},
             ValueKind: ValueVersion,
-            Usage:     "install a specific version",
+            Usage:     "Install a specific version",
           },
         },
       },
       {
         Name:        "uninstall",
-        Usage:       "remove managed CLI and desktop app",
+        Usage:       "Remove managed installs",
         TakesNoArgs: true,
       },
       {
         Name:        "version",
-        Usage:       "print version",
+        Usage:       "Print version",
         TakesNoArgs: true,
       },
       {
         Name:  "completion",
-        Usage: "print shell completion script (zsh|bash|fish)",
+        Usage: "Generate shell completion scripts",
       },
       {
         Name:   "__complete",
@@ -168,20 +168,26 @@ func DefaultCatalog() Catalog {
     },
     Notes: []string{
       "Desktop:",
-      "  bare pipebox (or pipebox --repo <path>) opens the desktop UI (reuses a running app)",
-      "  -n / --new opens a new window instead of reusing",
-      "  pipebox install / install-desktop fetches the UI from GitHub Releases",
-      "  pipebox update replaces managed CLI installs (~/.local/bin and go install bin) + desktop app",
-      "  set PIPEBOX_APP to override the desktop path",
+      "  Bare `pipebox` (or `pipebox --repo <path>`) opens the desktop UI.",
+      "  `-n` / `--new` opens a new window instead of reusing.",
+      "  `install` / `install-desktop` fetch the UI from GitHub Releases.",
+      "  `update` replaces managed CLI installs + desktop app.",
+      "  Set `PIPEBOX_APP` to override the desktop path.",
       "",
       "Secrets:",
-      "  run loads .env and .env.* from the repo when --secret-file is omitted",
+      "  `run` loads `.env` and `.env.*` from the repo when `--secret-file` is omitted.",
       "",
       "Inputs:",
-      "  pass workflow_dispatch inputs with --input KEY=VALUE (repeatable)",
+      "  Pass workflow_dispatch inputs with `--input KEY=VALUE` (repeatable).",
+      "",
+      "Examples:",
+      "  pipebox doctor",
+      "  pipebox list --repo <path>",
+      "  pipebox run --repo <path> --workflow <file>",
+      "  pipebox completion zsh",
       "",
       "Completions:",
-      "  add to your shell rc after install: eval \"$(pipebox completion zsh)\"  # or bash",
+      "  Add to your shell rc after install: eval \"$(pipebox completion zsh)\"  # or bash",
       "  fish: pipebox completion fish > ~/.config/fish/completions/pipebox.fish",
     },
   }

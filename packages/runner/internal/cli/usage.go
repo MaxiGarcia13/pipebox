@@ -9,26 +9,22 @@ func Usage() string {
   return UsageCatalog(DefaultCatalog())
 }
 
+func CommandUsage(name string) string {
+  return CommandUsageCatalog(DefaultCatalog(), name)
+}
+
 func UsageCatalog(catalog Catalog) string {
   var builder strings.Builder
   builder.WriteString("pipebox — local CI runner CLI\n\n")
   builder.WriteString("Usage:\n")
-  builder.WriteString("  pipebox\n")
+  builder.WriteString("  pipebox [command] [flags]\n\n")
 
-  for _, flag := range catalog.RootFlags {
-    line := formatRootFlagUsage(flag)
-    if line != "" {
-      builder.WriteString("  pipebox ")
-      builder.WriteString(line)
-      builder.WriteByte('\n')
-    }
-  }
+  commands := catalog.VisibleCommands()
+  builder.WriteString("Commands:\n")
+  writeCommandRows(&builder, commands)
 
-  for _, command := range catalog.VisibleCommands() {
-    builder.WriteString("  pipebox ")
-    builder.WriteString(formatCommandUsage(command))
-    builder.WriteByte('\n')
-  }
+  builder.WriteString("\nFlags:\n")
+  writeFlagRows(&builder, catalog.RootFlags)
 
   if len(catalog.Notes) > 0 {
     builder.WriteByte('\n')
@@ -41,63 +37,92 @@ func UsageCatalog(catalog Catalog) string {
   return strings.TrimRight(builder.String(), "\n")
 }
 
-func formatRootFlagUsage(flag Flag) string {
-  switch {
-  case flagHasName(flag, "--repo"):
-    return "--repo <path>"
-  case flagHasName(flag, "--new"):
-    return "-n | --new [--repo <path>]"
-  case flagHasName(flag, "--help"):
-    return "--help | -h"
-  case flagHasName(flag, "--version"):
-    return "--version | -v"
-  default:
-    return strings.Join(flag.Names, " | ")
+func CommandUsageCatalog(catalog Catalog, name string) string {
+  command, ok := catalog.Command(name)
+  if !ok || command.Hidden {
+    return UsageCatalog(catalog)
+  }
+
+  var builder strings.Builder
+  builder.WriteString("Usage:\n")
+  builder.WriteString("  ")
+  builder.WriteString(commandSynopsis(command))
+  builder.WriteByte('\n')
+
+  if len(command.Flags) > 0 {
+    builder.WriteString("\nFlags:\n")
+    writeFlagRows(&builder, command.Flags)
+  }
+
+  return strings.TrimRight(builder.String(), "\n")
+}
+
+func WantsHelp(args []string) bool {
+  for _, arg := range args {
+    if arg == "-h" || arg == "--help" || arg == "help" {
+      return true
+    }
+  }
+  return false
+}
+
+func writeCommandRows(builder *strings.Builder, commands []Command) {
+  width := 0
+  for _, command := range commands {
+    if length := len(command.Name); length > width {
+      width = length
+    }
+  }
+  for _, command := range commands {
+    fmt.Fprintf(builder, "  %-*s  %s\n", width, command.Name, command.Usage)
   }
 }
 
-func formatCommandUsage(command Command) string {
+func writeFlagRows(builder *strings.Builder, flags []Flag) {
+  labels := make([]string, len(flags))
+  width := 0
+  for index, flag := range flags {
+    label := formatFlagLabel(flag)
+    labels[index] = label
+    if length := len(label); length > width {
+      width = length
+    }
+  }
+  for index, flag := range flags {
+    fmt.Fprintf(builder, "  %-*s  %s\n", width, labels[index], flag.Usage)
+  }
+}
+
+func formatFlagLabel(flag Flag) string {
+  names := make([]string, 0, len(flag.Names))
+  for _, name := range flag.Names {
+    if strings.HasPrefix(name, "-") {
+      names = append(names, name)
+    }
+  }
+  label := strings.Join(names, ", ")
+  if suffix := flagValueType(flag); suffix != "" {
+    return label + " " + suffix
+  }
+  return label
+}
+
+func flagValueType(flag Flag) string {
+  if flag.ValueKind == ValueNone {
+    return ""
+  }
+  if flag.Repeatable {
+    return "stringArray"
+  }
+  return "string"
+}
+
+func commandSynopsis(command Command) string {
   if command.Name == "completion" {
-    return "completion <zsh|bash|fish>"
+    return "pipebox completion <zsh|bash|fish>"
   }
   if len(command.Flags) == 0 {
-    return command.Name
+    return "pipebox " + command.Name
   }
-
-  parts := []string{command.Name}
-  for _, flag := range command.Flags {
-    parts = append(parts, formatFlagUsage(flag))
-  }
-  return strings.Join(parts, " ")
-}
-
-func formatFlagUsage(flag Flag) string {
-  primary := flag.Names[0]
-  switch flag.ValueKind {
-  case ValueNone:
-    return fmt.Sprintf("[%s]", primary)
-  case ValueOpaque:
-    if flag.Repeatable {
-      return fmt.Sprintf("[%s KEY=VALUE]", primary)
-    }
-    return fmt.Sprintf("[%s <value>]", primary)
-  case ValuePath:
-    if primary == "--repo" {
-      return fmt.Sprintf("%s <path>", primary)
-    }
-    if primary == "--secret-file" {
-      return fmt.Sprintf("[%s <path>]", primary)
-    }
-    return fmt.Sprintf("[%s <path>]", primary)
-  case ValueWorkflow:
-    return fmt.Sprintf("%s <file>", primary)
-  case ValueJob:
-    return fmt.Sprintf("[%s <id>]", primary)
-  case ValueProvider:
-    return fmt.Sprintf("[%s <id>]", primary)
-  case ValueVersion:
-    return fmt.Sprintf("[%s <v>]", primary)
-  default:
-    return fmt.Sprintf("[%s]", primary)
-  }
+  return "pipebox " + command.Name + " [flags]"
 }
