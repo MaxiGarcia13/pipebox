@@ -13,23 +13,36 @@ func Run(version string) event.Doctor {
     lookPathCheck("docker"),
   }
 
-  ok := checks[0].OK
   if checks[0].OK {
     daemonCheck := dockerInfoCheck()
     checks = append(checks, daemonCheck)
-    if !daemonCheck.OK {
-      ok = false
-    } else {
+    if daemonCheck.OK {
       checks = append(checks, actImageCheck(), jenkinsImageCheck())
     }
   }
 
   return event.Doctor{
     Type:    event.TypeDoctor,
-    OK:      ok,
+    OK:      allChecksOK(checks),
     Version: version,
     Checks:  checks,
   }
+}
+
+func Emit() {
+  _ = event.EmitStdout(Run(""))
+}
+
+func allChecksOK(checks []event.DoctorCheck) bool {
+  if len(checks) == 0 {
+    return false
+  }
+  for _, check := range checks {
+    if !check.OK {
+      return false
+    }
+  }
+  return true
 }
 
 func lookPathCheck(name string) event.DoctorCheck {

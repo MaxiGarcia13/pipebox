@@ -1,4 +1,4 @@
-import type { RunnerEvent } from '@/domain/runner-events';
+import type { DoctorEvent, RunnerEvent } from '@/domain/runner-events';
 import type { StartRunOptions } from '@/services/ipc-channels';
 import { ref } from 'vue';
 
@@ -6,7 +6,27 @@ function hasRunFinished(events: RunnerEvent[]): boolean {
   return events.some((event) => event.type === 'run_finished');
 }
 
-export function useRunSession() {
+function withReceiptTime(event: RunnerEvent): RunnerEvent {
+  if (
+    event.type !== 'step_started'
+    && event.type !== 'step_finished'
+    && event.type !== 'run_finished'
+  ) {
+    return event;
+  }
+  if (event.receivedAt != null) {
+    return event;
+  }
+  // Wall clock for the log. groupRunEvents only reads this; it does not sample time.
+  return {
+    ...event,
+    receivedAt: Date.now(),
+  };
+}
+
+export function useRunSession(hooks?: {
+  onDoctor?: (event: DoctorEvent) => void;
+}) {
   const runningWorkflow = ref<string | null>(null);
   const runEventsWorkflow = ref<string | null>(null);
   const runEvents = ref<RunnerEvent[]>([]);
@@ -20,11 +40,16 @@ export function useRunSession() {
   }
 
   function onRunnerEvent(event: RunnerEvent) {
-    if (event.type === 'run_finished' && hasRunFinished(runEvents.value)) {
+    if (event.type === 'doctor') {
+      hooks?.onDoctor?.(event);
       return;
     }
-    runEvents.value = [...runEvents.value, event];
-    if (event.type === 'run_finished') {
+    const stamped = withReceiptTime(event);
+    if (stamped.type === 'run_finished' && hasRunFinished(runEvents.value)) {
+      return;
+    }
+    runEvents.value = [...runEvents.value, stamped];
+    if (stamped.type === 'run_finished') {
       isRunning.value = false;
       runningWorkflow.value = null;
     }
@@ -58,11 +83,11 @@ export function useRunSession() {
     if (!hasRunFinished(runEvents.value)) {
       runEvents.value = [
         ...runEvents.value,
-        {
+        withReceiptTime({
           type: 'run_finished',
           status: 'cancelled',
           exitCode: 130,
-        },
+        }),
       ];
     }
   }

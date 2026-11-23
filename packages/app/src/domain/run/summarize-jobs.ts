@@ -47,9 +47,6 @@ export function summarizeJobs(
     }
 
     summary.status = mergeJobStatus(summary.status, step.status);
-    if (step.durationMs != null && step.durationMs > 0) {
-      summary.durationMs = (summary.durationMs ?? 0) + step.durationMs;
-    }
   }
 
   // Without job_finished, keep the job "running" only while a step is running
@@ -70,6 +67,10 @@ export function summarizeJobs(
     }
   }
 
+  for (const summary of summaries) {
+    applyJobTiming(summary, steps, aliases);
+  }
+
   return summaries;
 }
 
@@ -83,6 +84,51 @@ export function stepsForJob(steps: StepGroup[], job: JobSummary | null): StepGro
 export function defaultSelectedJobId(jobs: JobSummary[]): string | null {
   const withActivity = jobs.find((job) => job.status !== 'pending');
   return withActivity?.id ?? jobs[0]?.id ?? null;
+}
+
+function applyJobTiming(
+  summary: JobSummary,
+  steps: StepGroup[],
+  aliases: JobAliasMap,
+): void {
+  let startedAt: number | undefined;
+  let finishedAt: number | undefined;
+  let live = false;
+  let actMs = 0;
+
+  for (const step of steps) {
+    if (!matchesJob(summary, step.job, aliases)) {
+      continue;
+    }
+    if (step.startedAt != null) {
+      startedAt = startedAt == null
+        ? step.startedAt
+        : Math.min(startedAt, step.startedAt);
+    }
+    if (step.status === 'running') {
+      live = true;
+    }
+    if (step.finishedAt != null) {
+      finishedAt = finishedAt == null
+        ? step.finishedAt
+        : Math.max(finishedAt, step.finishedAt);
+    }
+    if (step.durationMs != null && step.durationMs > 0) {
+      actMs += step.durationMs;
+    }
+  }
+
+  if (startedAt != null) {
+    summary.startedAt = startedAt;
+    if (!live && finishedAt != null) {
+      summary.finishedAt = finishedAt;
+    }
+    return;
+  }
+
+  if (actMs > 0) {
+    summary.durationMs = actMs;
+  }
 }
 
 function matchesJob(

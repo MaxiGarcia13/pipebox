@@ -13,6 +13,7 @@ import (
   "time"
 
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/dockerimage"
+  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/doctor"
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/envfile"
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/event"
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/provider/jenkins/jfrimage"
@@ -41,6 +42,8 @@ func runController(ctx context.Context, options Options) (exitCode int, status s
     _ = event.EmitStdout(event.Error{Type: event.TypeError, Message: fmt.Sprintf("jenkins image: %v", err)})
     return 1, "failed"
   }
+  // Image exists now; the controller has not started yet.
+  doctor.Emit()
 
   session, err := startController(ctx, options)
   if session != nil && session.cleanup != nil {

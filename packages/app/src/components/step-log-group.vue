@@ -8,11 +8,17 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { Skeleton } from '@/components/ui/skeleton';
+import { visibleDurationMs } from '@/domain/run';
 import { formatDuration } from '@/utils';
 
-defineProps<{
+const props = defineProps<{
   group: StepGroup;
+  now?: number;
 }>();
+
+function stepDuration(group: StepGroup): number | undefined {
+  return visibleDurationMs(group, props.now ?? 0, group.status === 'running');
+}
 </script>
 
 <template>
@@ -50,10 +56,10 @@ defineProps<{
         {{ group.step }}
       </span>
       <span
-        v-if="formatDuration(group.durationMs)"
+        v-if="formatDuration(stepDuration(group))"
         class="shrink-0 font-mono text-xs text-muted-foreground"
       >
-        {{ formatDuration(group.durationMs) }}
+        {{ formatDuration(stepDuration(group)) }}
       </span>
     </CollapsibleTrigger>
 

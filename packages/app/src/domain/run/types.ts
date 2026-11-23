@@ -8,6 +8,8 @@ export interface StepGroup {
   job: string;
   step: string;
   status: StepRunStatus;
+  startedAt?: number;
+  finishedAt?: number;
   durationMs?: number;
   lines: string[];
   openDefault: boolean;
@@ -18,6 +20,8 @@ export interface JobSummary {
   name: string;
   needs: string[];
   status: JobRunStatus;
+  startedAt?: number;
+  finishedAt?: number;
   durationMs?: number;
 }
 

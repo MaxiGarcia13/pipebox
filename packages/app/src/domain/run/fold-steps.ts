@@ -23,10 +23,14 @@ export function foldSteps(
 
   for (const event of events) {
     if (event.type === 'step_started') {
-      demoteOtherRunningSteps(groups, event.job, event.step, seeded, aliases);
+      demoteOtherRunningSteps(groups, event.job, event.step, seeded, aliases, event.receivedAt);
       const group = findOrInsertStep(groups, byKey, event.job, event.step, aliases);
       group.status = 'running';
       group.openDefault = true;
+      if (event.receivedAt != null) {
+        group.startedAt = event.receivedAt;
+      }
+      delete group.finishedAt;
       delete group.durationMs;
       continue;
     }
@@ -35,6 +39,9 @@ export function foldSteps(
       const group = findOrInsertStep(groups, byKey, event.job, event.step, aliases);
       group.status = event.status;
       group.durationMs = event.durationMs;
+      if (event.receivedAt != null) {
+        group.finishedAt = event.receivedAt;
+      }
       group.openDefault = event.status === 'failed';
       continue;
     }
@@ -66,6 +73,7 @@ function demoteOtherRunningSteps(
   activeStep: string,
   seeded: Set<string>,
   aliases: JobAliasMap,
+  receivedAt?: number,
 ): void {
   const normalizedActive = normalizeStepName(activeStep);
   const activeIsExpanded = isExpandedStep(job, activeStep, seeded);
@@ -83,6 +91,9 @@ function demoteOtherRunningSteps(
 
     group.status = 'passed';
     group.openDefault = false;
+    if (receivedAt != null && group.finishedAt == null) {
+      group.finishedAt = receivedAt;
+    }
   }
 }
 

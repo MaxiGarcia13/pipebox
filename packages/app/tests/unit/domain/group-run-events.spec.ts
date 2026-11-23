@@ -40,9 +40,93 @@ describe('groupRunEvents', () => {
 
     expect(grouped.jobs).toHaveLength(1);
     expect(grouped.jobs[0]?.status).toBe('passed');
+    expect(grouped.jobs[0]?.durationMs).toBe(10);
     expect(grouped.steps).toHaveLength(1);
     expect(grouped.steps[0]?.status).toBe('passed');
     expect(grouped.steps[0]?.durationMs).toBe(10);
+  });
+
+  it('times a job from the first step start through now, not the sum of steps', () => {
+    const grouped = groupRunEvents([
+      {
+        type: 'job_graph',
+        jobs: [
+          {
+            id: 'e2e',
+            name: 'e2e',
+            needs: [],
+            steps: ['install', 'test'],
+          },
+        ],
+      },
+      {
+        type: 'step_started',
+        job: 'e2e',
+        step: 'install',
+        receivedAt: 1_000,
+      },
+      {
+        type: 'step_finished',
+        job: 'e2e',
+        step: 'install',
+        status: 'passed',
+        durationMs: 10,
+        receivedAt: 5_000,
+      },
+      {
+        type: 'step_started',
+        job: 'e2e',
+        step: 'test',
+        receivedAt: 5_000,
+      },
+    ]);
+
+    expect(grouped.steps[0]).toMatchObject({
+      startedAt: 1_000,
+      finishedAt: 5_000,
+    });
+    expect(grouped.steps[1]).toMatchObject({
+      status: 'running',
+      startedAt: 5_000,
+    });
+    expect(grouped.steps[1]?.finishedAt).toBeUndefined();
+    expect(grouped.jobs[0]).toMatchObject({
+      status: 'running',
+      startedAt: 1_000,
+    });
+    expect(grouped.jobs[0]?.finishedAt).toBeUndefined();
+    expect(grouped.jobs[0]?.durationMs).toBeUndefined();
+  });
+
+  it('freezes a finished job at the last step receipt time', () => {
+    const grouped = groupRunEvents([
+      {
+        type: 'step_started',
+        job: 'lint',
+        step: 'echo ok',
+        receivedAt: 2_000,
+      },
+      {
+        type: 'step_finished',
+        job: 'lint',
+        step: 'echo ok',
+        status: 'passed',
+        durationMs: 12,
+        receivedAt: 9_000,
+      },
+      {
+        type: 'run_finished',
+        status: 'passed',
+        exitCode: 0,
+        receivedAt: 9_100,
+      },
+    ]);
+
+    expect(grouped.jobs[0]).toMatchObject({
+      startedAt: 2_000,
+      finishedAt: 9_000,
+    });
+    expect(grouped.jobs[0]?.durationMs).toBeUndefined();
   });
 
   it('marks remaining steps failed after run failure', () => {

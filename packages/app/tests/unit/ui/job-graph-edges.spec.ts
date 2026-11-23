@@ -211,4 +211,25 @@ describe('job timeline connectors', () => {
     expect(connector.find('circle').attributes('cy')).toBe('48');
     expect(wrapper.findAll('button')).toHaveLength(3);
   });
+
+  it('shows the wall-clock span while a job is running', () => {
+    const jobs: JobSummary[] = [
+      {
+        id: 'e2e',
+        name: 'e2e',
+        needs: [],
+        status: 'running',
+        startedAt: 1_000,
+      },
+    ];
+    const wrapper = mount(JobTimeline, {
+      props: {
+        jobs,
+        selectedId: 'e2e',
+        now: 28_000,
+      },
+    });
+
+    expect(wrapper.get('button').text()).toContain('27s');
+  });
 });

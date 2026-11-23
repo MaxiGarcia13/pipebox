@@ -3,12 +3,13 @@ import type { JobSummary } from '@/domain/run';
 import { computed } from 'vue';
 import JobGraphConnector from '@/components/job-graph-connector.vue';
 import RunStatusIcon from '@/components/run-status-icon.vue';
-import { groupJobsByColumn } from '@/domain/run';
+import { groupJobsByColumn, visibleDurationMs } from '@/domain/run';
 import { formatDuration } from '@/utils';
 
 const props = defineProps<{
   jobs: JobSummary[];
   selectedId: string | null;
+  now?: number;
 }>();
 
 defineEmits<{
@@ -16,6 +17,10 @@ defineEmits<{
 }>();
 
 const columns = computed(() => groupJobsByColumn(props.jobs));
+
+function jobDuration(job: JobSummary): number | undefined {
+  return visibleDurationMs(job, props.now ?? 0, job.status === 'running');
+}
 </script>
 
 <template>
@@ -44,10 +49,10 @@ const columns = computed(() => groupJobsByColumn(props.jobs));
               {{ job.name }}
             </span>
             <span
-              v-if="formatDuration(job.durationMs)"
+              v-if="formatDuration(jobDuration(job))"
               class="shrink-0 font-mono text-xs text-muted-foreground"
             >
-              {{ formatDuration(job.durationMs) }}
+              {{ formatDuration(jobDuration(job)) }}
             </span>
           </button>
         </div>

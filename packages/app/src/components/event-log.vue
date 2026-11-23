@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import type { Artifact, ErrorEvent, RunnerEvent } from '@/domain/runner-events';
-import { computed, ref } from 'vue';
+import { computed, ref, toRef } from 'vue';
 import ArtifactList from '@/components/artifact-list.vue';
 import JobTimeline from '@/components/job-timeline.vue';
 import StepLogGroup from '@/components/step-log-group.vue';
+import { useNow } from '@/composables/use-now';
 import {
   defaultSelectedJobId,
   groupRunEvents,
@@ -17,6 +18,7 @@ const props = defineProps<{
 }>();
 
 const selectedId = ref<string | null>(null);
+const now = useNow(toRef(props, 'isRunning'));
 
 const grouped = computed(() => groupRunEvents(props.events));
 
@@ -90,6 +92,7 @@ const isEmpty = computed(() =>
       <JobTimeline
         :jobs="grouped.jobs"
         :selected-id="activeJobId"
+        :now="now"
         @select="selectedId = $event"
       />
 
@@ -98,6 +101,7 @@ const isEmpty = computed(() =>
           v-for="group in visibleSteps"
           :key="group.key"
           :group="group"
+          :now="now"
         />
 
         <p

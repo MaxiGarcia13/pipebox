@@ -1,4 +1,4 @@
-import type { GroupedRun } from './types';
+import type { GroupedRun, StepGroup } from './types';
 import type {
   JobNode,
   RunnerEvent,
@@ -28,6 +28,7 @@ export function groupRunEvents(events: RunnerEvent[]): GroupedRun {
   advancePendingSteps(steps, runFinished, aliases);
   closeExpandedParents(steps, seeded, aliases);
   settleAfterRunFinished(steps, runStatus);
+  closeOpenClocks(steps, events);
   const jobs = summarizeJobs(graphJobs, steps, runFinished, aliases);
   return { jobs, steps };
 }
@@ -40,6 +41,23 @@ function jobsFromGraph(events: RunnerEvent[]): JobNode[] {
     }
   }
   return [];
+}
+
+function closeOpenClocks(steps: StepGroup[], events: RunnerEvent[]): void {
+  let finishedAt: number | undefined;
+  for (const event of events) {
+    if (event.type === 'run_finished' && event.receivedAt != null) {
+      finishedAt = event.receivedAt;
+    }
+  }
+  if (finishedAt == null) {
+    return;
+  }
+  for (const step of steps) {
+    if (step.startedAt != null && step.finishedAt == null && step.status !== 'running') {
+      step.finishedAt = finishedAt;
+    }
+  }
 }
 
 function runFinishedStatus(events: RunnerEvent[]): RunStatus | null {

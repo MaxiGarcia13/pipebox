@@ -135,6 +135,15 @@ func TestDoctorEmitsDoctorEvent(t *testing.T) {
   if daemonOK && !foundJenkinsImage {
     t.Fatalf("expected jenkins_image check when daemon is up, got %#v", doctor.Checks)
   }
+  anyFailed := false
+  for _, check := range doctor.Checks {
+    if !check.OK {
+      anyFailed = true
+    }
+  }
+  if doctor.OK == anyFailed {
+    t.Fatalf("ok=%v does not match checks %#v", doctor.OK, doctor.Checks)
+  }
 }
 
 func TestListGitHubOnly(t *testing.T) {

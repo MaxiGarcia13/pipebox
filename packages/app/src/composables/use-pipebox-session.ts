@@ -1,4 +1,4 @@
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { missingRequiredInputs, toInputArgs } from '@/domain/workflow-inputs';
 import { useDoctorSession } from './use-doctor-session';
 import { useProjectSession } from './use-project-session';
@@ -10,7 +10,9 @@ export function usePipeboxSession() {
   const project = useProjectSession();
   const doctor = useDoctorSession();
   const workflow = useWorkflowSession(project.workflows);
-  const run = useRunSession();
+  const run = useRunSession({
+    onDoctor: doctor.applyDoctor,
+  });
 
   let unsubscribeEvents: (() => void) | undefined;
   let unsubscribeOpenRepo: (() => void) | undefined;
@@ -35,6 +37,12 @@ export function usePipeboxSession() {
     unsubscribeEvents = run.subscribe();
     void refreshDoctor();
     void openLaunchRepo();
+  });
+
+  watch(run.isRunning, (running, wasRunning) => {
+    if (wasRunning && !running) {
+      void doctor.runDoctor();
+    }
   });
 
   onUnmounted(() => {

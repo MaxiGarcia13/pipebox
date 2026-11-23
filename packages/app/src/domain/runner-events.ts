@@ -50,12 +50,14 @@ export interface RunFinishedEvent {
   type: 'run_finished';
   status: RunStatus;
   exitCode: number;
+  receivedAt?: number;
 }
 
 export interface StepStartedEvent {
   type: 'step_started';
   job: string;
   step: string;
+  receivedAt?: number;
 }
 
 export interface JobNode {
@@ -76,6 +78,7 @@ export interface StepFinishedEvent {
   step: string;
   status: StepStatus;
   durationMs?: number;
+  receivedAt?: number;
 }
 
 export interface LogEvent {

@@ -7,6 +7,7 @@ import {
   FIXTURE_REPO_JENKINS,
   FIXTURE_REPO_MIXED,
   githubWorkflow,
+  okDoctor,
   passedRunEvents,
 } from '../helpers/fixtures';
 import { mountApp } from '../helpers/mount-app';
@@ -111,6 +112,42 @@ describe('app session UI', () => {
 
     expect(wrapper.get('[data-testid="setup-banner"]').text()).toContain('daemon');
     expect(mock.doctorCalls.mock.calls.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('updates the banner from a doctor event on the run stream', async () => {
+    const { wrapper, mock } = await mountApp({
+      doctor: doctorWithFailedCheck('act_image'),
+    });
+
+    expect(wrapper.get('[data-testid="setup-banner"]').text()).toContain('Act image');
+
+    mock.emit({ ...okDoctor, version: '' });
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="setup-banner"]').exists()).toBe(false);
+    expect(wrapper.get('[data-testid="doctor-label"]').text()).toBe('OK');
+    expect(wrapper.text()).toContain('v0.7.0');
+  });
+
+  it('refreshes doctor when a run finishes', async () => {
+    const { wrapper, mock } = await mountApp({
+      launchRepo: FIXTURE_REPO_GITHUB,
+      doctor: doctorWithFailedCheck('act_image'),
+      runEvents: passedRunEvents(githubWorkflow.path),
+    });
+
+    expect(wrapper.get('[data-testid="setup-banner"]').text()).toContain('Act image');
+    const callsBefore = mock.doctorCalls.mock.calls.length;
+
+    mock.setDoctor(okDoctor);
+    await wrapper.get('[data-testid="workflow-row"]').trigger('click');
+    await flushPromises();
+    await wrapper.get('#workflow-input-note').setValue('ship it');
+    await wrapper.get('[data-testid="workflow-run"]').trigger('click');
+    await flushPromises();
+
+    expect(mock.doctorCalls.mock.calls.length).toBeGreaterThan(callsBefore);
+    expect(wrapper.find('[data-testid="setup-banner"]').exists()).toBe(false);
   });
 
   it('hides setup banner when doctor is ok', async () => {

@@ -1,3 +1,4 @@
+export { visibleDurationMs } from './elapsed';
 export { groupRunEvents } from './group-run-events';
 export { groupJobsByColumn, layoutJobGraph } from './layout-job-graph';
 export type { LaidOutJob } from './layout-job-graph';

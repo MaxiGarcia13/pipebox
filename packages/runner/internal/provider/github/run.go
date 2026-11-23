@@ -9,6 +9,7 @@ import (
   "strings"
   "syscall"
 
+  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/doctor"
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/envfile"
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/event"
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/provider/github/actimage"
@@ -97,6 +98,9 @@ func runAct(ctx context.Context, options Options) (exitCode int, status string) 
     })
     return 1, "failed"
   }
+
+  // buildActCommand already ensured the act image.
+  doctor.Emit()
 
   return runstream.Run(ctx, cmd, actparse.NewParser(), "start dockerized act")
 }
