@@ -54,6 +54,15 @@ func InstallDesktop(version string, progress Progress) (string, error) {
   return placeDesktop(extractDir)
 }
 
+func DesktopInstalled() bool {
+  path, err := userDesktopPath()
+  if err != nil {
+    return false
+  }
+  _, err = os.Stat(path)
+  return err == nil
+}
+
 func UninstallDesktop() (string, error) {
   path, err := userDesktopPath()
   if err != nil {

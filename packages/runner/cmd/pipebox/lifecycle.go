@@ -29,6 +29,15 @@ func runLifecycle(command string, args []string) {
       os.Exit(1)
     }
     ui.Ok(fmt.Sprintf("Desktop installed (%s)", desktopPath))
+  case "install-mcp":
+    mcpPath, err := install.InstallMCP(version, ui)
+    if err != nil {
+      ui.Err(err)
+      os.Exit(1)
+    }
+    ui.Ok(fmt.Sprintf("MCP installed (%s)", mcpPath))
+    ui.Info("Add this to your MCP client config:")
+    ui.Info(install.MCPConfigSnippet())
   case "update":
     runUpdate(ui, args)
   case "uninstall":
@@ -60,7 +69,12 @@ func runUpdate(ui *termui.UI, args []string) {
     return
   }
   ui.Ok(fmt.Sprintf("CLI updated to %s (%s)", result.TargetVersion, result.CLIPath))
-  ui.Ok(fmt.Sprintf("Desktop installed (%s)", result.DesktopPath))
+  if result.DesktopPath != "" {
+    ui.Ok(fmt.Sprintf("Desktop updated (%s)", result.DesktopPath))
+  }
+  if result.MCPPath != "" {
+    ui.Ok(fmt.Sprintf("MCP updated (%s)", result.MCPPath))
+  }
   ui.Ok("Shell completions updated")
   ui.Info("Open a new terminal tab to use completions.")
 }
@@ -82,5 +96,16 @@ func runUninstall(ui *termui.UI) {
     ui.Info("Desktop not installed")
   } else {
     ui.Ok(fmt.Sprintf("Uninstalled desktop (%s)", desktopPath))
+  }
+
+  mcpPath, err := install.UninstallMCP()
+  if err != nil {
+    ui.Err(err)
+    os.Exit(1)
+  }
+  if mcpPath == "" {
+    ui.Info("MCP not installed")
+  } else {
+    ui.Ok(fmt.Sprintf("Uninstalled MCP (%s)", mcpPath))
   }
 }

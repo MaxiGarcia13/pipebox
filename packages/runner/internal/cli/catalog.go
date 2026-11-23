@@ -131,8 +131,18 @@ func DefaultCatalog() Catalog {
         TakesNoArgs: true,
       },
       {
+        Name:        "install-mcp",
+        Usage:       "Install MCP server for AI agents",
+        TakesNoArgs: true,
+      },
+      {
+        Name:        "mcp",
+        Usage:       "Run the PipeBox MCP server (stdio)",
+        TakesNoArgs: true,
+      },
+      {
         Name:  "update",
-        Usage: "Update CLI and desktop app",
+        Usage: "Update CLI; desktop and MCP only if already installed",
         Flags: []Flag{
           {
             Names:     []string{"--check"},
@@ -171,8 +181,13 @@ func DefaultCatalog() Catalog {
       "  Bare `pipebox` (or `pipebox --repo <path>`) opens the desktop UI.",
       "  `-n` / `--new` opens a new window instead of reusing.",
       "  `install` / `install-desktop` fetch the UI from GitHub Releases.",
-      "  `update` replaces managed CLI installs + desktop app.",
+      "  `update` replaces managed CLI; desktop and MCP only if already installed.",
       "  Set `PIPEBOX_APP` to override the desktop path.",
+      "",
+      "MCP:",
+      "  `install-mcp` fetches the agent MCP server from GitHub Releases.",
+      "  `mcp` runs the stdio server (same as `pipebox-mcp`).",
+      "  Set `PIPEBOX_MCP` to override the MCP binary path.",
       "",
       "Secrets:",
       "  `run` loads `.env` and `.env.*` from the repo when `--secret-file` is omitted.",
@@ -184,12 +199,14 @@ func DefaultCatalog() Catalog {
       "  pipebox doctor",
       "  pipebox list --repo <path>",
       "  pipebox run --repo <path> --workflow <file>",
+      "  pipebox install-mcp",
       "  pipebox completion zsh",
       "",
       "Completions:",
       "  Add to your shell rc after install: eval \"$(pipebox completion zsh)\"  # or bash",
       "  fish: pipebox completion fish > ~/.config/fish/completions/pipebox.fish",
     },
+
   }
 }
 
