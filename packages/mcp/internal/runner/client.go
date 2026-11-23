@@ -66,7 +66,7 @@ func (c *Client) List(ctx context.Context, opts ListOptions) (*event.WorkflowLis
   if opts.Repo == "" {
     return nil, fmt.Errorf("repo is required")
   }
-  raw, err := c.runCollect(ctx, nil, "list", "--repo", opts.Repo)
+  raw, err := c.runCollect(ctx, nil, listArgs(opts)...)
   if err != nil {
     return nil, err
   }
@@ -81,11 +81,7 @@ func (c *Client) Graph(ctx context.Context, opts GraphOptions) (*event.JobGraph,
   if opts.Repo == "" || opts.Workflow == "" {
     return nil, fmt.Errorf("repo and workflow are required")
   }
-  args := []string{"graph", "--repo", opts.Repo, "--workflow", opts.Workflow}
-  if opts.Provider != "" {
-    args = append(args, "--provider", opts.Provider)
-  }
-  raw, err := c.runCollect(ctx, nil, args...)
+  raw, err := c.runCollect(ctx, nil, graphArgs(opts)...)
   if err != nil {
     return nil, err
   }
@@ -100,17 +96,7 @@ func (c *Client) Run(ctx context.Context, opts RunOptions, onEvent func(json.Raw
   if opts.Repo == "" || opts.Workflow == "" {
     return 1, fmt.Errorf("repo and workflow are required")
   }
-  args := []string{"run", "--repo", opts.Repo, "--workflow", opts.Workflow}
-  if opts.Provider != "" {
-    args = append(args, "--provider", opts.Provider)
-  }
-  if opts.Job != "" {
-    args = append(args, "--job", opts.Job)
-  }
-  for _, input := range opts.Inputs {
-    args = append(args, "--input", input)
-  }
-  return c.runStream(ctx, onEvent, args...)
+  return c.runStream(ctx, onEvent, runArgs(opts)...)
 }
 
 func (c *Client) runCollect(ctx context.Context, onEvent func(json.RawMessage) error, args ...string) ([]byte, error) {
