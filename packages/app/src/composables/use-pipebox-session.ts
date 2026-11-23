@@ -102,6 +102,11 @@ export function usePipeboxSession() {
     await doctor.runDoctor();
   }
 
+  async function refreshWorkflows() {
+    statusMessage.value = '';
+    await project.refresh();
+  }
+
   async function selectWorkflow(workflowPath: string) {
     workflow.select(workflowPath);
     if (workflowPath === run.runEventsWorkflow.value) {
@@ -162,6 +167,7 @@ export function usePipeboxSession() {
     selectRepo,
     selectWorkflow,
     runDoctor: refreshDoctor,
+    refreshWorkflows,
     startRun,
     stopRun: run.stop,
     switchProjectOpen: project.switchProjectOpen,

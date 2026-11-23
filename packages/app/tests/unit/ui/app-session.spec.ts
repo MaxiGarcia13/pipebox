@@ -9,6 +9,7 @@ import {
   githubWorkflow,
   okDoctor,
   passedRunEvents,
+  workflowList,
 } from '../helpers/fixtures';
 import { mountApp } from '../helpers/mount-app';
 
@@ -96,6 +97,34 @@ describe('app session UI', () => {
 
     expect(wrapper.get('[data-testid="workflow-list-none"]').text())
       .toContain('No workflows found');
+  });
+
+  it('refreshes the workflow list for the open project', async () => {
+    const list = workflowList([githubWorkflow], ['github']);
+    const { wrapper } = await mountApp({
+      launchRepo: FIXTURE_REPO_GITHUB,
+      listsByRepo: { [FIXTURE_REPO_GITHUB]: list },
+    });
+
+    expect(wrapper.findAll('[data-testid="workflow-row"]')).toHaveLength(1);
+    expect(wrapper.find('[data-testid="workflow-refresh"]').exists()).toBe(true);
+
+    Object.assign(list, workflowList([
+      githubWorkflow,
+      {
+        ...githubWorkflow,
+        id: 'publish',
+        name: 'Publish CLI',
+        path: '.github/workflows/publish.yml',
+      },
+    ], ['github']));
+
+    await wrapper.get('[data-testid="workflow-refresh"]').trigger('click');
+    await flushPromises();
+
+    const rows = wrapper.findAll('[data-testid="workflow-row"]');
+    expect(rows).toHaveLength(2);
+    expect(rows[1]?.get('[data-testid="workflow-name"]').text()).toBe('Publish CLI');
   });
 
   it('shows doctor banner for docker failure and refreshes', async () => {

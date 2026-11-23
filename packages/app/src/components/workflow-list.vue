@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Workflow } from '@/domain/runner-events';
-import { Play, Square } from 'lucide-vue-next';
+import { Play, RefreshCw, Square } from 'lucide-vue-next';
 import ProviderIcon from '@/components/provider-icon.vue';
 import { Button } from '@/components/ui/button';
 
@@ -14,6 +14,7 @@ defineProps<{
 
 defineEmits<{
   openProject: [];
+  refresh: [];
   select: [path: string];
   run: [path: string];
   stop: [];
@@ -22,10 +23,22 @@ defineEmits<{
 
 <template>
   <div class="flex min-h-0 flex-1 flex-col">
-    <div class="border-b border-sidebar-border px-4 py-2">
+    <div class="flex items-center justify-between gap-2 border-b border-sidebar-border px-4 py-2">
       <h2 class="text-sm font-medium text-sidebar-foreground">
         Workflows
       </h2>
+      <Button
+        v-if="hasRepo"
+        data-testid="workflow-refresh"
+        variant="ghost"
+        size="icon-xs"
+        class="rounded-xl text-muted-foreground"
+        title="Refresh workflows"
+        aria-label="Refresh workflows"
+        @click="$emit('refresh')"
+      >
+        <RefreshCw class="size-4" />
+      </Button>
     </div>
 
     <div

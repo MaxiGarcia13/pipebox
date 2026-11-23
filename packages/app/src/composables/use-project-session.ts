@@ -12,9 +12,17 @@ export function useProjectSession() {
     repoPath.value = nextPath;
     branch.value = null;
     workflows.value = [];
+    await refresh();
+  }
+
+  async function refresh() {
+    const path = repoPath.value;
+    if (!path) {
+      return;
+    }
     const [list, nextBranch] = await Promise.all([
-      window.pipebox.listWorkflows(nextPath),
-      window.pipebox.gitBranch(nextPath),
+      window.pipebox.listWorkflows(path),
+      window.pipebox.gitBranch(path),
     ]);
     workflows.value = list.workflows;
     branch.value = nextBranch;
@@ -43,6 +51,7 @@ export function useProjectSession() {
     workflows,
     switchProjectOpen,
     load,
+    refresh,
     requestSwitch,
     takePendingRepo,
     cancelSwitch,

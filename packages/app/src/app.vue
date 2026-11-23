@@ -27,6 +27,7 @@ const {
   selectRepo,
   selectWorkflow,
   runDoctor,
+  refreshWorkflows,
   startRun,
   stopRun,
   switchProjectOpen,
@@ -62,6 +63,7 @@ const {
         :running-path="runningWorkflow"
         :is-running="isRunning"
         @open-project="selectRepo"
+        @refresh="refreshWorkflows"
         @select="selectWorkflow($event)"
         @run="startRun"
         @stop="stopRun"
