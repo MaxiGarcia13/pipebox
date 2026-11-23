@@ -3,8 +3,16 @@ package server
 import (
   "fmt"
 
+  mcpserver "github.com/mark3labs/mcp-go/server"
+
   "github.com/MaxiGarcia13/pipebox/packages/mcp/internal/runcache"
   "github.com/MaxiGarcia13/pipebox/packages/mcp/internal/runner"
+)
+
+const (
+  serverName    = "pipebox"
+  serverVersion = "0.1.0"
+  defaultTail   = 80
 )
 
 type Server struct {
@@ -26,6 +34,16 @@ func (s *Server) Serve() error {
   if s == nil || s.Runner == nil {
     return fmt.Errorf("server is not configured")
   }
-  // Stdio MCP tool registration lands in the next plan task.
-  return fmt.Errorf("MCP stdio server not implemented yet")
+  if s.Cache == nil {
+    s.Cache = runcache.New()
+  }
+
+  mcpServer := mcpserver.NewMCPServer(
+    serverName,
+    serverVersion,
+    mcpserver.WithToolCapabilities(true),
+    mcpserver.WithRecovery(),
+  )
+  s.registerTools(mcpServer)
+  return mcpserver.ServeStdio(mcpServer)
 }
