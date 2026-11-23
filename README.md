@@ -69,6 +69,17 @@ Builds are unsigned for now. On macOS, if Gatekeeper blocks the app: right-click
 - Run jobs with Dockerized act / ephemeral Jenkins (no host `act` or Jenkins binary)
 - Inject secrets from `.env` / `.env.*`
 - Live step logs in the desktop UI — or pure CLI (`list` / `graph` / `run`)
+- Optional MCP server for AI agents (skinny run summaries + step log tails)
+
+## MCP (agents)
+
+Use PipeBox from Cursor, Claude Desktop, or any MCP-capable agent without dumping full CI logs into the model:
+
+```bash
+pipebox install-mcp
+```
+
+Then add `pipebox-mcp` as a stdio MCP server in your client. Setup, tools, and the preferred agent loop: [packages/mcp/README.md](packages/mcp/README.md).
 
 ## Updates
 
@@ -78,7 +89,7 @@ Check for a newer release:
 pipebox update --check
 ```
 
-Install the latest CLI + desktop:
+Install the latest CLI (desktop and MCP only if already installed):
 
 ```bash
 pipebox update
@@ -164,13 +175,25 @@ Fetch the desktop app only:
 pipebox install-desktop
 ```
 
-Update CLI + desktop (`--check` to report only, `--version` to pin):
+Fetch the MCP server for AI agents:
+
+```bash
+pipebox install-mcp
+```
+
+Run the MCP server (stdio):
+
+```bash
+pipebox mcp
+```
+
+Update CLI; desktop and MCP only if already installed (`--check` to report only, `--version` to pin):
 
 ```bash
 pipebox update [--check] [--version <v>]
 ```
 
-Remove the local CLI install and desktop app:
+Remove the local CLI install, desktop app, and MCP (if present):
 
 ```bash
 pipebox uninstall
@@ -182,19 +205,22 @@ pipebox uninstall
 | ----------------- | ------------------------ | ------------------------------------------------------------------------ |
 | `packages/app`    | Desktop shell + UI       | Electron, Vue 3, Vite, Tailwind v4, [shadcn-vue](https://shadcn-vue.com) |
 | `packages/runner` | CI runner + terminal CLI | Go binary `pipebox`                                                      |
+| `packages/mcp`    | MCP server for agents    | Go binary `pipebox-mcp` (stdio; wraps the CLI)                           |
 
 ```mermaid
 flowchart LR
   Vue[Vue_renderer] -->|IPC| Preload[preload_bridge]
   Preload --> Main[Electron_main]
   Main -->|spawn_stdin_stdout| Runner[Go_runner]
+  Agent[MCP_client] -->|stdio| MCP[pipebox_mcp]
+  MCP -->|spawn_NDJSON| Runner
   Runner -->|docker_run| ActImage[pipebox_act_image]
   ActImage --> Docker[Docker]
   Runner -->|NDJSON_events| Main
   Main -->|IPC_events| Vue
 ```
 
-The Go binary is both the app’s runner (spawned by Electron) and the CLI above. Provider discovery and boundaries: [AGENTS.md](AGENTS.md).
+The Go runner is shared by the desktop app and the MCP server. Provider discovery and boundaries: [AGENTS.md](AGENTS.md). MCP setup: [packages/mcp/README.md](packages/mcp/README.md).
 
 ## Develop
 
