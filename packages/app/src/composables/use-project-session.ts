@@ -1,10 +1,11 @@
-import type { Workflow } from '@/domain/runner-events';
+import type { Workflow, WorkflowProvider } from '@/domain/runner-events';
 import { ref } from 'vue';
 
 export function useProjectSession() {
   const repoPath = ref<string | null>(null);
   const branch = ref<string | null>(null);
   const workflows = ref<Workflow[]>([]);
+  const providers = ref<WorkflowProvider[]>([]);
   const pendingRepo = ref<string | null>(null);
   const switchProjectOpen = ref(false);
 
@@ -12,6 +13,7 @@ export function useProjectSession() {
     repoPath.value = nextPath;
     branch.value = null;
     workflows.value = [];
+    providers.value = [];
     await refresh();
   }
 
@@ -25,6 +27,9 @@ export function useProjectSession() {
       window.pipebox.gitBranch(path),
     ]);
     workflows.value = list.workflows;
+    providers.value = list.providers ?? [
+      ...new Set(list.workflows.map((workflow) => workflow.provider)),
+    ];
     branch.value = nextBranch;
   }
 
@@ -49,6 +54,7 @@ export function useProjectSession() {
     repoPath,
     branch,
     workflows,
+    providers,
     switchProjectOpen,
     load,
     refresh,

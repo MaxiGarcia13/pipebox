@@ -14,6 +14,7 @@ const {
   repoPath,
   branch,
   workflows,
+  providers,
   selectedWorkflow,
   runningWorkflow,
   doctor,
@@ -52,7 +53,10 @@ const {
     </template>
 
     <template #banner>
-      <SetupBanner :doctor="doctor" />
+      <SetupBanner
+        :doctor="doctor"
+        :providers="providers"
+      />
     </template>
 
     <template #sidebar>
@@ -95,6 +99,7 @@ const {
     <template #panel>
       <DoctorStatus
         :doctor="doctor"
+        :providers="providers"
         @refresh="runDoctor"
       />
     </template>

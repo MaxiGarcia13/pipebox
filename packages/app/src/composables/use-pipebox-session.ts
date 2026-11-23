@@ -154,6 +154,7 @@ export function usePipeboxSession() {
     repoPath: project.repoPath,
     branch: project.branch,
     workflows: project.workflows,
+    providers: project.providers,
     selectedWorkflow: workflow.selectedWorkflow,
     runningWorkflow: run.runningWorkflow,
     doctor: doctor.doctor,

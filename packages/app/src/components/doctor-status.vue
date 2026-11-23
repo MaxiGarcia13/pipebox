@@ -1,15 +1,28 @@
 <script setup lang="ts">
-import type { DoctorEvent } from '@/domain/runner-events';
+import type { DoctorEvent, WorkflowProvider } from '@/domain/runner-events';
 import { RefreshCw } from 'lucide-vue-next';
+import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
+import { relevantDoctorChecks } from '@/domain/relevant-doctor-checks';
 
-defineProps<{
+const props = defineProps<{
   doctor: DoctorEvent | null;
+  providers: WorkflowProvider[];
 }>();
 
 defineEmits<{
   refresh: [];
 }>();
+
+const checks = computed(() =>
+  props.doctor
+    ? relevantDoctorChecks(props.doctor.checks, props.providers)
+    : [],
+);
+
+const isOk = computed(() =>
+  checks.value.length > 0 && checks.value.every((check) => check.ok),
+);
 </script>
 
 <template>
@@ -20,14 +33,16 @@ defineEmits<{
     <div class="flex shrink-0 items-center gap-2 text-sm font-medium">
       <span
         class="size-2 rounded-full"
-        :class="doctor?.ok ? 'bg-chart-3' : 'bg-destructive'"
+        :class="doctor
+          ? (isOk ? 'bg-chart-3' : 'bg-destructive')
+          : 'bg-muted-foreground'"
       />
       Doctor
       <span
         data-testid="doctor-label"
         class="text-muted-foreground"
       >
-        {{ doctor ? (doctor.ok ? 'OK' : 'issues') : '…' }}
+        {{ doctor ? (isOk ? 'OK' : 'issues') : '…' }}
       </span>
 
       <Button
@@ -47,7 +62,7 @@ defineEmits<{
       class="flex items-center gap-2"
     >
       <li
-        v-for="check in doctor.checks"
+        v-for="check in checks"
         :key="check.name"
         class="rounded-xl border border-border px-4 py-2 text-xs whitespace-nowrap"
         :title="check.detail || check.path || check.name"

@@ -145,6 +145,7 @@ describe('app session UI', () => {
 
   it('updates the banner from a doctor event on the run stream', async () => {
     const { wrapper, mock } = await mountApp({
+      launchRepo: FIXTURE_REPO_GITHUB,
       doctor: doctorWithFailedCheck('act_image'),
     });
 
@@ -181,6 +182,47 @@ describe('app session UI', () => {
 
   it('hides setup banner when doctor is ok', async () => {
     const { wrapper } = await mountApp();
+    expect(wrapper.find('[data-testid="setup-banner"]').exists()).toBe(false);
+    expect(wrapper.get('[data-testid="doctor-label"]').text()).toBe('OK');
+  });
+
+  it('hides act image hints when the project has no github workflows', async () => {
+    const { wrapper } = await mountApp({
+      launchRepo: FIXTURE_REPO_JENKINS,
+      doctor: doctorWithFailedCheck('act_image'),
+    });
+
+    expect(wrapper.find('[data-testid="setup-banner"]').exists()).toBe(false);
+    expect(wrapper.get('[data-testid="doctor-label"]').text()).toBe('OK');
+    expect(wrapper.text()).not.toContain('act_image');
+  });
+
+  it('hides jenkins image hints when the project has no jenkins workflows', async () => {
+    const { wrapper } = await mountApp({
+      launchRepo: FIXTURE_REPO_GITHUB,
+      doctor: doctorWithFailedCheck('jenkins_image'),
+    });
+
+    expect(wrapper.find('[data-testid="setup-banner"]').exists()).toBe(false);
+    expect(wrapper.get('[data-testid="doctor-label"]').text()).toBe('OK');
+    expect(wrapper.text()).not.toContain('jenkins_image');
+  });
+
+  it('shows jenkins image hint for jenkins projects', async () => {
+    const { wrapper } = await mountApp({
+      launchRepo: FIXTURE_REPO_JENKINS,
+      doctor: doctorWithFailedCheck('jenkins_image'),
+    });
+
+    expect(wrapper.get('[data-testid="setup-banner"]').text()).toContain('Jenkins image');
+    expect(wrapper.get('[data-testid="doctor-label"]').text()).toBe('issues');
+  });
+
+  it('ignores provider image hints when no project is open', async () => {
+    const { wrapper } = await mountApp({
+      doctor: doctorWithFailedCheck('act_image'),
+    });
+
     expect(wrapper.find('[data-testid="setup-banner"]').exists()).toBe(false);
     expect(wrapper.get('[data-testid="doctor-label"]').text()).toBe('OK');
   });
