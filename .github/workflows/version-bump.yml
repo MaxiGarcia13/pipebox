@@ -42,6 +42,7 @@ jobs:
           set -euo pipefail
 
           VERSION_FILE=packages/runner/cmd/pipebox/main.go
+          MCP_VERSION_FILE=packages/mcp/internal/server/server.go
           APP_PACKAGE_JSON=packages/app/package.json
           TAG_PREFIX=packages/runner/v
 
@@ -114,10 +115,12 @@ jobs:
 
           sed -i "s/^const version = \".*\"/const version = \"${new}\"/" \
             "$VERSION_FILE"
+          sed -i "s/serverVersion = \"[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\"/serverVersion = \"${new}\"/" \
+            "$MCP_VERSION_FILE"
           sed -i "s/\"version\": \"[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\"/\"version\": \"${new}\"/" \
             "$APP_PACKAGE_JSON"
 
-          git add "$VERSION_FILE" "$APP_PACKAGE_JSON"
+          git add "$VERSION_FILE" "$MCP_VERSION_FILE" "$APP_PACKAGE_JSON"
           if git diff --staged --quiet; then
             git tag "$tag"
             git push origin "$tag"
