@@ -82,7 +82,7 @@ func actImageCheck() event.DoctorCheck {
     return event.DoctorCheck{
       Name:   "act_image",
       OK:     false,
-      Detail: actimage.Image + " missing (built on first run)",
+      Detail: missingImageDetail(actimage.Image+" missing", actimage.DockerfileDir),
     }
   }
   return event.DoctorCheck{
@@ -97,7 +97,7 @@ func jenkinsImageCheck() event.DoctorCheck {
     return event.DoctorCheck{
       Name:   "jenkins_image",
       OK:     false,
-      Detail: jfrimage.Image + " missing or outdated (built on first run)",
+      Detail: missingImageDetail(jfrimage.Image+" missing or outdated", jfrimage.DockerfileDir),
     }
   }
   return event.DoctorCheck{
@@ -105,4 +105,11 @@ func jenkinsImageCheck() event.DoctorCheck {
     OK:     true,
     Detail: jfrimage.Image,
   }
+}
+
+func missingImageDetail(prefix string, resolveDockerfileDir func() (string, error)) string {
+  if _, err := resolveDockerfileDir(); err != nil {
+    return prefix + "; cannot build: " + err.Error()
+  }
+  return prefix + " (built on first run)"
 }

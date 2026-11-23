@@ -4,6 +4,7 @@ import (
   "bufio"
   "fmt"
   "io"
+  "io/fs"
   "os"
   "os/exec"
   "path/filepath"
@@ -11,6 +12,7 @@ import (
   "strings"
   "sync"
 
+  dockerassets "github.com/MaxiGarcia13/pipebox/packages/runner/docker"
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/event"
 )
 
@@ -123,11 +125,23 @@ func ResolveDockerfileDir(config Config) (string, error) {
     }
   }
 
+  if hasEmbedded(config.DockerSubdir) {
+    return materializeEmbedded(config.DockerSubdir)
+  }
+
   label := config.Label
   if label == "" {
     label = config.DockerSubdir
   }
   return "", fmt.Errorf("%s Dockerfile not found (expected docker/%s next to pipebox)", label, config.DockerSubdir)
+}
+
+func hasEmbedded(subdir string) bool {
+  if subdir == "" {
+    return false
+  }
+  info, err := fs.Stat(dockerassets.FS, subdir)
+  return err == nil && info.IsDir()
 }
 
 func SocketPath() string {
