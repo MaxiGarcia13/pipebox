@@ -8,6 +8,12 @@ import (
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/dockerimage"
 )
 
+func TestRevisionBuildArg(t *testing.T) {
+  if len(config.BuildArgs) != 1 || config.BuildArgs[0] != "PIPEBOX_JENKINS_REVISION="+Revision {
+    t.Fatalf("build args: %v", config.BuildArgs)
+  }
+}
+
 func TestResolveDockerfileDirFromEnv(t *testing.T) {
   dir := t.TempDir()
   if err := os.WriteFile(filepath.Join(dir, "Dockerfile"), []byte("FROM scratch\n"), 0o644); err != nil {

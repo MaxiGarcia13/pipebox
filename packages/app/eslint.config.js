@@ -23,4 +23,11 @@ export default eslintConfig(
       '.vite',
     ],
   },
+  {
+    ignores: [
+      'out/**',
+      'test-results/**',
+      'playwright-report/**',
+    ],
+  },
 );

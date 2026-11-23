@@ -1,0 +1,16 @@
+pipeline {
+  agent none
+  stages {
+    stage('Docker agent') {
+      agent {
+        docker {
+          image 'alpine:3.21'
+          args '-u root'
+        }
+      }
+      steps {
+        sh 'uname -a && head -3 /etc/os-release'
+      }
+    }
+  }
+}

@@ -38,7 +38,7 @@ pipeline {
   if len(build.Needs) != 0 {
     t.Fatalf("build needs: %#v", build.Needs)
   }
-  if len(build.Steps) != 2 || build.Steps[0] != "echo 'building'" || build.Steps[1] != "sh 'make'" {
+  if len(build.Steps) != 2 || build.Steps[0] != "echo" || build.Steps[1] != "sh" {
     t.Fatalf("build steps: %#v", build.Steps)
   }
   testJob := graph.Jobs[1]
@@ -97,6 +97,63 @@ pipeline {
   }
 }
 
+func TestParseJobGraphNestedParallel(t *testing.T) {
+  source := `
+pipeline {
+  agent any
+  stages {
+    stage('CI') {
+      parallel {
+        stage('test') {
+          steps {
+            sh '''
+              pnpm test
+            '''
+          }
+        }
+        stage('lint') {
+          steps {
+            sh 'pnpm lint'
+          }
+        }
+      }
+    }
+    stage('e2e') {
+      steps {
+        sh 'pnpm test:e2e'
+      }
+    }
+  }
+}
+`
+  graph, err := ParseJobGraph(source)
+  if err != nil {
+    t.Fatalf("ParseJobGraph: %v", err)
+  }
+  if len(graph.Jobs) != 3 {
+    t.Fatalf("jobs: %#v", graph.Jobs)
+  }
+  if graph.Jobs[0].ID != "test" || len(graph.Jobs[0].Steps) != 1 || graph.Jobs[0].Steps[0] != "sh" {
+    t.Fatalf("test: %#v", graph.Jobs[0])
+  }
+  if len(graph.Jobs[0].Needs) != 0 {
+    t.Fatalf("test needs: %#v", graph.Jobs[0].Needs)
+  }
+  if graph.Jobs[1].ID != "lint" || len(graph.Jobs[1].Steps) != 1 || graph.Jobs[1].Steps[0] != "sh" {
+    t.Fatalf("lint: %#v", graph.Jobs[1])
+  }
+  if len(graph.Jobs[1].Needs) != 0 {
+    t.Fatalf("lint needs: %#v", graph.Jobs[1].Needs)
+  }
+  e2e := graph.Jobs[2]
+  if e2e.ID != "e2e" || len(e2e.Steps) != 1 || e2e.Steps[0] != "sh" {
+    t.Fatalf("e2e: %#v", e2e)
+  }
+  if len(e2e.Needs) != 2 || e2e.Needs[0] != "test" || e2e.Needs[1] != "lint" {
+    t.Fatalf("e2e needs: %#v", e2e.Needs)
+  }
+}
+
 func TestParseJobGraphScriptedOpaque(t *testing.T) {
   source := `
 node {
@@ -150,8 +207,37 @@ func TestGraphFixtureJenkinsOnly(t *testing.T) {
   if job.ID != "build" || job.Name != "Build" {
     t.Fatalf("job: %#v", job)
   }
-  if len(job.Steps) != 1 || job.Steps[0] != "echo 'jenkins-only fixture'" {
+  if len(job.Steps) != 1 || job.Steps[0] != "echo" {
     t.Fatalf("steps: %#v", job.Steps)
+  }
+}
+
+func TestParseJobGraphMultilineShKeyword(t *testing.T) {
+  source := `
+pipeline {
+  agent any
+  stages {
+    stage('Setup') {
+      steps {
+        sh '''
+          set -euo pipefail
+          echo hi
+        '''
+      }
+    }
+  }
+}
+`
+  graph, err := ParseJobGraph(source)
+  if err != nil {
+    t.Fatalf("ParseJobGraph: %v", err)
+  }
+  if len(graph.Jobs) != 1 {
+    t.Fatalf("jobs: %#v", graph.Jobs)
+  }
+  steps := graph.Jobs[0].Steps
+  if len(steps) != 1 || steps[0] != "sh" {
+    t.Fatalf("steps: %#v", steps)
   }
 }
 

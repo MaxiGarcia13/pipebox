@@ -51,3 +51,39 @@ func TestMaterializeJobFilterMissingStage(t *testing.T) {
     t.Fatal("expected error")
   }
 }
+
+func TestMaterializeJobFilterNestedParallel(t *testing.T) {
+  source := `
+pipeline {
+  agent any
+  stages {
+    stage('CI') {
+      parallel {
+        stage('test') {
+          steps { sh 'pnpm test' }
+        }
+        stage('lint') {
+          steps { sh 'pnpm lint' }
+        }
+      }
+    }
+    stage('e2e') {
+      steps { sh 'pnpm test:e2e' }
+    }
+  }
+}
+`
+  filtered, err := materializeJobFilter(source, "lint")
+  if err != nil {
+    t.Fatalf("materializeJobFilter: %v", err)
+  }
+  if !strings.Contains(filtered, "stage('lint')") {
+    t.Fatalf("missing lint stage: %s", filtered)
+  }
+  if strings.Contains(filtered, "stage('test')") || strings.Contains(filtered, "stage('e2e')") {
+    t.Fatalf("other stages should be removed: %s", filtered)
+  }
+  if strings.Contains(filtered, "stage('CI')") {
+    t.Fatalf("wrapper CI stage should not wrap the filtered job: %s", filtered)
+  }
+}

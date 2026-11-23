@@ -84,7 +84,7 @@ func jenkinsImageCheck() event.DoctorCheck {
     return event.DoctorCheck{
       Name:   "jenkins_image",
       OK:     false,
-      Detail: jfrimage.Image + " missing (built on first run)",
+      Detail: jfrimage.Image + " missing or outdated (built on first run)",
     }
   }
   return event.DoctorCheck{

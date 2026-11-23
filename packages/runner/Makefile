@@ -2,6 +2,7 @@ BINARY := pipebox
 CMD := ./cmd/pipebox
 ACT_IMAGE := pipebox-act:latest
 JENKINS_IMAGE := pipebox-jenkins:latest
+JENKINS_REVISION := $(shell sed -n 's/^[[:space:]]*Revision = "\(.*\)"/\1/p' internal/provider/jenkins/jfrimage/image.go)
 
 .PHONY: build clean test lint lint-indent lint-fix doctor image image-act image-jenkins
 
@@ -41,4 +42,7 @@ image-act:
 	docker build -t $(ACT_IMAGE) ./docker/act
 
 image-jenkins:
-	docker build -t $(JENKINS_IMAGE) ./docker/jenkins
+	docker build \
+		--build-arg PIPEBOX_JENKINS_REVISION=$(JENKINS_REVISION) \
+		-t $(JENKINS_IMAGE) \
+		./docker/jenkins

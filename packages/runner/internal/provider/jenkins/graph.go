@@ -130,12 +130,12 @@ func parseStageGroups(stagesBody string) []stageGroup {
     }
 
     if hasIdentAt(stagesBody, index, "stage") {
-      stage, end, ok := parseStageAt(stagesBody, index)
+      group, end, ok := parseStageGroupAt(stagesBody, index)
       if !ok {
         index++
         continue
       }
-      groups = append(groups, stageGroup{Parallel: false, Stages: []stageNode{stage}})
+      groups = append(groups, group)
       index = end
       continue
     }
@@ -143,6 +143,24 @@ func parseStageGroups(stagesBody string) []stageGroup {
     index++
   }
   return groups
+}
+
+func parseStageGroupAt(source string, from int) (stageGroup, int, bool) {
+  name, body, end, ok := readStageBody(source, from)
+  if !ok {
+    return stageGroup{}, from, false
+  }
+  // stage('CI') { parallel { stage('test')… } } → flatten to parallel jobs (no empty wrapper).
+  if parallelBody, parallelOK := extractFirstBlock(body, "parallel"); parallelOK {
+    stages := parseStagesInBody(parallelBody)
+    if len(stages) > 0 {
+      return stageGroup{Parallel: true, Stages: stages}, end, true
+    }
+  }
+  return stageGroup{
+    Parallel: false,
+    Stages:   []stageNode{{Name: name, Steps: parseStepLabels(body)}},
+  }, end, true
 }
 
 func parseStagesInBody(body string) []stageNode {
@@ -157,32 +175,39 @@ func parseStagesInBody(body string) []stageNode {
       index++
       continue
     }
-    stage, end, ok := parseStageAt(body, index)
+    name, stageBody, end, ok := readStageBody(body, index)
     if !ok {
       index++
       continue
     }
-    stages = append(stages, stage)
+    if parallelBody, parallelOK := extractFirstBlock(stageBody, "parallel"); parallelOK {
+      nested := parseStagesInBody(parallelBody)
+      if len(nested) > 0 {
+        stages = append(stages, nested...)
+        index = end
+        continue
+      }
+    }
+    stages = append(stages, stageNode{Name: name, Steps: parseStepLabels(stageBody)})
     index = end
   }
   return stages
 }
 
-func parseStageAt(source string, from int) (stageNode, int, bool) {
+func readStageBody(source string, from int) (name string, body string, end int, ok bool) {
   match := stageNamePattern.FindStringSubmatch(source[from:])
   if match == nil {
-    return stageNode{}, from, false
+    return "", "", from, false
   }
   openBrace := from + strings.Index(source[from:], "{")
   if openBrace < from {
-    return stageNode{}, from, false
+    return "", "", from, false
   }
-  body, end, ok := balancedBody(source, openBrace)
+  body, end, ok = balancedBody(source, openBrace)
   if !ok {
-    return stageNode{}, from, false
+    return "", "", from, false
   }
-  steps := parseStepLabels(body)
-  return stageNode{Name: match[1], Steps: steps}, end, true
+  return match[1], body, end, true
 }
 
 func parseStepLabels(stageBody string) []string {
@@ -205,16 +230,16 @@ func stepLabel(call string) string {
   if trimmed == "" {
     return ""
   }
-  line := trimmed
-  if newline := strings.IndexByte(line, '\n'); newline >= 0 {
-    line = strings.TrimSpace(line[:newline])
+  // Keyword only — matches Jenkins "[Pipeline] <step>" console tokens.
+  var builder strings.Builder
+  for _, char := range trimmed {
+    if unicode.IsLetter(char) || unicode.IsDigit(char) || char == '_' || char == '$' {
+      builder.WriteRune(char)
+      continue
+    }
+    break
   }
-  line = strings.TrimSuffix(line, "{")
-  line = strings.TrimSpace(line)
-  if line == "" {
-    return ""
-  }
-  return line
+  return builder.String()
 }
 
 func uniqueStageID(name string, used map[string]int) string {

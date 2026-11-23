@@ -3,6 +3,7 @@ package dockerimage
 import (
   "os"
   "path/filepath"
+  "strings"
   "testing"
 )
 
@@ -24,6 +25,17 @@ func TestResolveDockerfileDirFromEnv(t *testing.T) {
   }
   if got != dir {
     t.Fatalf("got %q want %q", got, dir)
+  }
+}
+
+func TestBuildCommandArgsIncludesBuildArgs(t *testing.T) {
+  args := buildCommandArgs(Config{
+    Image:     "pipebox-jenkins:latest",
+    BuildArgs: []string{"PIPEBOX_JENKINS_REVISION=ephemeral-3"},
+  }, "/docker/jenkins")
+  joined := strings.Join(args, " ")
+  if joined != "build -t pipebox-jenkins:latest --build-arg PIPEBOX_JENKINS_REVISION=ephemeral-3 /docker/jenkins" {
+    t.Fatalf("got %s", joined)
   }
 }
 

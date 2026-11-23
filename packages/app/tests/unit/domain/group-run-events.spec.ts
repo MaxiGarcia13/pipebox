@@ -81,4 +81,42 @@ describe('groupRunEvents', () => {
     );
     expect(grouped.jobs[0]?.status).toBe('failed');
   });
+
+  it('keeps a finished step passed when a later log arrives', () => {
+    const grouped = groupRunEvents([
+      {
+        type: 'job_graph',
+        jobs: [
+          {
+            id: 'lint',
+            name: 'Lint',
+            needs: [],
+            steps: ['sh'],
+          },
+        ],
+      },
+      {
+        type: 'step_started',
+        job: 'lint',
+        step: 'sh',
+      },
+      {
+        type: 'step_finished',
+        job: 'lint',
+        step: 'sh',
+        status: 'passed',
+        durationMs: 40,
+      },
+      {
+        type: 'log',
+        job: 'lint',
+        step: 'sh',
+        line: 'late line',
+      },
+    ]);
+
+    expect(grouped.steps[0]?.status).toBe('passed');
+    expect(grouped.steps[0]?.durationMs).toBe(40);
+    expect(grouped.steps[0]?.lines).toEqual(['late line']);
+  });
 });

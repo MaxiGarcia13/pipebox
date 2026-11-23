@@ -25,15 +25,15 @@ alwaysApply: true
 - **Renderer:** typed runner events + shadcn-vue only (provider icons from `workflow.provider`)
 - **Preload:** narrow typed bridge
 - **Main:** spawn/kill `pipebox`, forward NDJSON → IPC, file dialogs
-- **Runner (`pipebox`):** multi-provider discovery under `internal/provider/` — `Discover` / `List` / `Resolve`; GitHub in `provider/github` (Dockerized act, local `pipebox-act` from `packages/runner/docker/act`); Jenkins in `provider/jenkins` (Dockerized jenkinsfile-runner, local `pipebox-jenkins` from `packages/runner/docker/jenkins`); load project `.env` / `.env.*` as secrets; emit events; CLI commands `doctor`, `list`, `run`, `install`
-- **v1 dependency:** Docker only — no local `act` or jenkinsfile-runner binary; do not depend on a public `ghcr.io/nektos/act` image (it is not publicly pullable); Jenkins image is built FROM public `ghcr.io/jenkinsci/jenkinsfile-runner` and tagged locally as `pipebox-jenkins`
+- **Runner (`pipebox`):** multi-provider discovery under `internal/provider/` — `Discover` / `List` / `Resolve`; GitHub in `provider/github` (Dockerized act, local `pipebox-act` from `packages/runner/docker/act`); Jenkins in `provider/jenkins` (ephemeral official Jenkins controller, local `pipebox-jenkins` from `packages/runner/docker/jenkins`); load project `.env` / `.env.*` as secrets; emit events; CLI commands `doctor`, `list`, `run`, `install`
+- **v1 dependency:** Docker only — no local `act` or Jenkins binary; do not depend on a public `ghcr.io/nektos/act` image (it is not publicly pullable); Jenkins image is built FROM `jenkins/jenkins:lts-jdk21` and tagged locally as `pipebox-jenkins` (ephemeral controller per run, Casc, lean plugins, curated built-in toolchains, DooD via docker.sock for `agent { docker { … } }`)
 
 ## Providers
 
 - A repo may expose **zero or more** providers (e.g. migration with both GitHub and Jenkins)
 - Route `graph` / `run` **per selected workflow** via `provider` field or `--provider`, never a single repo-wide provider
 - GitHub-only knowledge (`.github` YAML, act, actparse, actimage) stays under `internal/provider/github/`
-- Jenkins-only knowledge (`Jenkinsfile`, jfrparse, jfrimage, Declarative scan) stays under `internal/provider/jenkins/`
+- Jenkins-only knowledge (`Jenkinsfile`, console parse, controller lifecycle, Declarative scan) stays under `internal/provider/jenkins/`
 
 ## Runner protocol (v1)
 

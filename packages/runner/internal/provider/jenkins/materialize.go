@@ -2,14 +2,8 @@ package jenkins
 
 import (
   "fmt"
-  "os"
   "strings"
 )
-
-type materializedJenkinsfile struct {
-  Path    string
-  Cleanup func()
-}
 
 func materializeJobFilter(source, job string) (string, error) {
   job = strings.TrimSpace(job)
@@ -55,29 +49,6 @@ func materializeJobFilter(source, job string) (string, error) {
   return builder.String(), nil
 }
 
-func writeMaterializedJenkinsfile(content string) (materializedJenkinsfile, error) {
-  file, err := os.CreateTemp("", "pipebox-jenkinsfile-*.groovy")
-  if err != nil {
-    return materializedJenkinsfile{}, err
-  }
-  path := file.Name()
-  if _, err := file.WriteString(content); err != nil {
-    _ = file.Close()
-    _ = os.Remove(path)
-    return materializedJenkinsfile{}, err
-  }
-  if err := file.Close(); err != nil {
-    _ = os.Remove(path)
-    return materializedJenkinsfile{}, err
-  }
-  return materializedJenkinsfile{
-    Path: path,
-    Cleanup: func() {
-      _ = os.Remove(path)
-    },
-  }, nil
-}
-
 func findStageSource(fullSource, pipelineBody, job string) (stageText string, stageName string, ok bool) {
   stagesBody, ok := extractFirstBlock(pipelineBody, "stages")
   if !ok {
@@ -113,6 +84,10 @@ func findStageSource(fullSource, pipelineBody, job string) (stageText string, st
       if stageMatches(name, job) {
         return text, name, true
       }
+      // Nested: stage('CI') { parallel { stage('test')… } }
+      if nestedText, nestedName, nestedOK := findStageInStageBody(text, job); nestedOK {
+        return nestedText, nestedName, true
+      }
       index = end
       continue
     }
@@ -141,7 +116,25 @@ func findStageInBody(fullSource, body, job string) (string, string, bool) {
     if stageMatches(name, job) {
       return text, name, true
     }
+    if nestedText, nestedName, nestedOK := findStageInStageBody(text, job); nestedOK {
+      return nestedText, nestedName, true
+    }
     index = end
+  }
+  return "", "", false
+}
+
+func findStageInStageBody(stageText, job string) (string, string, bool) {
+  openBrace := strings.Index(stageText, "{")
+  if openBrace < 0 {
+    return "", "", false
+  }
+  body, _, ok := balancedBody(stageText, openBrace)
+  if !ok {
+    return "", "", false
+  }
+  if parallelBody, parallelOK := extractFirstBlock(body, "parallel"); parallelOK {
+    return findStageInBody("", parallelBody, job)
   }
   return "", "", false
 }

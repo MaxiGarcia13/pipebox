@@ -47,16 +47,13 @@ export function foldSteps(
       }
       const group = findOrInsertStep(groups, byKey, job, step || '(log)', aliases);
       group.lines.push(event.line);
-      // Late/out-of-order act output after a premature pass must reopen the step.
-      // Never reopen finished job bookends — global act lines often stick to them.
-      if (group.status === 'passed' && isJobBookend(group.step)) {
+      // A finished step stays finished. Late lines still append.
+      if (group.status !== 'pending') {
         continue;
       }
-      if (group.status === 'pending' || group.status === 'passed') {
-        group.status = 'running';
-        group.openDefault = true;
-        delete group.durationMs;
-      }
+      group.status = 'running';
+      group.openDefault = true;
+      delete group.durationMs;
     }
   }
 

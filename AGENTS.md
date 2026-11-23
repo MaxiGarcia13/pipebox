@@ -1,8 +1,8 @@
 # PipeBox — agent notes
 
-Local CI/CD desktop control panel: run CI workflows locally (GitHub Actions via **Dockerized act**; Jenkins via **Dockerized jenkinsfile-runner**) so users can pick a repo, run workflows, inject secrets from project `.env` / `.env.*`, and watch step logs without pushing test commits.
+Local CI/CD desktop control panel: run CI workflows locally (GitHub Actions via **Dockerized act**; Jenkins via an **ephemeral official Jenkins controller**) so users can pick a repo, run workflows, inject secrets from project `.env` / `.env.*`, and watch step logs without pushing test commits.
 
-v1 requires **Docker only** for both providers — no local `act` or jenkinsfile-runner binary.
+v1 requires **Docker only** for both providers — no local `act` or Jenkins binary.
 
 ## Architecture
 
@@ -15,9 +15,9 @@ flowchart LR
   Discover --> GH[provider_github]
   Discover --> JK[provider_jenkins]
   GH -->|docker_run| ActImage[pipebox_act_image]
-  JK -->|docker_run| JfrImage[pipebox_jenkins_image]
+  JK -->|ephemeral_controller| JenkinsImage[pipebox_jenkins_image]
   ActImage --> Docker[Docker]
-  JfrImage --> Docker
+  JenkinsImage -->|docker.sock_DooD| Docker
   Runner -->|NDJSON_events| Main
   Main -->|IPC_events| Vue
 ```
@@ -26,14 +26,14 @@ Provider code lives under `packages/runner/internal/provider/`:
 
 - `Discover` / `List` / `Resolve` — multi-provider; route runs per workflow
 - `github/` — list/graph/run via act (`actparse` / `actimage`; image from `packages/runner/docker/act`)
-- `jenkins/` — list/graph/run via jenkinsfile-runner (`jfrparse` / `jfrimage`; image from `packages/runner/docker/jenkins`)
+- `jenkins/` — list/graph via Declarative scan; run via ephemeral `jenkins/jenkins:lts-jdk21` (`pipebox-jenkins`), console streamed through `jfrparse`
 
 The app renders a unified workflow list using `workflow.provider` (brand icons); it does not detect or parse CI files.
 
 ## MVP vs later
 
-- **MVP:** GitHub Actions + Jenkins via owned Docker images, Electron UI, `pipebox` CLI, secrets from project `.env` / `.env.*`.
-- **Later:** Richer installers (Homebrew), code signing / notarization, broader Jenkins plugin packs.
+- **MVP:** GitHub Actions + ephemeral Jenkins (lean Casc/plugins, curated `agent any` toolchains, DooD docker agents), Electron UI, `pipebox` CLI, secrets from project `.env` / `.env.*`.
+- **Later:** Richer installers (Homebrew), code signing / notarization, DinD if DooD is insufficient, broader plugin packs.
 
 ## Commands
 

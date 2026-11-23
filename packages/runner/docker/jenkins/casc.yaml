@@ -1,0 +1,13 @@
+jenkins:
+  systemMessage: PipeBox ephemeral Jenkins
+  numExecutors: 2
+  mode: NORMAL
+  scmCheckoutRetryCount: 0
+  securityRealm: none
+  authorizationStrategy: unsecured
+  remotingSecurity:
+    enabled: false
+
+unclassified:
+  location:
+    url: http://127.0.0.1:8080/

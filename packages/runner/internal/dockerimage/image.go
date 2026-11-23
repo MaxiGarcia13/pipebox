@@ -19,6 +19,7 @@ type Config struct {
   EnvVar       string
   DockerSubdir string
   Label        string
+  BuildArgs    []string
 }
 
 func Exists(image string) bool {
@@ -39,12 +40,7 @@ func Build(config Config) error {
     return err
   }
 
-  cmd := exec.Command(
-    "docker",
-    "build",
-    "-t", config.Image,
-    dockerfileDir,
-  )
+  cmd := exec.Command("docker", buildCommandArgs(config, dockerfileDir)...)
   stdout, err := cmd.StdoutPipe()
   if err != nil {
     return fmt.Errorf("stdout pipe: %w", err)
@@ -69,6 +65,15 @@ func Build(config Config) error {
     return fmt.Errorf("build %s: %w", config.Image, waitErr)
   }
   return nil
+}
+
+func buildCommandArgs(config Config, dockerfileDir string) []string {
+  args := []string{"build", "-t", config.Image}
+  for _, buildArg := range config.BuildArgs {
+    args = append(args, "--build-arg", buildArg)
+  }
+  args = append(args, dockerfileDir)
+  return args
 }
 
 func streamBuildLines(waitGroup *sync.WaitGroup, reader io.Reader) {

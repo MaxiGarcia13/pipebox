@@ -1,0 +1,10 @@
+pipeline {
+  agent any
+  stages {
+    stage('Toolchains') {
+      steps {
+        sh 'go version && node -v && pnpm -v && docker version --format "{{.Client.Version}}"'
+      }
+    }
+  }
+}

@@ -286,7 +286,7 @@ func TestGraphJenkinsOnly(t *testing.T) {
   if job.ID != "build" || job.Name != "Build" {
     t.Fatalf("job: %#v", job)
   }
-  if len(job.Steps) != 1 || job.Steps[0] != "echo 'jenkins-only fixture'" {
+  if len(job.Steps) != 1 || job.Steps[0] != "echo" {
     t.Fatalf("steps: %#v", job.Steps)
   }
 }

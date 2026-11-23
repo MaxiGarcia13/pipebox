@@ -12,19 +12,16 @@ import (
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/envfile"
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/event"
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/provider/jenkins/jfrimage"
-  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/provider/jenkins/jfrparse"
-  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/runstream"
 )
 
 type Options struct {
-  Repo                 string
-  Workflow             string
-  Job                  string
-  Secrets              []string
-  SecretFile           string
-  Inputs               []string
-  RunHome              string
-  materializedHostPath string
+  Repo       string
+  Workflow   string
+  Job        string
+  Secrets    []string
+  SecretFile string
+  Inputs     []string
+  RunHome    string
 }
 
 func Start(options Options) (int, error) {
@@ -63,11 +60,11 @@ func Start(options Options) (int, error) {
   if !jfrimage.Exists() {
     _ = event.EmitStdout(event.Log{
       Type: event.TypeLog,
-      Line: "building " + jfrimage.Image + " (first run)",
+      Line: "building " + jfrimage.Image + " (missing or outdated ephemeral Jenkins image)",
     })
   }
 
-  exitCode, status := runJFR(ctx, options)
+  exitCode, status := runController(ctx, options)
   if err := emitRunHomeArtifacts(runHome); err != nil {
     _ = event.EmitStdout(event.Error{
       Type:    event.TypeError,
@@ -83,22 +80,6 @@ func Start(options Options) (int, error) {
     return exitCode, err
   }
   return exitCode, nil
-}
-
-func runJFR(ctx context.Context, options Options) (exitCode int, status string) {
-  cmd, cleanup, err := buildJFRCommand(ctx, options)
-  if cleanup != nil {
-    defer cleanup()
-  }
-  if err != nil {
-    _ = event.EmitStdout(event.Error{
-      Type:    event.TypeError,
-      Message: err.Error(),
-    })
-    return 1, "failed"
-  }
-
-  return runstream.Run(ctx, cmd, jfrparse.NewParser(), "start dockerized jenkinsfile-runner")
 }
 
 func loadJobGraph(options Options) event.JobGraph {
