@@ -13,6 +13,14 @@ Local CI/CD control panel for GitHub Actions and Jenkins — run and debug pipel
 
 **Needs:** Docker running · Go 1.22+ on `PATH`
 
+| OS / arch     | CLI | Desktop |
+| ------------- | --- | ------- |
+| macOS arm64   | ✓   | ✓       |
+| macOS amd64   | ✓   | ✓       |
+| Windows amd64 | ✓   | ✓       |
+| Linux amd64   | ✓   | ✓       |
+| Linux arm64   | ✓   | —       |
+
 Install the CLI:
 
 ```bash
