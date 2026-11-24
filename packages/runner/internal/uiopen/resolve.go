@@ -5,6 +5,7 @@ import (
   "os"
   "path/filepath"
   "runtime"
+  "strings"
 )
 
 func ResolveApp() (string, error) {
@@ -117,11 +118,15 @@ func monorepoCandidates() []string {
 }
 
 func isLaunchable(path string) bool {
+  return isLaunchableOn(path, runtime.GOOS)
+}
+
+func isLaunchableOn(path, goos string) bool {
   info, err := os.Stat(path)
   if err != nil {
     return false
   }
-  if runtime.GOOS == "darwin" && info.IsDir() && filepath.Ext(path) == ".app" {
+  if goos == "darwin" && info.IsDir() && filepath.Ext(path) == ".app" {
     executable := macOSExecutable(path)
     execInfo, execErr := os.Stat(executable)
     if execErr != nil || execInfo.IsDir() || execInfo.Mode()&0o111 == 0 {
@@ -134,6 +139,10 @@ func isLaunchable(path string) bool {
   }
   if info.IsDir() {
     return false
+  }
+  // Windows FileMode from os.Stat typically has no Unix execute bits.
+  if goos == "windows" {
+    return strings.EqualFold(filepath.Ext(path), ".exe")
   }
   return info.Mode()&0o111 != 0
 }
