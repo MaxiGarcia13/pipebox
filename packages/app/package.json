@@ -2,7 +2,7 @@
   "name": "@pipebox/app",
   "productName": "PipeBox",
   "type": "module",
-  "version": "0.18.0",
+  "version": "0.18.1",
   "private": true,
   "description": "Local CI/CD control panel for running GitHub Actions with Dockerized act.",
   "author": "Maximiliano Garcia Mortigliengo",
