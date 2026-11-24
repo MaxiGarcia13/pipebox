@@ -1,10 +1,46 @@
 package install
 
 import (
+  "path/filepath"
   "runtime"
   "strings"
   "testing"
+
+  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/hostos"
 )
+
+func TestMCPBinaryName(t *testing.T) {
+  name := mcpBinaryName()
+  if hostos.Current().ID() == "windows" {
+    if name != "pipebox-mcp.exe" {
+      t.Fatalf("got %q", name)
+    }
+    return
+  }
+  if name != "pipebox-mcp" {
+    t.Fatalf("got %q", name)
+  }
+}
+
+func TestMCPTargetPathUsesCLILocalBinDir(t *testing.T) {
+  home := t.TempDir()
+  t.Setenv("HOME", home)
+  t.Setenv("USERPROFILE", home)
+
+  got, err := mcpTargetPath()
+  if err != nil {
+    t.Fatalf("mcpTargetPath: %v", err)
+  }
+
+  cliPath, err := hostos.Current().CLILocalBinPath()
+  if err != nil {
+    t.Fatalf("CLILocalBinPath: %v", err)
+  }
+  want := filepath.Join(filepath.Dir(cliPath), mcpBinaryName())
+  if got != want {
+    t.Fatalf("got %q want %q", got, want)
+  }
+}
 
 func TestMCPAssetName(t *testing.T) {
   name, err := mcpAssetName("0.1.0")
