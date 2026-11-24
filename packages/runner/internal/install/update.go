@@ -5,6 +5,8 @@ import (
   "os"
   "path/filepath"
   "strings"
+
+  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/hostos"
 )
 
 type UpdateOptions struct {
@@ -88,16 +90,14 @@ func installCLIFromRelease(version string, progress Progress) (string, error) {
   }
 
   progress.Step("Installing CLI…")
+  plat := hostos.Current()
   updated := make([]string, 0, len(targets))
   for _, path := range targets {
     if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
       return "", fmt.Errorf("create bin dir: %w", err)
     }
-    if err := copyFile(tmpPath, path); err != nil {
+    if err := plat.ReplaceFile(tmpPath, path); err != nil {
       return "", err
-    }
-    if err := os.Chmod(path, 0o755); err != nil {
-      return "", fmt.Errorf("chmod: %w", err)
     }
     updated = append(updated, path)
   }

@@ -4,43 +4,20 @@ import (
   "fmt"
   "os"
   "path/filepath"
-  "runtime"
-  "strings"
+
+  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/hostos"
 )
 
 func cliBinaryName() string {
-  if runtime.GOOS == "windows" {
-    return "pipebox.exe"
-  }
-  return "pipebox"
+  return hostos.Current().CLIBinaryName()
 }
 
 func cliTargetPath() (string, error) {
-  homeDir, err := os.UserHomeDir()
-  if err != nil {
-    return "", fmt.Errorf("resolve home: %w", err)
-  }
-  return filepath.Join(homeDir, ".local", "bin", cliBinaryName()), nil
+  return hostos.Current().CLILocalBinPath()
 }
 
 func cliGoBinPath() (string, error) {
-  if gobin := strings.TrimSpace(os.Getenv("GOBIN")); gobin != "" {
-    return filepath.Join(gobin, cliBinaryName()), nil
-  }
-
-  if gopath := strings.TrimSpace(os.Getenv("GOPATH")); gopath != "" {
-    first := strings.Split(gopath, string(os.PathListSeparator))[0]
-    first = strings.TrimSpace(first)
-    if first != "" {
-      return filepath.Join(first, "bin", cliBinaryName()), nil
-    }
-  }
-
-  homeDir, err := os.UserHomeDir()
-  if err != nil {
-    return "", fmt.Errorf("resolve home: %w", err)
-  }
-  return filepath.Join(homeDir, "go", "bin", cliBinaryName()), nil
+  return hostos.Current().CLIGoBinPath()
 }
 
 func managedCLIPaths() ([]string, error) {
@@ -89,6 +66,7 @@ func cliUpdateTargets() ([]string, error) {
 }
 
 func uniquePaths(paths ...string) []string {
+  plat := hostos.Current()
   seen := make(map[string]struct{}, len(paths))
   out := make([]string, 0, len(paths))
   for _, path := range paths {
@@ -96,10 +74,7 @@ func uniquePaths(paths ...string) []string {
       continue
     }
     clean := filepath.Clean(path)
-    key := clean
-    if runtime.GOOS == "windows" {
-      key = strings.ToLower(clean)
-    }
+    key := plat.PathEqualKey(clean)
     if _, ok := seen[key]; ok {
       continue
     }
