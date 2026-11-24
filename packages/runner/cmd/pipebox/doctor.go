@@ -12,13 +12,9 @@ import (
 )
 
 func runDoctor(args []string) {
-  repoPath := cli.FlagValue(args, "--repo")
-  if repoPath == "" {
-    cwd, err := os.Getwd()
-    if err != nil {
-      fail(err)
-    }
-    repoPath = cwd
+  repoPath, err := cli.RepoFromArgs(args)
+  if err != nil {
+    fail(err)
   }
 
   providers := discoveredProviderIDs(repoPath)
