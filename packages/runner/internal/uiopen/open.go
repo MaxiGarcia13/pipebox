@@ -7,6 +7,8 @@ import (
   "path/filepath"
   "runtime"
   "strings"
+
+  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/hostos"
 )
 
 func Open(repoPath string, newWindow bool) error {
@@ -50,7 +52,7 @@ func launchArgs(absRepo string, newWindow bool) []string {
 func startApp(appPath string, args []string) error {
   binaryPath := appPath
   if runtime.GOOS == "darwin" && strings.HasSuffix(appPath, ".app") {
-    binaryPath = macOSExecutable(appPath)
+    binaryPath = hostos.MacOSAppExecutable(appPath)
   }
 
   cmd := exec.Command(binaryPath, args...)
@@ -60,9 +62,4 @@ func startApp(appPath string, args []string) error {
     return fmt.Errorf("launch desktop app: %w", err)
   }
   return nil
-}
-
-func macOSExecutable(appPath string) string {
-  base := strings.TrimSuffix(filepath.Base(appPath), ".app")
-  return filepath.Join(appPath, "Contents", "MacOS", base)
 }
