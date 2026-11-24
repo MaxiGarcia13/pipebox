@@ -39,7 +39,9 @@ make build
 ./pipebox                    # open desktop UI (reuses a running app)
 ./pipebox --repo /path/to/repo
 ./pipebox -n --repo /path/to/repo   # new window
+./pipebox list
 ./pipebox list --repo /path/to/repo
+./pipebox run --workflow .github/workflows/ci.yml
 ```
 
 ## Package boundaries

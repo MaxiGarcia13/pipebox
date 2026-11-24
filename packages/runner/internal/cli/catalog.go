@@ -37,7 +37,7 @@ func DefaultCatalog() Catalog {
   repoFlag := Flag{
     Names:     []string{"--repo"},
     ValueKind: ValuePath,
-    Usage:     "Repository path",
+    Usage:     "Repository path (default: current directory)",
   }
   workflowFlag := Flag{
     Names:     []string{"--workflow"},
@@ -182,9 +182,9 @@ func DefaultCatalog() Catalog {
       "",
       "Examples:",
       "  pipebox doctor",
-      "  pipebox doctor --repo <path>",
+      "  pipebox list",
       "  pipebox list --repo <path>",
-      "  pipebox run --repo <path> --workflow <file>",
+      "  pipebox run --workflow <file>",
       "  pipebox completion zsh",
       "",
       "Completions:",

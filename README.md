@@ -142,23 +142,65 @@ Check Docker and local setup:
 pipebox doctor
 ```
 
-List workflows in a repo:
+List workflows in the repo you are in. A terminal prints a table. An empty repo prints `no workflows`.
 
 ```bash
-pipebox list --repo <path>
+pipebox list
 ```
 
-Print the job graph for a workflow:
+```
+PROVIDER  NAME   PATH
+github    CI     .github/workflows/ci.yml
+jenkins   Build  Jenkinsfile
+```
+
+Pipe stdout when you want one JSON object:
 
 ```bash
-pipebox graph --repo <path> --workflow <file>
+pipebox list | jq
 ```
 
-Run a workflow (optional job, inputs, and secrets):
+List a different checkout:
 
 ```bash
-pipebox run --repo <path> --workflow <file> [--job <id>] [--input KEY=VALUE] [--secret KEY=VALUE] [--secret-file <path>]
+pipebox list --repo ~/src/other
 ```
+
+Show jobs and steps before a run. Each job is an id and a name. A job that waits on another includes `needs`, and its steps are indented under it. Pass `--provider github` or `--provider jenkins` only when the same path could match both.
+
+```bash
+pipebox graph --workflow .github/workflows/ci.yml
+```
+
+```
+lint   Lint
+  echo ok
+build  Build
+  needs: lint
+  npm test
+```
+
+Run a workflow. The command streams NDJSON on purpose; the desktop app is the live view.
+
+```bash
+pipebox run --workflow .github/workflows/ci.yml
+```
+
+Run a single job:
+
+```bash
+pipebox run --workflow .github/workflows/ci.yml --job lint
+```
+
+Pass a `workflow_dispatch` input. Repeat `--input` for more than one.
+
+```bash
+pipebox run --workflow .github/workflows/ci.yml --input name=value
+```
+
+Secrets load from `.env` and `.env.*` in the repo. Pass `--secret KEY=VALUE` or `--secret-file path/to/file` to override that.
+
+Pipes and the desktop app always get NDJSON. There is no `--json` flag. A terminal gets the table for `list` and `graph` only.
 
 Install CLI to `~/.local/bin`, fetch the desktop app, and write shell completions:
 
