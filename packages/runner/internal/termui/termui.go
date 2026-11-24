@@ -49,6 +49,14 @@ func (u *UI) Ok(msg string) {
   _, _ = fmt.Fprintln(u.out, msg)
 }
 
+func (u *UI) Fail(msg string) {
+  if u.outTTY {
+    _, _ = fmt.Fprintf(u.out, "✗ %s\n", msg)
+    return
+  }
+  _, _ = fmt.Fprintln(u.out, msg)
+}
+
 func (u *UI) Err(err error) {
   if err == nil {
     return

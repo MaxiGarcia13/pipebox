@@ -102,9 +102,6 @@ func decodeLine[T any](t *testing.T, stdout string) T {
 
 func TestDoctorEmitsDoctorEvent(t *testing.T) {
   stdout, stderr, code := runPipebox(t, "doctor")
-  if code != 0 {
-    t.Fatalf("exit %d stderr=%q stdout=%q", code, stderr, stdout)
-  }
 
   doctor := decodeLine[event.Doctor](t, stdout)
   if doctor.Type != event.TypeDoctor {
@@ -143,6 +140,13 @@ func TestDoctorEmitsDoctorEvent(t *testing.T) {
   }
   if doctor.OK == anyFailed {
     t.Fatalf("ok=%v does not match checks %#v", doctor.OK, doctor.Checks)
+  }
+  wantCode := 0
+  if !doctor.OK {
+    wantCode = 1
+  }
+  if code != wantCode {
+    t.Fatalf("exit %d want %d stderr=%q stdout=%q", code, wantCode, stderr, stdout)
   }
 }
 
