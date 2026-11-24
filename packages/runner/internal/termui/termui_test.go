@@ -26,6 +26,24 @@ func TestPrinterOkPlainWithoutTTY(t *testing.T) {
   }
 }
 
+func TestPrinterFailUsesCrossOnTTY(t *testing.T) {
+  var out bytes.Buffer
+  ui := newUI(&out, io.Discard, true, false)
+  ui.Fail("docker not found")
+  if got := out.String(); got != "✗ docker not found\n" {
+    t.Fatalf("got %q", got)
+  }
+}
+
+func TestPrinterFailPlainWithoutTTY(t *testing.T) {
+  var out bytes.Buffer
+  ui := newUI(&out, io.Discard, false, false)
+  ui.Fail("docker not found")
+  if got := out.String(); got != "docker not found\n" {
+    t.Fatalf("got %q", got)
+  }
+}
+
 func TestPrinterErr(t *testing.T) {
   var errOut bytes.Buffer
   ui := newUI(io.Discard, &errOut, false, false)

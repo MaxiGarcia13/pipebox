@@ -8,7 +8,7 @@ import (
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/provider/jenkins/jfrimage"
 )
 
-func Run(version string) event.Doctor {
+func Run(version string, providers []string) event.Doctor {
   checks := []event.DoctorCheck{
     lookPathCheck("docker"),
   }
@@ -17,7 +17,12 @@ func Run(version string) event.Doctor {
     daemonCheck := dockerInfoCheck()
     checks = append(checks, daemonCheck)
     if daemonCheck.OK {
-      checks = append(checks, actImageCheck(), jenkinsImageCheck())
+      if hasProvider(providers, event.ProviderGitHub) {
+        checks = append(checks, actImageCheck())
+      }
+      if hasProvider(providers, event.ProviderJenkins) {
+        checks = append(checks, jenkinsImageCheck())
+      }
     }
   }
 
@@ -29,8 +34,17 @@ func Run(version string) event.Doctor {
   }
 }
 
-func Emit() {
-  _ = event.EmitStdout(Run(""))
+func Emit(providers ...string) {
+  _ = event.EmitStdout(Run("", providers))
+}
+
+func hasProvider(providers []string, id string) bool {
+  for _, provider := range providers {
+    if provider == id {
+      return true
+    }
+  }
+  return false
 }
 
 func allChecksOK(checks []event.DoctorCheck) bool {
@@ -82,7 +96,7 @@ func actImageCheck() event.DoctorCheck {
     return event.DoctorCheck{
       Name:   "act_image",
       OK:     false,
-      Detail: actimage.Image + " missing (built on first run)",
+      Detail: missingImageDetail(actimage.Image+" missing", actimage.DockerfileDir),
     }
   }
   return event.DoctorCheck{
@@ -97,7 +111,7 @@ func jenkinsImageCheck() event.DoctorCheck {
     return event.DoctorCheck{
       Name:   "jenkins_image",
       OK:     false,
-      Detail: jfrimage.Image + " missing or outdated (built on first run)",
+      Detail: missingImageDetail(jfrimage.Image+" missing or outdated", jfrimage.DockerfileDir),
     }
   }
   return event.DoctorCheck{
@@ -105,4 +119,11 @@ func jenkinsImageCheck() event.DoctorCheck {
     OK:     true,
     Detail: jfrimage.Image,
   }
+}
+
+func missingImageDetail(prefix string, resolveDockerfileDir func() (string, error)) string {
+  if _, err := resolveDockerfileDir(); err != nil {
+    return prefix + "; cannot build: " + err.Error()
+  }
+  return prefix + " (built on first run)"
 }

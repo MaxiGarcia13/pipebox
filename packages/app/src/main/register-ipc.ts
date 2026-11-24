@@ -14,8 +14,12 @@ import { takeWindowLaunchRepo } from './window-launch-repo';
 import { runnerFor } from './window-runners';
 
 export function registerIpc(): void {
-  ipcMain.handle(IPC_CHANNELS.doctor, async () => {
-    const events = await runToCompletion(['doctor']);
+  ipcMain.handle(IPC_CHANNELS.doctor, async (_event, repoPath?: string | null) => {
+    const args = ['doctor'];
+    if (repoPath) {
+      args.push('--repo', repoPath);
+    }
+    const events = await runToCompletion(args);
     const doctorEvent = events.find((event) => event.type === 'doctor');
     if (!doctorEvent || doctorEvent.type !== 'doctor') {
       throw new Error('doctor did not return a doctor event');

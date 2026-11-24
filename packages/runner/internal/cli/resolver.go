@@ -7,7 +7,8 @@ import (
 type ProviderResolver struct{}
 
 func (ProviderResolver) Workflows(repo string) []string {
-  if repo == "" {
+  repo, err := repoOrCwd(repo)
+  if err != nil {
     return nil
   }
   list, err := provider.List(repo)
@@ -24,7 +25,8 @@ func (ProviderResolver) Workflows(repo string) []string {
 }
 
 func (ProviderResolver) Jobs(repo, workflow, providerHint string) []string {
-  if repo == "" || workflow == "" {
+  repo, err := repoOrCwd(repo)
+  if err != nil || workflow == "" {
     return nil
   }
   resolved, err := provider.Resolve(repo, workflow, providerHint)
@@ -45,7 +47,8 @@ func (ProviderResolver) Jobs(repo, workflow, providerHint string) []string {
 }
 
 func (ProviderResolver) Providers(repo string) []string {
-  if repo == "" {
+  repo, err := repoOrCwd(repo)
+  if err != nil {
     return nil
   }
   list, err := provider.List(repo)

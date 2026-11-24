@@ -1,6 +1,9 @@
 package cli
 
-import "strings"
+import (
+  "os"
+  "strings"
+)
 
 func HasFlag(args []string, name string) bool {
   for _, arg := range args {
@@ -9,6 +12,17 @@ func HasFlag(args []string, name string) bool {
     }
   }
   return false
+}
+
+func RepoFromArgs(args []string) (string, error) {
+  return repoOrCwd(FlagValue(args, "--repo"))
+}
+
+func repoOrCwd(repo string) (string, error) {
+  if repo != "" {
+    return repo, nil
+  }
+  return os.Getwd()
 }
 
 func FlagValue(args []string, name string) string {

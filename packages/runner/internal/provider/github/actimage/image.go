@@ -15,6 +15,10 @@ func Exists() bool {
   return dockerimage.Exists(Image)
 }
 
+func DockerfileDir() (string, error) {
+  return dockerimage.ResolveDockerfileDir(config)
+}
+
 func Ensure() error {
   return dockerimage.Ensure(config)
 }

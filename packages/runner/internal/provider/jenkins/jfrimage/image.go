@@ -36,6 +36,10 @@ func Exists() bool {
   return strings.TrimSpace(string(output)) == Revision
 }
 
+func DockerfileDir() (string, error) {
+  return dockerimage.ResolveDockerfileDir(config)
+}
+
 func Ensure() error {
   if Exists() {
     return nil

@@ -8,6 +8,8 @@ import (
   "path/filepath"
   "runtime"
   "time"
+
+  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/hostos"
 )
 
 const (
@@ -64,7 +66,8 @@ func DesktopInstalled() bool {
 }
 
 func UninstallDesktop() (string, error) {
-  path, err := userDesktopPath()
+  plat := hostos.Current()
+  path, err := plat.DesktopDir()
   if err != nil {
     return "", err
   }
@@ -74,7 +77,7 @@ func UninstallDesktop() (string, error) {
     }
     return path, fmt.Errorf("stat desktop: %w", err)
   }
-  if err := os.RemoveAll(path); err != nil {
+  if err := plat.RemoveAll(path); err != nil {
     return path, fmt.Errorf("remove desktop: %w", err)
   }
   return path, nil

@@ -9,7 +9,7 @@ import { contextBridge, ipcRenderer } from 'electron';
 import { IPC_CHANNELS } from './services/ipc-channels';
 
 const pipeboxApi: PipeboxApi = {
-  doctor: () => ipcRenderer.invoke(IPC_CHANNELS.doctor),
+  doctor: (repoPath) => ipcRenderer.invoke(IPC_CHANNELS.doctor, repoPath ?? null),
   listWorkflows: (repoPath) =>
     ipcRenderer.invoke(IPC_CHANNELS.listWorkflows, repoPath),
   graphWorkflow: (options: GraphWorkflowOptions) =>

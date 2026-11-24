@@ -37,7 +37,7 @@ func DefaultCatalog() Catalog {
   repoFlag := Flag{
     Names:     []string{"--repo"},
     ValueKind: ValuePath,
-    Usage:     "Repository path",
+    Usage:     "Repository path (default: current directory)",
   }
   workflowFlag := Flag{
     Names:     []string{"--workflow"},
@@ -75,9 +75,9 @@ func DefaultCatalog() Catalog {
     },
     Commands: []Command{
       {
-        Name:        "doctor",
-        Usage:       "Run environment diagnostics",
-        TakesNoArgs: true,
+        Name:  "doctor",
+        Usage: "Run environment diagnostics",
+        Flags: []Flag{repoFlag},
       },
       {
         Name:  "list",
@@ -178,7 +178,8 @@ func DefaultCatalog() Catalog {
     },
     Notes: []string{
       "Desktop:",
-      "  Bare `pipebox` (or `pipebox --repo <path>`) opens the desktop UI.",
+      "  Bare `pipebox` opens the current directory when it has GitHub or Jenkins workflows.",
+      "  Otherwise it opens with no project. `pipebox --repo <path>` always opens that path.",
       "  `-n` / `--new` opens a new window instead of reusing.",
       "  `install` / `install-desktop` fetch the UI from GitHub Releases.",
       "  `update` replaces managed CLI; desktop and MCP only if already installed.",
@@ -197,8 +198,9 @@ func DefaultCatalog() Catalog {
       "",
       "Examples:",
       "  pipebox doctor",
+      "  pipebox list",
       "  pipebox list --repo <path>",
-      "  pipebox run --repo <path> --workflow <file>",
+      "  pipebox run --workflow <file>",
       "  pipebox install-mcp",
       "  pipebox completion zsh",
       "",

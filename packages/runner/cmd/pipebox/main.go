@@ -8,7 +8,7 @@ import (
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/uiopen"
 )
 
-const version = "0.17.0"
+const version = "0.20.0"
 
 func main() {
   parsed := cli.Parse(os.Args[1:])
@@ -37,7 +37,7 @@ func runSubcommand(command string, args []string) {
 
   switch command {
   case "doctor":
-    runDoctor()
+    runDoctor(args)
   case "list":
     runList(args)
   case "graph":

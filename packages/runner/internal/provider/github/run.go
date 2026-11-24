@@ -100,7 +100,7 @@ func runAct(ctx context.Context, options Options) (exitCode int, status string) 
   }
 
   // buildActCommand already ensured the act image.
-  doctor.Emit()
+  doctor.Emit(ID)
 
   return runstream.Run(ctx, cmd, actparse.NewParser(), "start dockerized act")
 }

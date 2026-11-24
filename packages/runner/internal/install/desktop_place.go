@@ -7,28 +7,12 @@ import (
   "path/filepath"
   "runtime"
   "strings"
+
+  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/hostos"
 )
 
 func userDesktopPath() (string, error) {
-  homeDir, err := os.UserHomeDir()
-  if err != nil {
-    return "", fmt.Errorf("resolve home: %w", err)
-  }
-
-  switch runtime.GOOS {
-  case "darwin":
-    return filepath.Join(homeDir, "Applications", "PipeBox.app"), nil
-  case "linux":
-    return filepath.Join(homeDir, ".local", "share", "pipebox-app"), nil
-  case "windows":
-    localAppData := os.Getenv("LOCALAPPDATA")
-    if localAppData == "" {
-      return "", fmt.Errorf("LOCALAPPDATA is not set")
-    }
-    return filepath.Join(localAppData, "PipeBox"), nil
-  default:
-    return "", fmt.Errorf("unsupported OS %s", runtime.GOOS)
-  }
+  return hostos.Current().DesktopDir()
 }
 
 func placeDesktop(extractDir string) (string, error) {
@@ -57,7 +41,7 @@ func placeDarwin(extractDir string) (string, error) {
   if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
     return "", fmt.Errorf("create Applications: %w", err)
   }
-  if err := os.RemoveAll(dest); err != nil {
+  if err := hostos.Current().RemoveAll(dest); err != nil {
     return "", fmt.Errorf("replace existing app: %w", err)
   }
   if err := copyTree(appPath, dest); err != nil {
@@ -77,7 +61,7 @@ func placeLinux(extractDir string) (string, error) {
   if err != nil {
     return "", err
   }
-  if err := os.RemoveAll(dest); err != nil {
+  if err := hostos.Current().RemoveAll(dest); err != nil {
     return "", fmt.Errorf("replace existing app: %w", err)
   }
   if err := copyTree(sourceRoot, dest); err != nil {
@@ -97,7 +81,7 @@ func placeWindows(extractDir string) (string, error) {
   if err != nil {
     return "", err
   }
-  if err := os.RemoveAll(dest); err != nil {
+  if err := hostos.Current().RemoveAll(dest); err != nil {
     return "", fmt.Errorf("replace existing app: %w", err)
   }
   if err := copyTree(sourceRoot, dest); err != nil {
@@ -191,7 +175,7 @@ func copyTree(source, dest string) error {
     if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
       return err
     }
-    if err := copyFile(path, target); err != nil {
+    if err := hostos.CopyFile(path, target); err != nil {
       return err
     }
     return os.Chmod(target, info.Mode().Perm())

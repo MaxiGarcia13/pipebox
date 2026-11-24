@@ -69,7 +69,13 @@ func repoPath(t *testing.T, name string) string {
 
 func runPipebox(t *testing.T, args ...string) (stdout string, stderr string, exitCode int) {
   t.Helper()
+  return runPipeboxDir(t, "", args...)
+}
+
+func runPipeboxDir(t *testing.T, dir string, args ...string) (stdout string, stderr string, exitCode int) {
+  t.Helper()
   cmd := exec.Command(pipeboxBin, args...)
+  cmd.Dir = dir
   var outBuf, errBuf bytes.Buffer
   cmd.Stdout = &outBuf
   cmd.Stderr = &errBuf
@@ -101,10 +107,7 @@ func decodeLine[T any](t *testing.T, stdout string) T {
 }
 
 func TestDoctorEmitsDoctorEvent(t *testing.T) {
-  stdout, stderr, code := runPipebox(t, "doctor")
-  if code != 0 {
-    t.Fatalf("exit %d stderr=%q stdout=%q", code, stderr, stdout)
-  }
+  stdout, stderr, code := runPipebox(t, "doctor", "--repo", repoPath(t, "mixed"))
 
   doctor := decodeLine[event.Doctor](t, stdout)
   if doctor.Type != event.TypeDoctor {
@@ -118,6 +121,7 @@ func TestDoctorEmitsDoctorEvent(t *testing.T) {
   }
   foundDocker := false
   daemonOK := false
+  foundActImage := false
   foundJenkinsImage := false
   for _, check := range doctor.Checks {
     switch check.Name {
@@ -125,6 +129,8 @@ func TestDoctorEmitsDoctorEvent(t *testing.T) {
       foundDocker = true
     case "docker_daemon":
       daemonOK = check.OK
+    case "act_image":
+      foundActImage = true
     case "jenkins_image":
       foundJenkinsImage = true
     }
@@ -132,8 +138,11 @@ func TestDoctorEmitsDoctorEvent(t *testing.T) {
   if !foundDocker {
     t.Fatalf("expected docker check, got %#v", doctor.Checks)
   }
+  if daemonOK && !foundActImage {
+    t.Fatalf("expected act_image check for mixed repo when daemon is up, got %#v", doctor.Checks)
+  }
   if daemonOK && !foundJenkinsImage {
-    t.Fatalf("expected jenkins_image check when daemon is up, got %#v", doctor.Checks)
+    t.Fatalf("expected jenkins_image check for mixed repo when daemon is up, got %#v", doctor.Checks)
   }
   anyFailed := false
   for _, check := range doctor.Checks {
@@ -143,6 +152,39 @@ func TestDoctorEmitsDoctorEvent(t *testing.T) {
   }
   if doctor.OK == anyFailed {
     t.Fatalf("ok=%v does not match checks %#v", doctor.OK, doctor.Checks)
+  }
+  wantCode := 0
+  if !doctor.OK {
+    wantCode = 1
+  }
+  if code != wantCode {
+    t.Fatalf("exit %d want %d stderr=%q stdout=%q", code, wantCode, stderr, stdout)
+  }
+}
+
+func TestDoctorScopesImagesToRepoProviders(t *testing.T) {
+  stdout, _, _ := runPipebox(t, "doctor", "--repo", repoPath(t, "github-only"))
+  doctor := decodeLine[event.Doctor](t, stdout)
+  for _, check := range doctor.Checks {
+    if check.Name == "jenkins_image" {
+      t.Fatalf("github-only repo should skip jenkins_image: %#v", doctor.Checks)
+    }
+  }
+
+  stdout, _, _ = runPipebox(t, "doctor", "--repo", repoPath(t, "jenkins-only"))
+  doctor = decodeLine[event.Doctor](t, stdout)
+  for _, check := range doctor.Checks {
+    if check.Name == "act_image" {
+      t.Fatalf("jenkins-only repo should skip act_image: %#v", doctor.Checks)
+    }
+  }
+
+  stdout, _, _ = runPipebox(t, "doctor", "--repo", repoPath(t, "empty"))
+  doctor = decodeLine[event.Doctor](t, stdout)
+  for _, check := range doctor.Checks {
+    if check.Name == "act_image" || check.Name == "jenkins_image" {
+      t.Fatalf("empty repo should skip provider images: %#v", doctor.Checks)
+    }
   }
 }
 
@@ -297,6 +339,42 @@ func TestGraphJenkinsOnly(t *testing.T) {
   }
   if len(job.Steps) != 1 || job.Steps[0] != "echo" {
     t.Fatalf("steps: %#v", job.Steps)
+  }
+}
+
+func TestListUsesWorkingDirectory(t *testing.T) {
+  stdout, stderr, code := runPipeboxDir(t, repoPath(t, "github-only"), "list")
+  if code != 0 {
+    t.Fatalf("exit %d stderr=%q stdout=%q", code, stderr, stdout)
+  }
+
+  list := decodeLine[event.WorkflowList](t, stdout)
+  if list.Type != event.TypeWorkflowList {
+    t.Fatalf("type: got %q", list.Type)
+  }
+  if len(list.Workflows) != 1 || list.Workflows[0].Name != "CI" {
+    t.Fatalf("workflows: %#v", list.Workflows)
+  }
+}
+
+func TestGraphUsesWorkingDirectory(t *testing.T) {
+  stdout, stderr, code := runPipeboxDir(
+    t,
+    repoPath(t, "github-only"),
+    "graph",
+    "--workflow",
+    ".github/workflows/ci.yml",
+  )
+  if code != 0 {
+    t.Fatalf("exit %d stderr=%q stdout=%q", code, stderr, stdout)
+  }
+
+  graph := decodeLine[event.JobGraph](t, stdout)
+  if graph.Type != event.TypeJobGraph {
+    t.Fatalf("type: got %q", graph.Type)
+  }
+  if len(graph.Jobs) != 1 || graph.Jobs[0].ID != "lint" {
+    t.Fatalf("jobs: %#v", graph.Jobs)
   }
 }
 

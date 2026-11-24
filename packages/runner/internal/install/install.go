@@ -2,9 +2,10 @@ package install
 
 import (
   "fmt"
-  "io"
   "os"
   "path/filepath"
+
+  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/hostos"
 )
 
 type Result struct {
@@ -49,13 +50,9 @@ func installCLI() (string, error) {
     return "", fmt.Errorf("create bin dir: %w", err)
   }
 
-  if err := copyFile(executablePath, path); err != nil {
+  if err := hostos.Current().ReplaceFile(executablePath, path); err != nil {
     return "", err
   }
-  if err := os.Chmod(path, 0o755); err != nil {
-    return "", fmt.Errorf("chmod: %w", err)
-  }
-
   return path, nil
 }
 
@@ -65,8 +62,9 @@ func Uninstall() (cliPaths []string, desktopPath string, err error) {
     return nil, "", err
   }
 
+  plat := hostos.Current()
   for _, path := range cliPaths {
-    if removeErr := os.Remove(path); removeErr != nil {
+    if removeErr := plat.RemoveFile(path); removeErr != nil {
       return cliPaths, "", fmt.Errorf("remove cli %s: %w", path, removeErr)
     }
   }
@@ -80,31 +78,4 @@ func Uninstall() (cliPaths []string, desktopPath string, err error) {
     return cliPaths, desktopPath, err
   }
   return cliPaths, desktopPath, nil
-}
-
-func copyFile(sourcePath, targetPath string) (err error) {
-  source, err := os.Open(sourcePath)
-  if err != nil {
-    return fmt.Errorf("open source: %w", err)
-  }
-  defer func() {
-    if closeErr := source.Close(); err == nil && closeErr != nil {
-      err = fmt.Errorf("close source: %w", closeErr)
-    }
-  }()
-
-  target, err := os.OpenFile(targetPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o755)
-  if err != nil {
-    return fmt.Errorf("open target: %w", err)
-  }
-  defer func() {
-    if closeErr := target.Close(); err == nil && closeErr != nil {
-      err = fmt.Errorf("close target: %w", closeErr)
-    }
-  }()
-
-  if _, err := io.Copy(target, source); err != nil {
-    return fmt.Errorf("copy binary: %w", err)
-  }
-  return nil
 }

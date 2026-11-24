@@ -41,7 +41,7 @@ export function usePipeboxSession() {
 
   watch(run.isRunning, (running, wasRunning) => {
     if (wasRunning && !running) {
-      void doctor.runDoctor();
+      void refreshDoctor();
     }
   });
 
@@ -55,6 +55,7 @@ export function usePipeboxSession() {
     workflow.reset();
     run.reset();
     await project.load(nextPath);
+    await refreshDoctor();
   }
 
   async function requestOpenRepo(nextPath: string) {
@@ -99,7 +100,7 @@ export function usePipeboxSession() {
 
   async function refreshDoctor() {
     statusMessage.value = '';
-    await doctor.runDoctor();
+    await doctor.runDoctor(project.repoPath.value);
   }
 
   async function refreshWorkflows() {

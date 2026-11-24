@@ -43,7 +43,7 @@ func runController(ctx context.Context, options Options) (exitCode int, status s
     return 1, "failed"
   }
   // Image exists now; the controller has not started yet.
-  doctor.Emit()
+  doctor.Emit(ID)
 
   session, err := startController(ctx, options)
   if session != nil && session.cleanup != nil {
