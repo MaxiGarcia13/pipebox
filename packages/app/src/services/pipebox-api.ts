@@ -11,7 +11,7 @@ import type {
 } from '@/domain/runner-events';
 
 export interface PipeboxApi {
-  doctor: () => Promise<DoctorEvent>;
+  doctor: (repoPath?: string | null) => Promise<DoctorEvent>;
   listWorkflows: (repoPath: string) => Promise<WorkflowListEvent>;
   graphWorkflow: (options: GraphWorkflowOptions) => Promise<JobGraphEvent>;
   selectRepo: () => Promise<string | null>;

@@ -101,7 +101,7 @@ func decodeLine[T any](t *testing.T, stdout string) T {
 }
 
 func TestDoctorEmitsDoctorEvent(t *testing.T) {
-  stdout, stderr, code := runPipebox(t, "doctor")
+  stdout, stderr, code := runPipebox(t, "doctor", "--repo", repoPath(t, "mixed"))
 
   doctor := decodeLine[event.Doctor](t, stdout)
   if doctor.Type != event.TypeDoctor {
@@ -115,6 +115,7 @@ func TestDoctorEmitsDoctorEvent(t *testing.T) {
   }
   foundDocker := false
   daemonOK := false
+  foundActImage := false
   foundJenkinsImage := false
   for _, check := range doctor.Checks {
     switch check.Name {
@@ -122,6 +123,8 @@ func TestDoctorEmitsDoctorEvent(t *testing.T) {
       foundDocker = true
     case "docker_daemon":
       daemonOK = check.OK
+    case "act_image":
+      foundActImage = true
     case "jenkins_image":
       foundJenkinsImage = true
     }
@@ -129,8 +132,11 @@ func TestDoctorEmitsDoctorEvent(t *testing.T) {
   if !foundDocker {
     t.Fatalf("expected docker check, got %#v", doctor.Checks)
   }
+  if daemonOK && !foundActImage {
+    t.Fatalf("expected act_image check for mixed repo when daemon is up, got %#v", doctor.Checks)
+  }
   if daemonOK && !foundJenkinsImage {
-    t.Fatalf("expected jenkins_image check when daemon is up, got %#v", doctor.Checks)
+    t.Fatalf("expected jenkins_image check for mixed repo when daemon is up, got %#v", doctor.Checks)
   }
   anyFailed := false
   for _, check := range doctor.Checks {
@@ -147,6 +153,32 @@ func TestDoctorEmitsDoctorEvent(t *testing.T) {
   }
   if code != wantCode {
     t.Fatalf("exit %d want %d stderr=%q stdout=%q", code, wantCode, stderr, stdout)
+  }
+}
+
+func TestDoctorScopesImagesToRepoProviders(t *testing.T) {
+  stdout, _, _ := runPipebox(t, "doctor", "--repo", repoPath(t, "github-only"))
+  doctor := decodeLine[event.Doctor](t, stdout)
+  for _, check := range doctor.Checks {
+    if check.Name == "jenkins_image" {
+      t.Fatalf("github-only repo should skip jenkins_image: %#v", doctor.Checks)
+    }
+  }
+
+  stdout, _, _ = runPipebox(t, "doctor", "--repo", repoPath(t, "jenkins-only"))
+  doctor = decodeLine[event.Doctor](t, stdout)
+  for _, check := range doctor.Checks {
+    if check.Name == "act_image" {
+      t.Fatalf("jenkins-only repo should skip act_image: %#v", doctor.Checks)
+    }
+  }
+
+  stdout, _, _ = runPipebox(t, "doctor", "--repo", repoPath(t, "empty"))
+  doctor = decodeLine[event.Doctor](t, stdout)
+  for _, check := range doctor.Checks {
+    if check.Name == "act_image" || check.Name == "jenkins_image" {
+      t.Fatalf("empty repo should skip provider images: %#v", doctor.Checks)
+    }
   }
 }
 

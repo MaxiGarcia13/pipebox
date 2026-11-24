@@ -8,7 +8,7 @@ import (
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/provider/jenkins/jfrimage"
 )
 
-func Run(version string) event.Doctor {
+func Run(version string, providers []string) event.Doctor {
   checks := []event.DoctorCheck{
     lookPathCheck("docker"),
   }
@@ -17,7 +17,12 @@ func Run(version string) event.Doctor {
     daemonCheck := dockerInfoCheck()
     checks = append(checks, daemonCheck)
     if daemonCheck.OK {
-      checks = append(checks, actImageCheck(), jenkinsImageCheck())
+      if hasProvider(providers, event.ProviderGitHub) {
+        checks = append(checks, actImageCheck())
+      }
+      if hasProvider(providers, event.ProviderJenkins) {
+        checks = append(checks, jenkinsImageCheck())
+      }
     }
   }
 
@@ -29,8 +34,17 @@ func Run(version string) event.Doctor {
   }
 }
 
-func Emit() {
-  _ = event.EmitStdout(Run(""))
+func Emit(providers ...string) {
+  _ = event.EmitStdout(Run("", providers))
+}
+
+func hasProvider(providers []string, id string) bool {
+  for _, provider := range providers {
+    if provider == id {
+      return true
+    }
+  }
+  return false
 }
 
 func allChecksOK(checks []event.DoctorCheck) bool {

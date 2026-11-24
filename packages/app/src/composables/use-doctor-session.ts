@@ -11,8 +11,8 @@ export function useDoctorSession() {
       : { ...next, version };
   }
 
-  async function runDoctor() {
-    applyDoctor(await window.pipebox.doctor());
+  async function runDoctor(repoPath?: string | null) {
+    applyDoctor(await window.pipebox.doctor(repoPath));
   }
 
   return {

@@ -75,9 +75,9 @@ func DefaultCatalog() Catalog {
     },
     Commands: []Command{
       {
-        Name:        "doctor",
-        Usage:       "Run environment diagnostics",
-        TakesNoArgs: true,
+        Name:  "doctor",
+        Usage: "Run environment diagnostics",
+        Flags: []Flag{repoFlag},
       },
       {
         Name:  "list",
@@ -182,6 +182,7 @@ func DefaultCatalog() Catalog {
       "",
       "Examples:",
       "  pipebox doctor",
+      "  pipebox doctor --repo <path>",
       "  pipebox list --repo <path>",
       "  pipebox run --repo <path> --workflow <file>",
       "  pipebox completion zsh",

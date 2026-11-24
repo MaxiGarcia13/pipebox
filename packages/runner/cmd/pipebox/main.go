@@ -37,7 +37,7 @@ func runSubcommand(command string, args []string) {
 
   switch command {
   case "doctor":
-    runDoctor()
+    runDoctor(args)
   case "list":
     runList(args)
   case "graph":

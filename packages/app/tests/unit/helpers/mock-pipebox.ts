@@ -82,7 +82,7 @@ export function createMockPipebox(
     [jenkinsWorkflow.path]: githubGraph,
     ...options.graphsByWorkflow,
   };
-  const branchesByRepo = {
+  const branchesByRepo: Record<string, string | null> = {
     [FIXTURE_REPO_GITHUB]: 'main',
     [FIXTURE_REPO_JENKINS]: 'main',
     [FIXTURE_REPO_MIXED]: 'develop',
@@ -103,7 +103,7 @@ export function createMockPipebox(
   }
 
   const api: PipeboxApi = {
-    doctor: async () => {
+    doctor: async (_repoPath?: string | null) => {
       doctorCalls();
       return doctorResult;
     },
