@@ -6,6 +6,8 @@ import (
   "os/exec"
   "path/filepath"
   "runtime"
+
+  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/hostos"
 )
 
 const mcpReleaseTagPrefix = "packages/mcp/v"
@@ -43,11 +45,8 @@ func InstallMCP(version string, progress Progress) (string, error) {
   if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
     return "", fmt.Errorf("create bin dir: %w", err)
   }
-  if err := copyFile(tmpPath, target); err != nil {
+  if err := hostos.Current().ReplaceFile(tmpPath, target); err != nil {
     return "", err
-  }
-  if err := os.Chmod(target, 0o755); err != nil {
-    return "", fmt.Errorf("chmod: %w", err)
   }
   return target, nil
 }
