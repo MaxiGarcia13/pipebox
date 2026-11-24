@@ -8,6 +8,7 @@ import (
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/cli"
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/event"
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/provider"
+  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/termui"
 )
 
 func runList(args []string) {
@@ -20,7 +21,9 @@ func runList(args []string) {
     emitError(err)
     os.Exit(1)
   }
-  if err := event.EmitStdout(result); err != nil {
+  if termui.IsTTY(os.Stdout) {
+    fmt.Println(formatWorkflowList(result))
+  } else if err := event.EmitStdout(result); err != nil {
     fail(err)
   }
 }
@@ -45,7 +48,9 @@ func runGraph(args []string) {
     emitError(err)
     os.Exit(1)
   }
-  if err := event.EmitStdout(result); err != nil {
+  if termui.IsTTY(os.Stdout) {
+    fmt.Println(formatJobGraph(result))
+  } else if err := event.EmitStdout(result); err != nil {
     fail(err)
   }
 }
