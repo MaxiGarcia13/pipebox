@@ -62,7 +62,7 @@ func UninstallMCP() (string, error) {
     }
     return path, fmt.Errorf("stat mcp: %w", err)
   }
-  if err := os.Remove(path); err != nil {
+  if err := hostos.Current().RemoveFile(path); err != nil {
     return path, fmt.Errorf("remove mcp: %w", err)
   }
   return path, nil
@@ -78,17 +78,19 @@ func MCPInstalled() bool {
 }
 
 func ResolveMCP() (string, error) {
+  plat := hostos.Current()
+
   if envPath := os.Getenv("PIPEBOX_MCP"); envPath != "" {
     if abs, err := filepath.Abs(envPath); err == nil {
       envPath = abs
     }
-    if isExecutableFile(envPath) {
+    if plat.IsLaunchable(envPath) {
       return envPath, nil
     }
     return "", fmt.Errorf("PIPEBOX_MCP not found or not executable: %s", envPath)
   }
 
-  if path, err := mcpTargetPath(); err == nil && isExecutableFile(path) {
+  if path, err := mcpTargetPath(); err == nil && plat.IsLaunchable(path) {
     return path, nil
   }
 
@@ -97,7 +99,7 @@ func ResolveMCP() (string, error) {
   }
 
   for _, candidate := range mcpMonorepoCandidates() {
-    if isExecutableFile(candidate) {
+    if plat.IsLaunchable(candidate) {
       return candidate, nil
     }
   }
@@ -118,18 +120,18 @@ func MCPConfigSnippet() string {
 }
 
 func mcpBinaryName() string {
-  if runtime.GOOS == "windows" {
+  if hostos.Current().ID() == "windows" {
     return "pipebox-mcp.exe"
   }
   return "pipebox-mcp"
 }
 
 func mcpTargetPath() (string, error) {
-  homeDir, err := os.UserHomeDir()
+  cliPath, err := hostos.Current().CLILocalBinPath()
   if err != nil {
-    return "", fmt.Errorf("resolve home: %w", err)
+    return "", err
   }
-  return filepath.Join(homeDir, ".local", "bin", mcpBinaryName()), nil
+  return filepath.Join(filepath.Dir(cliPath), mcpBinaryName()), nil
 }
 
 func mcpAssetName(version string) (string, error) {
@@ -187,15 +189,4 @@ func mcpMonorepoCandidates() []string {
     filepath.Clean(filepath.Join(runnerDir, "..", "mcp", mcpBinaryName())),
     filepath.Clean(filepath.Join(runnerDir, mcpBinaryName())),
   }
-}
-
-func isExecutableFile(path string) bool {
-  info, err := os.Stat(path)
-  if err != nil || info.IsDir() {
-    return false
-  }
-  if runtime.GOOS == "windows" {
-    return true
-  }
-  return info.Mode()&0o111 != 0
 }
