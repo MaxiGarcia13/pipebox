@@ -8,7 +8,7 @@ import (
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/uiopen"
 )
 
-const version = "0.19.2"
+const version = "0.20.0"
 
 func main() {
   parsed := cli.Parse(os.Args[1:])
