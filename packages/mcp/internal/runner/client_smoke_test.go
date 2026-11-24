@@ -36,7 +36,7 @@ func TestRunSkinnySummaryWithFakePipebox(t *testing.T) {
     t.Fatalf("expected noisy NDJSON stream, got %d events", eventCount)
   }
 
-  summary := cache.Finish(runID, exitCode)
+  summary := cache.Finish(runID, exitCode, err)
   raw, err := json.Marshal(summary)
   if err != nil {
     t.Fatal(err)

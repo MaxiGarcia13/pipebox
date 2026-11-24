@@ -31,10 +31,7 @@ func (s *Server) runWorkflow(ctx context.Context, req mcp.CallToolRequest) (*mcp
     return s.Cache.Ingest(runID, raw)
   })
 
-  summary := s.Cache.Finish(runID, exitCode)
-  if runErr != nil && summary.Status == "" && len(summary.FailedSteps) == 0 {
-    return mcp.NewToolResultError(runErr.Error()), nil
-  }
+  summary := s.Cache.Finish(runID, exitCode, runErr)
   return mcp.NewToolResultJSON(summary)
 }
 
@@ -47,14 +44,9 @@ func (s *Server) getRunSummary(_ context.Context, req mcp.CallToolRequest) (*mcp
 }
 
 func (s *Server) getStepLogs(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-  job, err := req.RequireString("job")
-  if err != nil {
-    return mcp.NewToolResultError(err.Error()), nil
-  }
-  step, err := req.RequireString("step")
-  if err != nil {
-    return mcp.NewToolResultError(err.Error()), nil
-  }
+  // Empty job+step returns unscoped setup/preflight logs from the run.
+  job := req.GetString("job", "")
+  step := req.GetString("step", "")
 
   tail := req.GetInt("tail", defaultTail)
   if tail <= 0 {

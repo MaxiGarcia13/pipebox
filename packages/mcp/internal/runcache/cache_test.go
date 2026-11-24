@@ -2,6 +2,7 @@ package runcache
 
 import (
   "encoding/json"
+  "errors"
   "fmt"
   "testing"
 )
@@ -36,7 +37,7 @@ func TestCacheFailedStepsAndTail(t *testing.T) {
     },
   })
 
-  summary := cache.Finish(runID, 1)
+  summary := cache.Finish(runID, 1, nil)
   if summary.Status != "failed" || summary.ExitCode != 1 {
     t.Fatalf("unexpected summary: %#v", summary)
   }
@@ -48,6 +49,9 @@ func TestCacheFailedStepsAndTail(t *testing.T) {
   }
   if summary.ArtifactCount != 2 {
     t.Fatalf("artifact count: %d", summary.ArtifactCount)
+  }
+  if len(summary.SetupLogTail) != 0 {
+    t.Fatalf("setupLogTail should be empty when failedSteps present: %#v", summary.SetupLogTail)
   }
 
   lines, err := cache.StepLogs(runID, "build", "test", 2)
@@ -70,9 +74,72 @@ func TestCacheFailedStepsAndTail(t *testing.T) {
 func TestCacheFinishInfersStatus(t *testing.T) {
   cache := New()
   runID := cache.Begin("/repo", "ci.yml", "")
-  summary := cache.Finish(runID, 0)
+  summary := cache.Finish(runID, 0, nil)
   if summary.Status != "passed" || summary.ExitCode != 0 {
     t.Fatalf("got %#v", summary)
+  }
+}
+
+func TestCacheErrorsAndSetupLogTail(t *testing.T) {
+  cache := New()
+  runID := cache.Begin("/repo", "ci", "")
+
+  mustIngest(t, cache, runID, map[string]any{
+    "type": "run_started", "repo": "/repo", "workflow": ".github/workflows/ci.yml",
+  })
+  for i := 0; i < 25; i++ {
+    mustIngest(t, cache, runID, map[string]any{
+      "type": "log", "line": fmt.Sprintf("setup-%d", i),
+    })
+  }
+  mustIngest(t, cache, runID, map[string]any{
+    "type": "error", "message": "act image: build failed",
+  })
+  mustIngest(t, cache, runID, map[string]any{
+    "type": "error", "message": "act image: build failed",
+  })
+  mustIngest(t, cache, runID, map[string]any{
+    "type": "run_finished", "status": "failed", "exitCode": 1,
+  })
+
+  summary := cache.Finish(runID, 1, errors.New("act image: build failed"))
+  if summary.Status != "failed" {
+    t.Fatalf("status: %q", summary.Status)
+  }
+  if len(summary.FailedSteps) != 0 {
+    t.Fatalf("failedSteps: %#v", summary.FailedSteps)
+  }
+  if len(summary.Errors) != 1 || summary.Errors[0] != "act image: build failed" {
+    t.Fatalf("errors: %#v", summary.Errors)
+  }
+  if len(summary.SetupLogTail) != setupLogTailLines {
+    t.Fatalf("setupLogTail len: %d", len(summary.SetupLogTail))
+  }
+  if summary.SetupLogTail[0] != "setup-5" || summary.SetupLogTail[19] != "setup-24" {
+    t.Fatalf("setupLogTail: %#v", summary.SetupLogTail)
+  }
+  if summary.Workflow != ".github/workflows/ci.yml" {
+    t.Fatalf("workflow: %q", summary.Workflow)
+  }
+
+  lines, err := cache.StepLogs(runID, "", "", 3)
+  if err != nil {
+    t.Fatal(err)
+  }
+  if len(lines) != 3 || lines[0] != "setup-22" {
+    t.Fatalf("setup step logs: %#v", lines)
+  }
+}
+
+func TestCacheFinishAppendsRunErr(t *testing.T) {
+  cache := New()
+  runID := cache.Begin("/repo", "ci.yml", "")
+  summary := cache.Finish(runID, 1, errors.New("spawn failed"))
+  if summary.Status != "failed" {
+    t.Fatalf("status: %q", summary.Status)
+  }
+  if len(summary.Errors) != 1 || summary.Errors[0] != "spawn failed" {
+    t.Fatalf("errors: %#v", summary.Errors)
   }
 }
 

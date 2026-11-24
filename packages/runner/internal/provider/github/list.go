@@ -35,7 +35,7 @@ func List(repoPath string) (event.WorkflowList, error) {
       continue
     }
     id := strings.TrimSuffix(name, filepath.Ext(name))
-    relativePath := filepath.Join(".github", "workflows", name)
+    relativePath := filepath.ToSlash(filepath.Join(".github", "workflows", name))
     workflow := event.Workflow{
       ID:       id,
       Name:     id,

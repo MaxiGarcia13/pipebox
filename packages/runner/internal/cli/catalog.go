@@ -200,7 +200,7 @@ func DefaultCatalog() Catalog {
       "  pipebox doctor",
       "  pipebox list",
       "  pipebox list --repo <path>",
-      "  pipebox run --workflow <file>",
+      "  pipebox run --workflow <id|path>",
       "  pipebox install-mcp",
       "  pipebox completion zsh",
       "",

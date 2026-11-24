@@ -41,22 +41,24 @@ After saving, restart or reload the MCP connection.
 
 ## Tools
 
-| Tool              | Purpose                                              |
-| ----------------- | ---------------------------------------------------- |
-| `doctor`          | Check Docker / images / CLI                          |
-| `list_workflows`  | List workflows for a repo (`repo` defaults to cwd)   |
-| `graph_workflow`  | Job/step graph without running                       |
-| `run_workflow`    | Run locally; returns status + failed steps only      |
-| `get_run_summary` | Cached summary from a prior `run_workflow`           |
-| `get_step_logs`   | Tailed log lines for one job/step (default tail: 80) |
+| Tool              | Purpose                                                                                  |
+| ----------------- | ---------------------------------------------------------------------------------------- |
+| `doctor`          | Check Docker / images / CLI                                                              |
+| `list_workflows`  | List workflows for a repo (`repo` defaults to cwd)                                       |
+| `graph_workflow`  | Job/step graph without running                                                           |
+| `run_workflow`    | Run locally; skinny summary (`status`, `errors`, `failedSteps`, optional `setupLogTail`) |
+| `get_run_summary` | Cached summary from a prior `run_workflow`                                               |
+| `get_step_logs`   | Tailed log lines for one job/step (default tail: 80); omit job/step for setup logs       |
+
+`workflow` accepts a list **id** (e.g. `ci`) or **path** (e.g. `.github/workflows/ci.yml`).
 
 Secrets stay out of MCP args — `pipebox run` loads the repo’s `.env` / `.env.*` as usual.
 
 ### Preferred agent loop
 
-1. `list_workflows` → pick a workflow
-2. `run_workflow` → read `failedSteps`
-3. `get_step_logs` on failed steps only
+1. `list_workflows` → pick a workflow (`id` or `path`)
+2. `run_workflow` → read `errors` / `setupLogTail` / `failedSteps` (do not shell `pipebox`)
+3. `get_step_logs` on failed steps only (or empty job+step for more setup logs)
 4. Fix → `run_workflow` again
 
 Prefer these tools over shelling `pipebox run` and pasting full NDJSON/logs into the chat.

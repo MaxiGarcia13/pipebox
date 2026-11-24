@@ -8,6 +8,11 @@ import (
   "github.com/MaxiGarcia13/pipebox/packages/mcp/internal/event"
 )
 
+const (
+  maxErrors         = 8
+  setupLogTailLines = 20
+)
+
 type FailedStep struct {
   Job        string `json:"job"`
   Step       string `json:"step"`
@@ -22,6 +27,8 @@ type Summary struct {
   Status        string       `json:"status,omitempty"`
   ExitCode      int          `json:"exitCode"`
   FailedSteps   []FailedStep `json:"failedSteps"`
+  Errors        []string     `json:"errors,omitempty"`
+  SetupLogTail  []string     `json:"setupLogTail,omitempty"`
   ArtifactCount int          `json:"artifactCount"`
 }
 
@@ -128,6 +135,12 @@ func (c *Cache) Ingest(runID string, raw json.RawMessage) error {
     }
     key := stepKey{Job: ev.Job, Step: ev.Step}
     rec.logs[key] = append(rec.logs[key], ev.Line)
+  case event.TypeError:
+    var ev event.Error
+    if err := json.Unmarshal(raw, &ev); err != nil {
+      return err
+    }
+    appendError(&rec.Summary, ev.Message)
   case event.TypeArtifacts:
     var ev event.Artifacts
     if err := json.Unmarshal(raw, &ev); err != nil {
@@ -138,20 +151,38 @@ func (c *Cache) Ingest(runID string, raw json.RawMessage) error {
   return nil
 }
 
-func (c *Cache) Finish(runID string, exitCode int) Summary {
+func (c *Cache) Finish(runID string, exitCode int, runErr error) Summary {
   c.mu.Lock()
   defer c.mu.Unlock()
 
   rec := c.records[runID]
   if rec == nil {
-    return Summary{RunID: runID, ExitCode: exitCode, FailedSteps: []FailedStep{}}
+    summary := Summary{RunID: runID, ExitCode: exitCode, FailedSteps: []FailedStep{}}
+    if runErr != nil {
+      appendError(&summary, runErr.Error())
+      summary.Status = "failed"
+    } else if exitCode == 0 {
+      summary.Status = "passed"
+    } else {
+      summary.Status = "failed"
+    }
+    return summary
+  }
+  if runErr != nil {
+    appendError(&rec.Summary, runErr.Error())
   }
   if rec.Summary.Status == "" {
     rec.Summary.ExitCode = exitCode
-    if exitCode == 0 {
+    if exitCode == 0 && runErr == nil {
       rec.Summary.Status = "passed"
     } else {
       rec.Summary.Status = "failed"
+    }
+  }
+  if rec.Summary.Status == "failed" && len(rec.Summary.FailedSteps) == 0 {
+    setup := rec.logs[stepKey{}]
+    if len(setup) > 0 {
+      rec.Summary.SetupLogTail = tailLines(setup, setupLogTailLines)
     }
   }
   return cloneSummary(rec.Summary)
@@ -192,12 +223,7 @@ func (c *Cache) StepLogs(runID, job, step string, tail int) ([]string, error) {
   }
 
   lines := rec.logs[stepKey{Job: job, Step: step}]
-  if tail > 0 && len(lines) > tail {
-    lines = lines[len(lines)-tail:]
-  }
-  out := make([]string, len(lines))
-  copy(out, lines)
-  return out, nil
+  return tailLines(lines, tail), nil
 }
 
 func (c *Cache) LatestID() string {
@@ -227,13 +253,45 @@ func (c *Cache) evictLocked() {
   }
 }
 
+func appendError(summary *Summary, message string) {
+  if message == "" {
+    return
+  }
+  for _, existing := range summary.Errors {
+    if existing == message {
+      return
+    }
+  }
+  if len(summary.Errors) >= maxErrors {
+    return
+  }
+  summary.Errors = append(summary.Errors, message)
+}
+
+func tailLines(lines []string, tail int) []string {
+  if tail > 0 && len(lines) > tail {
+    lines = lines[len(lines)-tail:]
+  }
+  out := make([]string, len(lines))
+  copy(out, lines)
+  return out
+}
+
 func cloneSummary(in Summary) Summary {
   out := in
   if in.FailedSteps == nil {
     out.FailedSteps = []FailedStep{}
-    return out
+  } else {
+    out.FailedSteps = make([]FailedStep, len(in.FailedSteps))
+    copy(out.FailedSteps, in.FailedSteps)
   }
-  out.FailedSteps = make([]FailedStep, len(in.FailedSteps))
-  copy(out.FailedSteps, in.FailedSteps)
+  if in.Errors != nil {
+    out.Errors = make([]string, len(in.Errors))
+    copy(out.Errors, in.Errors)
+  }
+  if in.SetupLogTail != nil {
+    out.SetupLogTail = make([]string, len(in.SetupLogTail))
+    copy(out.SetupLogTail, in.SetupLogTail)
+  }
   return out
 }
