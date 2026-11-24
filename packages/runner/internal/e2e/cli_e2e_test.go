@@ -69,7 +69,13 @@ func repoPath(t *testing.T, name string) string {
 
 func runPipebox(t *testing.T, args ...string) (stdout string, stderr string, exitCode int) {
   t.Helper()
+  return runPipeboxDir(t, "", args...)
+}
+
+func runPipeboxDir(t *testing.T, dir string, args ...string) (stdout string, stderr string, exitCode int) {
+  t.Helper()
   cmd := exec.Command(pipeboxBin, args...)
+  cmd.Dir = dir
   var outBuf, errBuf bytes.Buffer
   cmd.Stdout = &outBuf
   cmd.Stderr = &errBuf
@@ -333,6 +339,42 @@ func TestGraphJenkinsOnly(t *testing.T) {
   }
   if len(job.Steps) != 1 || job.Steps[0] != "echo" {
     t.Fatalf("steps: %#v", job.Steps)
+  }
+}
+
+func TestListUsesWorkingDirectory(t *testing.T) {
+  stdout, stderr, code := runPipeboxDir(t, repoPath(t, "github-only"), "list")
+  if code != 0 {
+    t.Fatalf("exit %d stderr=%q stdout=%q", code, stderr, stdout)
+  }
+
+  list := decodeLine[event.WorkflowList](t, stdout)
+  if list.Type != event.TypeWorkflowList {
+    t.Fatalf("type: got %q", list.Type)
+  }
+  if len(list.Workflows) != 1 || list.Workflows[0].Name != "CI" {
+    t.Fatalf("workflows: %#v", list.Workflows)
+  }
+}
+
+func TestGraphUsesWorkingDirectory(t *testing.T) {
+  stdout, stderr, code := runPipeboxDir(
+    t,
+    repoPath(t, "github-only"),
+    "graph",
+    "--workflow",
+    ".github/workflows/ci.yml",
+  )
+  if code != 0 {
+    t.Fatalf("exit %d stderr=%q stdout=%q", code, stderr, stdout)
+  }
+
+  graph := decodeLine[event.JobGraph](t, stdout)
+  if graph.Type != event.TypeJobGraph {
+    t.Fatalf("type: got %q", graph.Type)
+  }
+  if len(graph.Jobs) != 1 || graph.Jobs[0].ID != "lint" {
+    t.Fatalf("jobs: %#v", graph.Jobs)
   }
 }
 
