@@ -13,31 +13,39 @@ func normalizeVersion(version string) string {
   return strings.TrimPrefix(strings.TrimSpace(version), "v")
 }
 
-func parseReleaseTag(tag string) (string, error) {
+func parseReleaseTagWithPrefix(tag, prefix string) (string, error) {
   tag = strings.TrimSpace(tag)
-  if !strings.HasPrefix(tag, releaseTagPrefix) {
+  if !strings.HasPrefix(tag, prefix) {
     return "", fmt.Errorf("unexpected release tag %q", tag)
   }
-  version := normalizeVersion(strings.TrimPrefix(tag, releaseTagPrefix))
+  version := normalizeVersion(strings.TrimPrefix(tag, prefix))
   if version == "" {
     return "", fmt.Errorf("empty version in tag %q", tag)
   }
   return version, nil
 }
 
-func LatestVersion() (string, error) {
-  return latestVersionFrom(releaseLatestAPIURL())
+func parseReleaseTag(tag string) (string, error) {
+  return parseReleaseTagWithPrefix(tag, releaseTagPrefix)
 }
 
-func releaseLatestAPIURL() string {
+func LatestVersion() (string, error) {
+  return latestVersionWithPrefix(releaseListAPIURL(), releaseTagPrefix)
+}
+
+func LatestMCPVersion() (string, error) {
+  return latestVersionWithPrefix(releaseListAPIURL(), mcpReleaseTagPrefix)
+}
+
+func releaseListAPIURL() string {
   return fmt.Sprintf(
-    "https://api.github.com/repos/%s/%s/releases/latest",
+    "https://api.github.com/repos/%s/%s/releases?per_page=30",
     releaseOwner,
     releaseRepo,
   )
 }
 
-func latestVersionFrom(apiURL string) (string, error) {
+func latestVersionWithPrefix(apiURL, prefix string) (string, error) {
   req, err := http.NewRequest(http.MethodGet, apiURL, nil)
   if err != nil {
     return "", fmt.Errorf("latest release request: %w", err)
@@ -60,11 +68,18 @@ func latestVersionFrom(apiURL string) (string, error) {
     return "", fmt.Errorf("latest release: %s", resp.Status)
   }
 
-  var release struct {
+  var releases []struct {
     TagName string `json:"tag_name"`
   }
-  if err := json.Unmarshal(body, &release); err != nil {
+  if err := json.Unmarshal(body, &releases); err != nil {
     return "", fmt.Errorf("latest release json: %w", err)
   }
-  return parseReleaseTag(release.TagName)
+  for _, release := range releases {
+    version, err := parseReleaseTagWithPrefix(release.TagName, prefix)
+    if err != nil {
+      continue
+    }
+    return version, nil
+  }
+  return "", fmt.Errorf("no release with prefix %q", prefix)
 }

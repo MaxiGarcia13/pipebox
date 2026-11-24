@@ -30,7 +30,12 @@ func runLifecycle(command string, args []string) {
     }
     ui.Ok(fmt.Sprintf("Desktop installed (%s)", desktopPath))
   case "install-mcp":
-    mcpPath, err := install.InstallMCP(version, ui)
+    mcpVersion, err := install.LatestMCPVersion()
+    if err != nil {
+      ui.Err(err)
+      os.Exit(1)
+    }
+    mcpPath, err := install.InstallMCP(mcpVersion, ui)
     if err != nil {
       ui.Err(err)
       os.Exit(1)

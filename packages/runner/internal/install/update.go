@@ -68,7 +68,11 @@ func Update(options UpdateOptions) (UpdateResult, error) {
   }
 
   if MCPInstalled() {
-    mcpPath, err := InstallMCP(target, progress)
+    mcpVersion, err := LatestMCPVersion()
+    if err != nil {
+      return result, fmt.Errorf("cli updated to %s, but mcp latest failed: %w", cliPath, err)
+    }
+    mcpPath, err := InstallMCP(mcpVersion, progress)
     if err != nil {
       return result, fmt.Errorf("cli updated to %s, but mcp failed: %w", cliPath, err)
     }
