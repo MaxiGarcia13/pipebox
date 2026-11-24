@@ -41,25 +41,28 @@ After saving, restart or reload the MCP connection.
 
 ## Tools
 
-| Tool              | Purpose                                                                                  |
-| ----------------- | ---------------------------------------------------------------------------------------- |
-| `doctor`          | Check Docker / images / CLI                                                              |
-| `list_workflows`  | List workflows for a repo (`repo` defaults to cwd)                                       |
-| `graph_workflow`  | Job/step graph without running                                                           |
-| `run_workflow`    | Run locally; skinny summary (`status`, `errors`, `failedSteps`, optional `setupLogTail`) |
-| `get_run_summary` | Cached summary from a prior `run_workflow`                                               |
-| `get_step_logs`   | Tailed log lines for one job/step (default tail: 80); omit job/step for setup logs       |
+| Tool              | Purpose                                                                                                                |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `doctor`          | Check Docker / images / CLI                                                                                            |
+| `list_workflows`  | List workflows for a repo (`repo` defaults to cwd)                                                                     |
+| `graph_workflow`  | Job/step graph (`needs`) without running — use before multi-job runs                                                   |
+| `run_workflow`    | Run locally; pass `job` for one job/stage; skinny summary (`status`, `errors`, `failedSteps`, optional `setupLogTail`) |
+| `get_run_summary` | Cached summary from a prior `run_workflow`                                                                             |
+| `get_step_logs`   | Tailed log lines for one job/step (default tail: 80); omit job/step for setup logs                                     |
 
 `workflow` accepts a list **id** (e.g. `ci`) or **path** (e.g. `.github/workflows/ci.yml`).
+
+`job` selects one GitHub Actions job or one Jenkins Declarative stage (name/slug). Prefer this for multi-job workflows so each MCP call finishes before host timeouts.
 
 Secrets stay out of MCP args — `pipebox run` loads the repo’s `.env` / `.env.*` as usual.
 
 ### Preferred agent loop
 
 1. `list_workflows` → pick a workflow (`id` or `path`)
-2. `run_workflow` → read `errors` / `setupLogTail` / `failedSteps` (do not shell `pipebox`)
-3. `get_step_logs` on failed steps only (or empty job+step for more setup logs)
-4. Fix → `run_workflow` again
+2. `graph_workflow` → note job/stage ids and `needs`
+3. `run_workflow` **with `job`** for each job/stage in dependency order (do not shell `pipebox`; avoid full multi-job runs in one call)
+4. Read `errors` / `setupLogTail` / `failedSteps`; `get_step_logs` on failures only
+5. Fix → re-run the failed `job` only
 
 Prefer these tools over shelling `pipebox run` and pasting full NDJSON/logs into the chat.
 

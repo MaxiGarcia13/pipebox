@@ -18,7 +18,7 @@ func (s *Server) registerTools(mcpServer *mcpserver.MCPServer) {
   ), s.listWorkflows)
 
   mcpServer.AddTool(mcp.NewTool("graph_workflow",
-    mcp.WithDescription("Return the job/step graph for one workflow without running it. Prefer list_workflows id or path."),
+    mcp.WithDescription("Return the job/step graph (ids, needs) without running. Call this before run_workflow when a workflow has multiple jobs/stages, then run one job at a time."),
     mcp.WithString("repo",
       mcp.Description("Repo path. Defaults to the MCP process working directory."),
     ),
@@ -33,7 +33,7 @@ func (s *Server) registerTools(mcpServer *mcpserver.MCPServer) {
   ), s.graphWorkflow)
 
   mcpServer.AddTool(mcp.NewTool("run_workflow",
-    mcp.WithDescription("Run a workflow locally. Returns a skinny summary only (status, errors, failedSteps, optional setupLogTail). Do not shell pipebox or dump NDJSON. On failure: read errors/setupLogTail first; use get_step_logs for failed step tails."),
+    mcp.WithDescription("Run a workflow locally. Prefer job= for one GitHub job or Jenkins Declarative stage per call (avoids MCP timeouts on long CI). Returns a skinny summary only (status, errors, failedSteps, optional setupLogTail). Do not shell pipebox or dump NDJSON. On failure: read errors/setupLogTail first; use get_step_logs for failed step tails."),
     mcp.WithString("repo",
       mcp.Description("Repo path. Defaults to the MCP process working directory."),
     ),
@@ -46,7 +46,7 @@ func (s *Server) registerTools(mcpServer *mcpserver.MCPServer) {
       mcp.Enum("github", "jenkins"),
     ),
     mcp.WithString("job",
-      mcp.Description("Optional single job id to run."),
+      mcp.Description("Preferred: single GitHub job id or Jenkins Declarative stage name/slug. Omit only for single-job workflows. Respect graph needs order (e.g. run test and lint before e2e)."),
     ),
     mcp.WithArray("inputs",
       mcp.Description("Workflow inputs as KEY=VALUE strings."),
