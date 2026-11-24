@@ -2,6 +2,7 @@ package server
 
 import (
   "fmt"
+  "sync"
 
   mcpserver "github.com/mark3labs/mcp-go/server"
 
@@ -18,6 +19,7 @@ const (
 type Server struct {
   Runner *runner.Client
   Cache  *runcache.Cache
+  runs   sync.WaitGroup
 }
 
 func New(client *runner.Client) *Server {
@@ -28,6 +30,13 @@ func New(client *runner.Client) *Server {
     Runner: client,
     Cache:  runcache.New(),
   }
+}
+
+func (s *Server) Wait() {
+  if s == nil {
+    return
+  }
+  s.runs.Wait()
 }
 
 func (s *Server) Serve() error {

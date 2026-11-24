@@ -9,7 +9,7 @@ import (
   "github.com/MaxiGarcia13/pipebox/packages/mcp/internal/runner"
 )
 
-func (s *Server) runWorkflow(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (s *Server) runWorkflow(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
   workflow, err := req.RequireString("workflow")
   if err != nil {
     return mcp.NewToolResultError(err.Error()), nil
@@ -20,18 +20,29 @@ func (s *Server) runWorkflow(ctx context.Context, req mcp.CallToolRequest) (*mcp
   }
 
   job := req.GetString("job", "")
-  runID := s.Cache.Begin(repo, workflow, job)
-  exitCode, runErr := s.Runner.Run(ctx, runner.RunOptions{
+  opts := runner.RunOptions{
     Repo:     repo,
     Workflow: workflow,
     Provider: req.GetString("provider", ""),
     Job:      job,
     Inputs:   req.GetStringSlice("inputs", nil),
-  }, func(raw json.RawMessage) error {
-    return s.Cache.Ingest(runID, raw)
-  })
+  }
 
-  summary := s.Cache.Finish(runID, exitCode, runErr)
+  runID := s.Cache.Begin(repo, workflow, job)
+  // Detach from the MCP request context so a host tool timeout does not kill pipebox.
+  s.runs.Add(1)
+  go func() {
+    defer s.runs.Done()
+    exitCode, runErr := s.Runner.Run(context.Background(), opts, func(raw json.RawMessage) error {
+      return s.Cache.Ingest(runID, raw)
+    })
+    s.Cache.Finish(runID, exitCode, runErr)
+  }()
+
+  summary, err := s.Cache.Summary(runID)
+  if err != nil {
+    return mcp.NewToolResultError(err.Error()), nil
+  }
   return mcp.NewToolResultJSON(summary)
 }
 

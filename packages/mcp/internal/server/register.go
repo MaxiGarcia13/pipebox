@@ -33,7 +33,7 @@ func (s *Server) registerTools(mcpServer *mcpserver.MCPServer) {
   ), s.graphWorkflow)
 
   mcpServer.AddTool(mcp.NewTool("run_workflow",
-    mcp.WithDescription("Run a workflow locally. Prefer job= for one GitHub job or Jenkins Declarative stage per call (avoids MCP timeouts on long CI). Returns a skinny summary only (status, errors, failedSteps, optional setupLogTail). Do not shell pipebox or dump NDJSON. On failure: read errors/setupLogTail first; use get_step_logs for failed step tails."),
+    mcp.WithDescription("Start a local workflow run asynchronously. Returns immediately with status=running and runId. Prefer job= for one GitHub job or Jenkins Declarative stage. Poll get_run_summary until status is passed or failed — do not shell pipebox or dump NDJSON. On failure: read errors/setupLogTail; use get_step_logs for failed step tails."),
     mcp.WithString("repo",
       mcp.Description("Repo path. Defaults to the MCP process working directory."),
     ),
@@ -55,7 +55,7 @@ func (s *Server) registerTools(mcpServer *mcpserver.MCPServer) {
   ), s.runWorkflow)
 
   mcpServer.AddTool(mcp.NewTool("get_run_summary",
-    mcp.WithDescription("Return the cached skinny summary for a prior run_workflow call."),
+    mcp.WithDescription("Poll the skinny summary for a runId from run_workflow. status is running until the run finishes (passed or failed). Do not shell pipebox while waiting."),
     mcp.WithString("runId",
       mcp.Description("Run id from run_workflow. Defaults to the latest run."),
     ),

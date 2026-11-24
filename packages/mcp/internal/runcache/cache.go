@@ -11,6 +11,9 @@ import (
 const (
   maxErrors         = 8
   setupLogTailLines = 20
+  StatusRunning     = "running"
+  StatusPassed      = "passed"
+  StatusFailed      = "failed"
 )
 
 type FailedStep struct {
@@ -70,6 +73,7 @@ func (c *Cache) Begin(repo, workflow, job string) string {
       Repo:        repo,
       Workflow:    workflow,
       Job:         job,
+      Status:      StatusRunning,
       FailedSteps: []FailedStep{},
     },
     logs: make(map[stepKey][]string),
@@ -160,26 +164,27 @@ func (c *Cache) Finish(runID string, exitCode int, runErr error) Summary {
     summary := Summary{RunID: runID, ExitCode: exitCode, FailedSteps: []FailedStep{}}
     if runErr != nil {
       appendError(&summary, runErr.Error())
-      summary.Status = "failed"
+      summary.Status = StatusFailed
     } else if exitCode == 0 {
-      summary.Status = "passed"
+      summary.Status = StatusPassed
     } else {
-      summary.Status = "failed"
+      summary.Status = StatusFailed
     }
     return summary
   }
   if runErr != nil {
     appendError(&rec.Summary, runErr.Error())
   }
-  if rec.Summary.Status == "" {
-    rec.Summary.ExitCode = exitCode
+  rec.Summary.ExitCode = exitCode
+  // Keep terminal status from run_finished; otherwise leave "running" and derive.
+  if rec.Summary.Status == "" || rec.Summary.Status == StatusRunning {
     if exitCode == 0 && runErr == nil {
-      rec.Summary.Status = "passed"
+      rec.Summary.Status = StatusPassed
     } else {
-      rec.Summary.Status = "failed"
+      rec.Summary.Status = StatusFailed
     }
   }
-  if rec.Summary.Status == "failed" && len(rec.Summary.FailedSteps) == 0 {
+  if rec.Summary.Status == StatusFailed && len(rec.Summary.FailedSteps) == 0 {
     setup := rec.logs[stepKey{}]
     if len(setup) > 0 {
       rec.Summary.SetupLogTail = tailLines(setup, setupLogTailLines)
@@ -236,7 +241,10 @@ func (c *Cache) evictLocked() {
   for len(c.records) > c.limit {
     oldest := ""
     oldestNum := c.nextID + 1
-    for id := range c.records {
+    for id, rec := range c.records {
+      if rec.Summary.Status == StatusRunning {
+        continue
+      }
       var n int
       if _, err := fmt.Sscanf(id, "run-%d", &n); err != nil {
         continue

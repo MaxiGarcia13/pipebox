@@ -74,9 +74,26 @@ func TestCacheFailedStepsAndTail(t *testing.T) {
 func TestCacheFinishInfersStatus(t *testing.T) {
   cache := New()
   runID := cache.Begin("/repo", "ci.yml", "")
+  started, err := cache.Summary(runID)
+  if err != nil {
+    t.Fatal(err)
+  }
+  if started.Status != StatusRunning {
+    t.Fatalf("begin status: %#v", started)
+  }
   summary := cache.Finish(runID, 0, nil)
-  if summary.Status != "passed" || summary.ExitCode != 0 {
+  if summary.Status != StatusPassed || summary.ExitCode != 0 {
     t.Fatalf("got %#v", summary)
+  }
+}
+
+func TestCacheSkipsEvictingRunning(t *testing.T) {
+  cache := New()
+  cache.limit = 1
+  first := cache.Begin("/repo", "a.yml", "")
+  _ = cache.Begin("/repo", "b.yml", "")
+  if _, err := cache.Summary(first); err != nil {
+    t.Fatalf("running run should not be evicted: %v", err)
   }
 }
 

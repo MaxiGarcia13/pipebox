@@ -4,6 +4,8 @@ import (
   "encoding/json"
   "fmt"
   "os"
+  "strconv"
+  "time"
 )
 
 func main() {
@@ -27,6 +29,11 @@ func main() {
       },
     })
   case "run":
+    if ms := os.Getenv("FAKE_PIPEBOX_SLEEP_MS"); ms != "" {
+      if n, err := strconv.Atoi(ms); err == nil && n > 0 {
+        time.Sleep(time.Duration(n) * time.Millisecond)
+      }
+    }
     emit(map[string]any{
       "type":     "run_started",
       "repo":     flagValue("--repo"),
