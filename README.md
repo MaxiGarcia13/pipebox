@@ -104,7 +104,7 @@ Or run `pipebox install` to copy the CLI into `~/.local/bin/pipebox` and fetch t
 
 ## CLI
 
-Open the desktop UI (reuse if already running):
+Open the desktop UI (reuse if already running). If this directory has GitHub Actions or Jenkins workflows, that project opens. Otherwise the app starts with no project.
 
 ```bash
 pipebox

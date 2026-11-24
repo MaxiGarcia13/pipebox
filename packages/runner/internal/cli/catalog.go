@@ -168,7 +168,8 @@ func DefaultCatalog() Catalog {
     },
     Notes: []string{
       "Desktop:",
-      "  Bare `pipebox` (or `pipebox --repo <path>`) opens the desktop UI.",
+      "  Bare `pipebox` opens the current directory when it has GitHub or Jenkins workflows.",
+      "  Otherwise it opens with no project. `pipebox --repo <path>` always opens that path.",
       "  `-n` / `--new` opens a new window instead of reusing.",
       "  `install` / `install-desktop` fetch the UI from GitHub Releases.",
       "  `update` replaces managed CLI installs + desktop app.",

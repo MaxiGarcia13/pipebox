@@ -9,6 +9,7 @@ import (
   "strings"
 
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/hostos"
+  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/provider"
 )
 
 func Open(repoPath string, newWindow bool) error {
@@ -17,6 +18,7 @@ func Open(repoPath string, newWindow bool) error {
     return err
   }
 
+  repoPath = implicitRepo(repoPath)
   absRepo := ""
   if repoPath != "" {
     var absErr error
@@ -34,6 +36,20 @@ func Open(repoPath string, newWindow bool) error {
   }
 
   return startApp(appPath, launchArgs(absRepo, newWindow))
+}
+
+func implicitRepo(repoPath string) string {
+  if repoPath != "" {
+    return repoPath
+  }
+  cwd, err := os.Getwd()
+  if err != nil {
+    return ""
+  }
+  if len(provider.Discover(cwd)) == 0 {
+    return ""
+  }
+  return cwd
 }
 
 // Chromium keeps --name=value as one switch; the two-token form --name value is
