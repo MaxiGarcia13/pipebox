@@ -70,7 +70,7 @@ make test
 - GitHub-only code stays under `packages/runner/internal/provider/github/`.
 - App UI uses shadcn-vue under `packages/app/src/components/ui/`. After `shadcn-vue add`, rename generated files to **kebab-case** and fix imports.
 - Do not expose a generic shell API through preload.
-- MCP setup for agents: [packages/mcp/README.md](packages/mcp/README.md).
+- Package notes: [packages/app/README.md](packages/app/README.md), [packages/runner/README.md](packages/runner/README.md), [packages/mcp/README.md](packages/mcp/README.md).
 
 ## AI agents
 

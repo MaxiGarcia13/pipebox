@@ -10,18 +10,19 @@ v1 requires **Docker only** for both providers — no local `act` or Jenkins bin
 flowchart LR
   Vue[Vue_renderer] -->|IPC| Preload[preload_bridge]
   Preload --> Main[Electron_main]
-  Main -->|spawn_stdin_stdout| Runner[Go_runner]
+  Main -->|spawn| Runner[pipebox]
+  Terminal[Terminal] -->|run| Runner
   Agent[MCP_client] -->|stdio| MCP[pipebox_mcp]
-  MCP -->|spawn_NDJSON| Runner
+  MCP -->|spawn| Runner
   Runner --> Discover[provider_Discover]
   Discover --> GH[provider_github]
   Discover --> JK[provider_jenkins]
-  GH -->|docker_run| ActImage[pipebox_act_image]
-  JK -->|ephemeral_controller| JenkinsImage[pipebox_jenkins_image]
-  ActImage --> Docker[Docker]
-  JenkinsImage -->|docker.sock_DooD| Docker
-  Runner -->|NDJSON_events| Main
-  Main -->|IPC_events| Vue
+  GH -->|docker_run| Act[pipebox_act]
+  JK -->|ephemeral_controller| Jfr[pipebox_jenkins]
+  Act --> Docker[Docker]
+  Jfr -->|docker.sock_DooD| Docker
+  Runner -->|NDJSON| Main
+  Main -->|IPC| Vue
 ```
 
 Provider code lives under `packages/runner/internal/provider/`:

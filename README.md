@@ -29,28 +29,25 @@ Local CI/CD control panel for GitHub Actions and Jenkins — run and debug pipel
 flowchart LR
   Vue[Vue_renderer] -->|IPC| Preload[preload_bridge]
   Preload --> Main[Electron_main]
-  Main -->|spawn_stdin_stdout| Runner[Go_runner]
+  Main -->|spawn| Runner[pipebox]
+  Terminal[Terminal] -->|run| Runner
   Agent[MCP_client] -->|stdio| MCP[pipebox_mcp]
-  MCP -->|spawn_NDJSON| Runner
-  Runner -->|docker_run| ActImage[pipebox_act_image]
-  ActImage --> Docker[Docker]
-  Runner -->|NDJSON_events| Main
-  Main -->|IPC_events| Vue
+  MCP -->|spawn| Runner
+  Runner --> GH[provider_github]
+  Runner --> JK[provider_jenkins]
+  GH -->|docker_run| Act[pipebox_act]
+  JK -->|ephemeral_controller| Jfr[pipebox_jenkins]
+  Act --> Docker[Docker]
+  Jfr -->|docker.sock_DooD| Docker
+  Runner -->|NDJSON| Main
+  Main -->|IPC| Vue
 ```
-
-The Go runner is shared by the desktop app and the MCP server.
 
 ## Quick start
 
 **Needs:** Docker running · Go 1.22+ on `PATH`
 
-| OS / arch     | CLI | Desktop |
-| ------------- | --- | ------- |
-| macOS arm64   | ✓   | ✓       |
-| macOS amd64   | ✓   | ✓       |
-| Windows amd64 | ✓   | ✓       |
-| Linux amd64   | ✓   | ✓       |
-| Linux arm64   | ✓   | —       |
+Desktop platforms: [packages/app/README.md#support](packages/app/README.md#support).
 
 Install the CLI:
 
