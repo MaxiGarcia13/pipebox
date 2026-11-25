@@ -27,12 +27,15 @@ on:
   }
 
   artifactDir := t.TempDir()
+  cacheDir := t.TempDir()
   args, cleanup, err := buildActArgs(repoPath, Options{
     Repo:         repoPath,
     Workflow:     ".github/workflows/deploy.yml",
     Inputs:       []string{"tag=v1"},
     ArtifactDir:  artifactDir,
     ArtifactPort: 34567,
+    CacheDir:     cacheDir,
+    CachePort:    34568,
   })
   if cleanup != nil {
     defer cleanup()
@@ -75,6 +78,24 @@ on:
   if !containsPair(args, "-e", "ACT_DISABLE_VERSION_CHECK=1") {
     t.Fatalf("missing ACT_DISABLE_VERSION_CHECK in %#v", args)
   }
+  if !containsPair(args, "--cache-server-path", cacheMountPath) {
+    t.Fatalf("missing cache-server-path in %#v", args)
+  }
+  if !containsPair(args, "--cache-server-addr", cacheBindAddr) {
+    t.Fatalf("missing cache-server-addr in %#v", args)
+  }
+  if !containsPair(args, "--cache-server-port", "34568") {
+    t.Fatalf("missing cache-server-port in %#v", args)
+  }
+  if !containsPair(args, "--cache-server-external-url", "http://host.docker.internal:34568") {
+    t.Fatalf("missing cache-server-external-url in %#v", args)
+  }
+  if !containsPair(args, "-v", cacheDir+":"+cacheMountPath) {
+    t.Fatalf("missing cache mount in %#v", args)
+  }
+  if !containsPair(args, "-p", "34568:34568") {
+    t.Fatalf("missing cache port publish in %#v", args)
+  }
 }
 
 func TestBuildActArgsPushWorkflow(t *testing.T) {
@@ -94,6 +115,8 @@ func TestBuildActArgsPushWorkflow(t *testing.T) {
     Workflow:     ".github/workflows/ci.yml",
     ArtifactDir:  t.TempDir(),
     ArtifactPort: 34567,
+    CacheDir:     t.TempDir(),
+    CachePort:    34568,
   })
   if cleanup != nil {
     defer cleanup()
@@ -128,6 +151,8 @@ on:
     Workflow:     ".github/workflows/ci.yml",
     ArtifactDir:  t.TempDir(),
     ArtifactPort: 34567,
+    CacheDir:     t.TempDir(),
+    CachePort:    34568,
   })
   if cleanup != nil {
     defer cleanup()
@@ -176,6 +201,8 @@ jobs:
     Workflow:     ".github/workflows/ci.yml",
     ArtifactDir:  t.TempDir(),
     ArtifactPort: 34567,
+    CacheDir:     t.TempDir(),
+    CachePort:    34568,
   })
   if cleanup != nil {
     defer cleanup()

@@ -1,0 +1,57 @@
+name: Cache and artifacts
+on: push
+jobs:
+  produce:
+    name: Produce
+    runs-on: ubuntu-latest
+    steps:
+      - name: Write cache and artifact files
+        run: |
+          mkdir -p .pipebox-cache-demo
+          echo "from-produce" > .pipebox-cache-demo/marker.txt
+          echo "hello-from-pipebox" > demo-artifact.txt
+
+      - name: Save cache
+        uses: actions/cache/save@v4
+        with:
+          path: .pipebox-cache-demo
+          key: pipebox-demo-${{ runner.os }}-v1
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-out
+          path: demo-artifact.txt
+
+  consume:
+    name: Consume
+    needs: [produce]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clear workspace leftovers
+        run: rm -rf .pipebox-cache-demo demo-artifact.txt downloaded
+
+      - name: Restore cache
+        uses: actions/cache/restore@v4
+        id: cache
+        with:
+          path: .pipebox-cache-demo
+          key: pipebox-demo-${{ runner.os }}-v1
+
+      - name: Assert cache restored
+        run: |
+          test -f .pipebox-cache-demo/marker.txt
+          grep -q from-produce .pipebox-cache-demo/marker.txt
+          echo "CACHE_OK"
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: demo-out
+          path: downloaded
+
+      - name: Assert artifact downloaded
+        run: |
+          test -f downloaded/demo-artifact.txt
+          grep -q hello-from-pipebox downloaded/demo-artifact.txt
+          echo "ARTIFACT_OK"

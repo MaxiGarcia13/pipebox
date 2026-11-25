@@ -90,6 +90,20 @@ func buildActArgs(repoPath string, options Options) ([]string, func(), error) {
   // upload-artifact can reach it; 127.0.0.1 only works when act runs on the host.
   runtimeURL := fmt.Sprintf("http://host.docker.internal:%s/", artifactPort)
 
+  cacheDir, err := resolveCacheMountDir(options.CacheDir)
+  if err != nil {
+    cleanup()
+    return nil, nil, err
+  }
+  if options.CachePort <= 0 {
+    cleanup()
+    return nil, nil, fmt.Errorf("cache port is required")
+  }
+  cachePort := strconv.Itoa(options.CachePort)
+  // Same sibling-container networking for actions/cache; act injects
+  // ACTIONS_CACHE_URL from --cache-server-external-url (no trailing slash).
+  cacheExternalURL := fmt.Sprintf("http://host.docker.internal:%s", cachePort)
+
   actWorkflowPath, workflowMountArgs, err := resolveActWorkflowPath(repoPath, materialized.Path)
   if err != nil {
     cleanup()
@@ -101,12 +115,14 @@ func buildActArgs(repoPath string, options Options) ([]string, func(), error) {
     "--rm",
     "-t",
     "-p", fmt.Sprintf("%s:%s", artifactPort, artifactPort),
+    "-p", fmt.Sprintf("%s:%s", cachePort, cachePort),
     "--add-host", "host.docker.internal:host-gateway",
     "-e", "ACTIONS_RUNTIME_URL=" + runtimeURL,
     "-e", "ACT_DISABLE_VERSION_CHECK=1",
     "-v", fmt.Sprintf("%s:/workspace", repoPath),
     "-v", fmt.Sprintf("%s:/var/run/docker.sock", dockerSock),
     "-v", fmt.Sprintf("%s:%s", artifactDir, artifactMountPath),
+    "-v", fmt.Sprintf("%s:%s", cacheDir, cacheMountPath),
     "-w", "/workspace",
   }
   args = append(args, workflowMountArgs...)
@@ -140,6 +156,10 @@ func buildActArgs(repoPath string, options Options) ([]string, func(), error) {
     "--artifact-server-path", artifactMountPath,
     "--artifact-server-addr", artifactBindAddr,
     "--artifact-server-port", artifactPort,
+    "--cache-server-path", cacheMountPath,
+    "--cache-server-addr", cacheBindAddr,
+    "--cache-server-port", cachePort,
+    "--cache-server-external-url", cacheExternalURL,
     "--container-options", "--add-host=host.docker.internal:host-gateway",
     "-W", actWorkflowPath,
   )
@@ -212,6 +232,20 @@ func resolveArtifactDir(artifactDir string) (string, error) {
   }
   if err := os.MkdirAll(absolutePath, 0o700); err != nil {
     return "", fmt.Errorf("create artifact dir: %w", err)
+  }
+  return absolutePath, nil
+}
+
+func resolveCacheMountDir(cacheDir string) (string, error) {
+  if cacheDir == "" {
+    return "", fmt.Errorf("cache dir is required")
+  }
+  absolutePath, err := filepath.Abs(cacheDir)
+  if err != nil {
+    return "", fmt.Errorf("resolve cache dir: %w", err)
+  }
+  if err := os.MkdirAll(absolutePath, 0o700); err != nil {
+    return "", fmt.Errorf("create cache dir: %w", err)
   }
   return absolutePath, nil
 }

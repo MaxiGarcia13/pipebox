@@ -428,3 +428,127 @@ func TestCompleteWorkflows(t *testing.T) {
     t.Fatalf("expected workflow %q in %q", want, stdout)
   }
 }
+
+func TestRunGitHubCacheAndArtifacts(t *testing.T) {
+  requireDockerDaemon(t)
+
+  repo := repoPath(t, "github-cache-artifacts")
+  // Shared workspace leftovers must not fake cache/artifact sharing.
+  for _, name := range []string{".pipebox-cache-demo", "demo-artifact.txt", "downloaded"} {
+    _ = os.RemoveAll(filepath.Join(repo, name))
+  }
+
+  stdout, stderr, code := runPipebox(
+    t,
+    "run",
+    "--repo", repo,
+    "--workflow", "cache-artifacts",
+    "--provider", "github",
+  )
+  if code != 0 {
+    t.Fatalf("exit %d stderr=%q stdout=%q", code, stderr, stdout)
+  }
+
+  lines := ndjsonLines(stdout)
+  if !logContains(lines, "CACHE_OK") {
+    t.Fatalf("missing CACHE_OK in logs; stdout=%s", stdout)
+  }
+  if !logContains(lines, "ARTIFACT_OK") {
+    t.Fatalf("missing ARTIFACT_OK in logs; stdout=%s", stdout)
+  }
+
+  artifacts := lastArtifacts(t, lines)
+  if len(artifacts.Artifacts) == 0 {
+    t.Fatal("expected artifacts event")
+  }
+  found := false
+  for _, artifact := range artifacts.Artifacts {
+    if artifact.Name == "demo-out" && artifact.Size > 0 {
+      found = true
+      break
+    }
+  }
+  if !found {
+    t.Fatalf("expected demo-out artifact, got %#v", artifacts.Artifacts)
+  }
+
+  finished := lastRunFinished(t, lines)
+  if finished.Status != "passed" || finished.ExitCode != 0 {
+    t.Fatalf("run_finished: %#v", finished)
+  }
+}
+
+func requireDockerDaemon(t *testing.T) {
+  t.Helper()
+  cmd := exec.Command("docker", "info")
+  if err := cmd.Run(); err != nil {
+    t.Skip("docker daemon not reachable")
+  }
+}
+
+func ndjsonLines(stdout string) []string {
+  raw := strings.Split(stdout, "\n")
+  lines := make([]string, 0, len(raw))
+  for _, line := range raw {
+    line = strings.TrimSpace(line)
+    if line != "" {
+      lines = append(lines, line)
+    }
+  }
+  return lines
+}
+
+func logContains(lines []string, needle string) bool {
+  for _, line := range lines {
+    var entry event.Log
+    if err := json.Unmarshal([]byte(line), &entry); err != nil {
+      continue
+    }
+    if entry.Type == event.TypeLog && strings.Contains(entry.Line, needle) {
+      return true
+    }
+  }
+  return false
+}
+
+func lastArtifacts(t *testing.T, lines []string) event.Artifacts {
+  t.Helper()
+  var last event.Artifacts
+  found := false
+  for _, line := range lines {
+    var entry event.Artifacts
+    if err := json.Unmarshal([]byte(line), &entry); err != nil {
+      continue
+    }
+    if entry.Type != event.TypeArtifacts {
+      continue
+    }
+    last = entry
+    found = true
+  }
+  if !found {
+    t.Fatal("missing artifacts event")
+  }
+  return last
+}
+
+func lastRunFinished(t *testing.T, lines []string) event.RunFinished {
+  t.Helper()
+  var last event.RunFinished
+  found := false
+  for _, line := range lines {
+    var entry event.RunFinished
+    if err := json.Unmarshal([]byte(line), &entry); err != nil {
+      continue
+    }
+    if entry.Type != event.TypeRunFinished {
+      continue
+    }
+    last = entry
+    found = true
+  }
+  if !found {
+    t.Fatal("missing run_finished event")
+  }
+  return last
+}

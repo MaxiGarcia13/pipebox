@@ -26,6 +26,8 @@ type Options struct {
   Inputs       []string
   ArtifactDir  string
   ArtifactPort int
+  CacheDir     string
+  CachePort    int
 }
 
 func Start(options Options) (int, error) {
@@ -60,6 +62,17 @@ func Start(options Options) (int, error) {
   }
   options.ArtifactDir = artifacts.Dir
   options.ArtifactPort = artifacts.Port
+
+  cache, err := prepareCacheRuntime()
+  if err != nil {
+    _ = event.EmitStdout(event.Error{
+      Type:    event.TypeError,
+      Message: err.Error(),
+    })
+    return 1, nil
+  }
+  options.CacheDir = cache.Dir
+  options.CachePort = cache.Port
 
   if !actimage.Exists() {
     _ = event.EmitStdout(event.Log{
