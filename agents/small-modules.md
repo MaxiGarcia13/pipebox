@@ -1,8 +1,3 @@
----
-description: Prefer small components and functions; split large files
-alwaysApply: true
----
-
 # Small modules
 
 - Keep components and functions small, with a single clear responsibility.

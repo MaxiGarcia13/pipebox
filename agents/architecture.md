@@ -1,8 +1,3 @@
----
-description: PipeBox package boundaries, runner protocol, and UI stack
-alwaysApply: true
----
-
 # Architecture
 
 ## Packages

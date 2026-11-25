@@ -72,7 +72,11 @@ make test
 - Do not expose a generic shell API through preload.
 - MCP setup for agents: [packages/mcp/README.md](packages/mcp/README.md).
 
-Deeper agent/architecture notes: [AGENTS.md](AGENTS.md).
+## AI agents
+
+Shared guidance lives in [AGENTS.md](AGENTS.md) and [`agents/`](agents/). Point your coding agent at those files using whatever local setup that tool expects (Cursor rules, Claude `CLAUDE.md`, etc.). Do not commit tool-specific config (`.cursor/`, `CLAUDE.md`, `.claude/`).
+
+MCP: [packages/mcp/README.md](packages/mcp/README.md).
 
 ## Pull requests
 

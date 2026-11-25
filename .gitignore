@@ -10,5 +10,5 @@ dist
 /Jenkinsfile
 
 .cursor
-!.cursor/rules
-!.cursor/skills
+CLAUDE.md
+.claude/

@@ -1,8 +1,3 @@
----
-description: File and identifier naming conventions
-alwaysApply: true
----
-
 # Naming conventions
 
 - **Files and folders**: kebab-case (`workflow-list.vue`, `step-log.ts`)
