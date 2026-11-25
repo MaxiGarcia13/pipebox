@@ -76,7 +76,7 @@ make test
 
 Shared guidance lives in [AGENTS.md](AGENTS.md), [`rules/`](rules/), and [`skills/`](skills/).
 
-Wire **rules** and **skills** locally for whatever agent you use (e.g. Cursor `.cursor/rules`, Claude `CLAUDE.md`). They are not installed automatically on clone. Do not commit tool-specific config (`.cursor/`, `CLAUDE.md`, `.claude/`).
+Wire **rules** and **skills** locally for whatever agent you use (e.g. Cursor `.cursor/`, OpenCode `.opencode/`, Claude `CLAUDE.md`). They are not installed automatically on clone. Do not commit tool-specific config (`.cursor/`, `.opencode/`, `CLAUDE.md`, `.claude/`).
 
 MCP: [packages/mcp/README.md](packages/mcp/README.md).
 
