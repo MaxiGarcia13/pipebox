@@ -86,7 +86,7 @@ jobs:
           gh release create "$mcp_tag" dist-mcp/* \
             --title "$title" \
             --notes-file mcp-release-notes.md \
-            --target "${{ inputs.tag_name }}"
+            --target "$(git rev-parse "$TAG_NAME")"
 
       - name: Upload assets
         if: ${{ !inputs.create_release }}
