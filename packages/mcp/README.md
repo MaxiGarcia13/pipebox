@@ -2,12 +2,11 @@
 
 Stdio [MCP](https://modelcontextprotocol.io) server for AI agents and IDEs. It wraps the `pipebox` CLI and returns **skinny** results (summaries + on-demand log tails) so local CI runs do not dump full console output into the model context.
 
-Works with any MCP-capable client (Cursor, Claude Desktop, and others).
+Works with any MCP-capable client (Cursor, Claude Desktop, OpenCode, and others).
 
-## Prerequisites
+`pipebox-mcp` is a thin client of the runner — same boundary as the Electron app. It does not parse GitHub Actions or Jenkins files; it spawns `pipebox` and filters NDJSON.
 
-- Docker running
-- `pipebox` CLI on `PATH` (`pipebox doctor` OK)
+Monorepo build/test: [CONTRIBUTING.md](../../CONTRIBUTING.md).
 
 ## Install
 
@@ -15,13 +14,13 @@ Works with any MCP-capable client (Cursor, Claude Desktop, and others).
 pipebox install-mcp
 ```
 
-This downloads `pipebox-mcp` to `~/.local/bin` (same managed layout as the CLI) and prints a config snippet.
-
-Override the binary with `PIPEBOX_MCP` if needed.
-
 ## Configure your client
 
-Add a stdio MCP server that runs `pipebox-mcp` (or `pipebox mcp`):
+Register a stdio MCP server that runs `pipebox-mcp` (or `pipebox mcp`). Restart or reload MCP after saving.
+
+### Cursor
+
+User or project `mcp.json`:
 
 ```json
 {
@@ -33,11 +32,65 @@ Add a stdio MCP server that runs `pipebox-mcp` (or `pipebox mcp`):
 }
 ```
 
-**Cursor** — MCP settings / `mcp.json` (user or project).  
-**Claude Desktop** — `claude_desktop_config.json` under the app support directory for your OS.  
-**Other agents** — any client that can launch a stdio MCP command.
+### Claude Desktop
 
-After saving, restart or reload the MCP connection.
+Edit `claude_desktop_config.json`:
+
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+- Linux: `~/.config/Claude/claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "pipebox": {
+      "command": "pipebox-mcp"
+    }
+  }
+}
+```
+
+Fully quit and reopen Claude Desktop after saving.
+
+### Claude Code
+
+```bash
+claude mcp add --transport stdio pipebox -- pipebox-mcp
+```
+
+Or from JSON (project scope with `--scope project`, all projects with `--scope user`):
+
+```bash
+claude mcp add-json pipebox '{"command":"pipebox-mcp"}'
+```
+
+Verify with `claude mcp list`.
+
+### OpenCode
+
+CLI (project config; add `--global` for every project):
+
+```bash
+opencode mcp add pipebox -- pipebox-mcp
+```
+
+Or in `opencode.json` / `.opencode/opencode.json` (global: `~/.config/opencode/opencode.json`):
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "servers": {
+      "pipebox": {
+        "type": "local",
+        "command": ["pipebox-mcp"]
+      }
+    }
+  }
+}
+```
+
+Check with `opencode mcp list` or `/mcps` in the TUI.
 
 ## Tools
 
@@ -66,25 +119,3 @@ Secrets stay out of MCP args — `pipebox run` loads the repo’s `.env` / `.env
 6. Fix → re-run the failed `job` only
 
 Prefer these tools over shelling `pipebox run` and pasting full NDJSON/logs into the chat.
-
-## Develop
-
-From the monorepo:
-
-```bash
-pnpm mcp:build   # or: make -C packages/mcp build
-pnpm mcp:test
-./packages/mcp/pipebox-mcp   # stdio server
-```
-
-Point a client at the built binary, or:
-
-```bash
-pipebox mcp
-```
-
-(`pipebox mcp` resolves managed install → `PATH` → monorepo build → `PIPEBOX_MCP`.)
-
-## Architecture
-
-`pipebox-mcp` is a thin client of the runner — same boundary as the Electron app. It does not parse GitHub Actions or Jenkins files; it spawns `pipebox` and filters NDJSON.

@@ -29,6 +29,10 @@ pnpm runner:image
 pnpm runner:lint
 pnpm runner:lint:fix
 pnpm runner:doctor
+pnpm mcp:build
+pnpm mcp:test
+pnpm mcp:lint
+pnpm mcp:lint:fix
 ```
 
 From `packages/runner`:
@@ -44,17 +48,29 @@ make build
 ./pipebox run --workflow .github/workflows/ci.yml
 ```
 
+From `packages/mcp` (or via `pipebox mcp`):
+
+```bash
+make build                   # or: pnpm mcp:build
+make test
+./pipebox-mcp                # stdio server; point a client at this binary
+```
+
+`pipebox mcp` resolves managed install → `PATH` → monorepo build → `PIPEBOX_MCP`.
+
 ## Package boundaries
 
 | Package           | Owns                                                 | Does not own                           |
 | ----------------- | ---------------------------------------------------- | -------------------------------------- |
 | `packages/app`    | Electron UI, typed runner events, IPC bridge         | act/log parsing, CI-provider detection |
 | `packages/runner` | Providers, Dockerized act, NDJSON events, public CLI | Vue / preload UI                       |
+| `packages/mcp`    | Stdio MCP server, skinny tools over runner NDJSON    | Providers, CI file parsing             |
 
 - Route `graph` / `run` **per workflow** via `provider` (or `--provider`), never a single repo-wide provider.
 - GitHub-only code stays under `packages/runner/internal/provider/github/`.
 - App UI uses shadcn-vue under `packages/app/src/components/ui/`. After `shadcn-vue add`, rename generated files to **kebab-case** and fix imports.
 - Do not expose a generic shell API through preload.
+- MCP setup for agents: [packages/mcp/README.md](packages/mcp/README.md).
 
 Deeper agent/architecture notes: [AGENTS.md](AGENTS.md).
 
