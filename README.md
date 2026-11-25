@@ -17,8 +17,6 @@ Local CI/CD control panel for GitHub Actions and Jenkins — run and debug pipel
 - Live step logs in the desktop UI — or pure CLI (`list` / `graph` / `run`)
 - Optional MCP server for AI agents (skinny run summaries + step log tails)
 
-GitHub `actions/cache` and `actions/upload-artifact` run locally via act’s servers so those steps don’t fail. Cache is **ephemeral per run** (not GitHub’s cloud cache, not shared across PipeBox runs). Artifacts are collected for the UI/CLI after the run; they are not uploaded to GitHub.
-
 ## How it works
 
 | Package           | Role                     | Tech                                                                     |
@@ -247,6 +245,10 @@ Remove the local CLI install, desktop app, and MCP (if present):
 ```bash
 pipebox uninstall
 ```
+
+## Notes
+
+GitHub `actions/cache` and `actions/upload-artifact` run locally via act’s servers so those steps don’t fail. Cache is ephemeral per run (not GitHub’s cloud cache, not shared across PipeBox runs). Artifacts are collected for the UI/CLI after the run; they are not uploaded to GitHub.
 
 ## Develop
 
