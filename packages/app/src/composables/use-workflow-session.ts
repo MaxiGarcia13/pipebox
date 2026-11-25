@@ -52,12 +52,17 @@ export function useWorkflowSession(workflows: Ref<Workflow[]>) {
   async function loadPreview(
     repoPath: string,
     workflowPath: string,
+    options?: { force?: boolean },
   ): Promise<
     | { status: 'cached' }
     | { status: 'loaded' }
     | { status: 'error'; message: string }
   > {
-    if (previewWorkflow.value === workflowPath && previewEvents.value.length > 0) {
+    if (
+      !options?.force
+      && previewWorkflow.value === workflowPath
+      && previewEvents.value.length > 0
+    ) {
       return { status: 'cached' };
     }
     try {

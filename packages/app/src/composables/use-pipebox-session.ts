@@ -106,6 +106,19 @@ export function usePipeboxSession() {
   async function refreshWorkflows() {
     statusMessage.value = '';
     await project.refresh();
+    const selected = workflow.selectedWorkflow.value;
+    const repoPath = project.repoPath.value;
+    if (!selected || !repoPath) {
+      return;
+    }
+    if (!project.workflows.value.some((item) => item.path === selected)) {
+      workflow.reset();
+      return;
+    }
+    const preview = await workflow.loadPreview(repoPath, selected, { force: true });
+    if (preview.status === 'error') {
+      statusMessage.value = preview.message;
+    }
   }
 
   async function selectWorkflow(workflowPath: string) {

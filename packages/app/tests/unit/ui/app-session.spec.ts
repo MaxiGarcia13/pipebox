@@ -6,6 +6,7 @@ import {
   FIXTURE_REPO_GITHUB,
   FIXTURE_REPO_JENKINS,
   FIXTURE_REPO_MIXED,
+  githubGraph,
   githubWorkflow,
   okDoctor,
   passedRunEvents,
@@ -125,6 +126,38 @@ describe('app session UI', () => {
     const rows = wrapper.findAll('[data-testid="workflow-row"]');
     expect(rows).toHaveLength(2);
     expect(rows[1]?.get('[data-testid="workflow-name"]').text()).toBe('Publish CLI');
+  });
+
+  it('refreshes the selected workflow graph preview', async () => {
+    const graph = {
+      type: 'job_graph' as const,
+      jobs: [...githubGraph.jobs],
+    };
+    const { wrapper } = await mountApp({
+      launchRepo: FIXTURE_REPO_GITHUB,
+      graphsByWorkflow: { [githubWorkflow.path]: graph },
+    });
+
+    await wrapper.get('[data-testid="workflow-row"]').trigger('click');
+    await flushPromises();
+
+    expect(wrapper.get('[data-testid="event-log"]').text()).toContain('Lint');
+    expect(wrapper.get('[data-testid="event-log"]').text()).not.toContain('Test');
+
+    graph.jobs = [
+      {
+        id: 'test',
+        name: 'Test',
+        needs: [],
+        steps: ['npm test'],
+      },
+    ];
+
+    await wrapper.get('[data-testid="workflow-refresh"]').trigger('click');
+    await flushPromises();
+
+    expect(wrapper.get('[data-testid="event-log"]').text()).toContain('Test');
+    expect(wrapper.get('[data-testid="event-log"]').text()).not.toContain('Lint');
   });
 
   it('shows doctor banner for docker failure and refreshes', async () => {
