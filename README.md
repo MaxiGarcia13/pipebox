@@ -9,6 +9,37 @@ Local CI/CD control panel for GitHub Actions and Jenkins — run and debug pipel
 | GitHub Actions | Ready — run locally via Dockerized [act](https://github.com/nektos/act) (`pipebox-act`)                                               |
 | Jenkins        | Ready — run locally via an ephemeral [Jenkins LTS](https://www.jenkins.io/doc/book/installing/docker/) controller (`pipebox-jenkins`) |
 
+## What you get
+
+- Browse GitHub Actions and Jenkins workflows for a local repo
+- Run jobs with Dockerized act / ephemeral Jenkins (no host `act` or Jenkins binary)
+- Inject secrets from `.env` / `.env.*`
+- Live step logs in the desktop UI — or pure CLI (`list` / `graph` / `run`)
+- Optional MCP server for AI agents (skinny run summaries + step log tails)
+
+## How it works
+
+| Package           | Role                     | Tech                                                                     |
+| ----------------- | ------------------------ | ------------------------------------------------------------------------ |
+| `packages/app`    | Desktop shell + UI       | Electron, Vue 3, Vite, Tailwind v4, [shadcn-vue](https://shadcn-vue.com) |
+| `packages/runner` | CI runner + terminal CLI | Go binary `pipebox`                                                      |
+| `packages/mcp`    | MCP server for agents    | Go binary `pipebox-mcp` (stdio; wraps the CLI)                           |
+
+```mermaid
+flowchart LR
+  Vue[Vue_renderer] -->|IPC| Preload[preload_bridge]
+  Preload --> Main[Electron_main]
+  Main -->|spawn_stdin_stdout| Runner[Go_runner]
+  Agent[MCP_client] -->|stdio| MCP[pipebox_mcp]
+  MCP -->|spawn_NDJSON| Runner
+  Runner -->|docker_run| ActImage[pipebox_act_image]
+  ActImage --> Docker[Docker]
+  Runner -->|NDJSON_events| Main
+  Main -->|IPC_events| Vue
+```
+
+The Go runner is shared by the desktop app and the MCP server. Provider discovery and boundaries: [AGENTS.md](AGENTS.md). MCP setup: [packages/mcp/README.md](packages/mcp/README.md).
+
 ## Quick start
 
 **Needs:** Docker running · Go 1.22+ on `PATH`
@@ -71,48 +102,6 @@ Or download the CLI binary for your OS/arch from [Releases](https://github.com/M
 
 Builds are unsigned for now. On macOS, if Gatekeeper blocks the app: right-click `PipeBox.app` → Open → Open. On Windows, accept the SmartScreen prompt if shown.
 
-## What you get
-
-- Browse GitHub Actions and Jenkins workflows for a local repo
-- Run jobs with Dockerized act / ephemeral Jenkins (no host `act` or Jenkins binary)
-- Inject secrets from `.env` / `.env.*`
-- Live step logs in the desktop UI — or pure CLI (`list` / `graph` / `run`)
-- Optional MCP server for AI agents (skinny run summaries + step log tails)
-
-## MCP (agents)
-
-Use PipeBox from Cursor, Claude Desktop, or any MCP-capable agent without dumping full CI logs into the model:
-
-```bash
-pipebox install-mcp
-```
-
-Then add `pipebox-mcp` as a stdio MCP server in your client. Setup, tools, and the preferred agent loop: [packages/mcp/README.md](packages/mcp/README.md).
-
-## Updates
-
-Check for a newer release:
-
-```bash
-pipebox update --check
-```
-
-Install the latest CLI (desktop and MCP only if already installed):
-
-```bash
-pipebox update
-```
-
-Pin a version:
-
-```bash
-pipebox update --version 0.4.1
-```
-
-No second `go install` needed once a `pipebox` binary is on your `PATH`.
-
-Or run `pipebox install` to copy the CLI into `~/.local/bin/pipebox` and fetch the desktop app in one go.
-
 ## CLI
 
 Open the desktop UI (reuse if already running). If this directory has GitHub Actions or Jenkins workflows, that project opens. Otherwise the app starts with no project.
@@ -132,8 +121,6 @@ Open a new window:
 ```bash
 pipebox -n --repo <path>
 ```
-
-Other commands:
 
 Show help:
 
@@ -213,64 +200,51 @@ Secrets load from `.env` and `.env.*` in the repo. Pass `--secret KEY=VALUE` or 
 
 Pipes and the desktop app always get NDJSON. There is no `--json` flag. A terminal gets the table for `list` and `graph` only.
 
-Install CLI to `~/.local/bin`, fetch the desktop app, and write shell completions:
+## MCP (agents)
 
-```bash
-pipebox install
-```
-
-Fetch the desktop app only:
-
-```bash
-pipebox install-desktop
-```
-
-Fetch the MCP server for AI agents:
+Use PipeBox from Cursor, Claude Desktop, or any MCP-capable agent without dumping full CI logs into the model:
 
 ```bash
 pipebox install-mcp
 ```
 
-Run the MCP server (stdio):
+Then add `pipebox-mcp` as a stdio MCP server in your client. Setup, tools, and the preferred agent loop: [packages/mcp/README.md](packages/mcp/README.md).
+
+Run the MCP server (stdio) directly:
 
 ```bash
 pipebox mcp
 ```
 
-Update CLI; desktop and MCP only if already installed (`--check` to report only, `--version` to pin):
+## Updates
+
+Check for a newer release:
 
 ```bash
-pipebox update [--check] [--version <v>]
+pipebox update --check
 ```
+
+Install the latest CLI (desktop and MCP only if already installed):
+
+```bash
+pipebox update
+```
+
+Pin a version:
+
+```bash
+pipebox update --version 0.4.1
+```
+
+No second `go install` needed once a `pipebox` binary is on your `PATH`.
+
+Or run `pipebox install` to copy the CLI into `~/.local/bin/pipebox` and fetch the desktop app in one go.
 
 Remove the local CLI install, desktop app, and MCP (if present):
 
 ```bash
 pipebox uninstall
 ```
-
-## How it works
-
-| Package           | Role                     | Tech                                                                     |
-| ----------------- | ------------------------ | ------------------------------------------------------------------------ |
-| `packages/app`    | Desktop shell + UI       | Electron, Vue 3, Vite, Tailwind v4, [shadcn-vue](https://shadcn-vue.com) |
-| `packages/runner` | CI runner + terminal CLI | Go binary `pipebox`                                                      |
-| `packages/mcp`    | MCP server for agents    | Go binary `pipebox-mcp` (stdio; wraps the CLI)                           |
-
-```mermaid
-flowchart LR
-  Vue[Vue_renderer] -->|IPC| Preload[preload_bridge]
-  Preload --> Main[Electron_main]
-  Main -->|spawn_stdin_stdout| Runner[Go_runner]
-  Agent[MCP_client] -->|stdio| MCP[pipebox_mcp]
-  MCP -->|spawn_NDJSON| Runner
-  Runner -->|docker_run| ActImage[pipebox_act_image]
-  ActImage --> Docker[Docker]
-  Runner -->|NDJSON_events| Main
-  Main -->|IPC_events| Vue
-```
-
-The Go runner is shared by the desktop app and the MCP server. Provider discovery and boundaries: [AGENTS.md](AGENTS.md). MCP setup: [packages/mcp/README.md](packages/mcp/README.md).
 
 ## Develop
 
