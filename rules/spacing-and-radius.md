@@ -1,9 +1,3 @@
----
-description: Even spacing scale and unified border radius for UI
-globs: packages/app/**/*.{vue,css}
-alwaysApply: false
----
-
 # Spacing and radius
 
 ## Spacing

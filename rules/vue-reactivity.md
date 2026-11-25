@@ -1,9 +1,3 @@
----
-description: Avoid unnecessary Vue computed/watch; prefer plain values and derived state
-globs: packages/app/**/*.vue,packages/app/**/composables/**/*.ts,packages/app/**/stores/**/*.ts
-alwaysApply: false
----
-
 # Vue reactivity — no unnecessary memoize
 
 Do not wrap cheap, synchronous derives in `computed` or `watch`. Prefer plain `const`, template expressions, or a real derived `computed` only when it earns its keep.
