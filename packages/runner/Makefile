@@ -3,6 +3,7 @@ CMD := ./cmd/pipebox
 ACT_IMAGE := pipebox-act:latest
 JENKINS_IMAGE := pipebox-jenkins:latest
 JENKINS_REVISION := $(shell sed -n 's/^[[:space:]]*Revision = "\(.*\)"/\1/p' internal/provider/jenkins/jfrimage/image.go)
+GO_INDENT := python3 $(CURDIR)/../../scripts/go-indent.py
 
 .PHONY: build clean test lint lint-indent lint-fix doctor image image-act image-jenkins
 
@@ -16,21 +17,15 @@ test:
 	go test ./...
 
 # gofmt uses tabs; this repo uses 2-space indent (.editorconfig).
-# printf: $'\t' is not POSIX. dash keeps it as the pattern "$t".
 lint-indent:
-	@if grep -RInF --include='*.go' "$$(printf '\t')" .; then \
-		echo >&2 "error: Go files must use 2-space indent (no tabs; see .editorconfig)"; \
-		exit 1; \
-	fi
+	@$(GO_INDENT) --check .
 
 lint: lint-indent
 	golangci-lint run ./...
 
-# Expand tabs → 2 spaces (gofmt/editor may reintroduce tabs).
-expand-go-tabs:
-	@python3 -c 'from pathlib import Path; [p.write_text(p.read_text().replace(chr(9), "  ")) for p in Path(".").rglob("*.go")]'
-
-lint-fix: expand-go-tabs
+# gofmt/editor may reintroduce tabs; expand before other fixes.
+lint-fix:
+	@$(GO_INDENT) --fix .
 	golangci-lint run --fix ./...
 
 doctor: build
