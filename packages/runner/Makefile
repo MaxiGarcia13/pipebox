@@ -3,7 +3,7 @@ CMD := ./cmd/pipebox
 ACT_IMAGE := pipebox-act:latest
 JENKINS_IMAGE := pipebox-jenkins:latest
 JENKINS_REVISION := $(shell sed -n 's/^[[:space:]]*Revision = "\(.*\)"/\1/p' internal/provider/jenkins/jfrimage/image.go)
-GO_INDENT := python3 $(CURDIR)/../../scripts/go-indent.py
+GO_INDENT := node $(CURDIR)/../../scripts/go-indent.mjs
 
 .PHONY: build clean test lint lint-indent lint-fix doctor image image-act image-jenkins
 
