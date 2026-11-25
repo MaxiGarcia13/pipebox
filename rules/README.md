@@ -1,4 +1,4 @@
-# Agent coding conventions
+# Coding conventions
 
 Shared, tool-agnostic rules for coding agents. Overview: [AGENTS.md](../AGENTS.md). Local tool setup: [CONTRIBUTING.md](../CONTRIBUTING.md).
 

@@ -74,7 +74,7 @@ make test
 
 ## AI agents
 
-Shared guidance lives in [AGENTS.md](AGENTS.md) and [`agents/`](agents/). Point your coding agent at those files using whatever local setup that tool expects (Cursor rules, Claude `CLAUDE.md`, etc.). Do not commit tool-specific config (`.cursor/`, `CLAUDE.md`, `.claude/`).
+Shared guidance lives in [AGENTS.md](AGENTS.md) and [`rules/`](rules/) (add shared skills under `skills/` when needed). Point your coding agent at those files using whatever local setup that tool expects (Cursor rules, Claude `CLAUDE.md`, etc.). Do not commit tool-specific config (`.cursor/`, `CLAUDE.md`, `.claude/`).
 
 MCP: [packages/mcp/README.md](packages/mcp/README.md).
 
