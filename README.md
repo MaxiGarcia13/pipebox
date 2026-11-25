@@ -1,6 +1,6 @@
 # PipeBox
 
-Local CI/CD control panel for GitHub Actions and Jenkins — run and debug pipelines locally with visual step logs. No git push required.
+Local CI/CD for GitHub Actions and Jenkins — run and debug pipelines from the desktop UI, terminal, or MCP. No git push required.
 
 ![PipeBox demo](docs/demo.gif)
 
