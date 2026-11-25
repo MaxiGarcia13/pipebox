@@ -78,6 +78,9 @@ on:
   if !containsPair(args, "-e", "ACT_DISABLE_VERSION_CHECK=1") {
     t.Fatalf("missing ACT_DISABLE_VERSION_CHECK in %#v", args)
   }
+  if !containsPair(args, "--concurrent-jobs", "1") {
+    t.Fatalf("missing --concurrent-jobs 1 in %#v", args)
+  }
   if !containsPair(args, "--cache-server-path", cacheMountPath) {
     t.Fatalf("missing cache-server-path in %#v", args)
   }

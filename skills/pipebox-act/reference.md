@@ -12,12 +12,14 @@
 - Act runs inside Docker; host needs Docker on `PATH`.
 - Cache/artifacts helpers live beside the provider (`cache.go`, `artifacts.go`) — keep host↔container path assumptions in github package tests.
 - Job selection: pass a single job when multi-job workflows are heavy (CLI `--job` / MCP `job`).
+- Always pass `--concurrent-jobs 1` so independent jobs (e.g. lint + test) do not interleave stdout; actparse cannot safely attribute unprefixed `| …` lines across parallel jobs.
 
 ## actparse
 
 - Package: `packages/runner/internal/provider/github/actparse`.
 - `Parser.HandleLine` turns raw act lines into `step_started` / `step_finished` / `log` / `error` events.
 - Job prefix splitting and step start/finish matchers are the fragile surface — extend with tests in `parser_test.go` before broadening regexes.
+- Unprefixed `|` continuations stick to the active job/step; with `--concurrent-jobs 1` that sticky rule stays correct.
 - Duration parsing: `duration.go` (`parseActDurationMs`).
 
 ## Testdata
