@@ -1,6 +1,6 @@
 BINARY := pipebox-mcp
 CMD := ./cmd/pipebox-mcp
-GO_INDENT := python3 $(CURDIR)/../../scripts/go-indent.py
+GO_INDENT := node $(CURDIR)/../../scripts/go-indent.mjs
 
 .PHONY: build clean test lint lint-indent lint-fix
 
