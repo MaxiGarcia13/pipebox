@@ -38,7 +38,7 @@ flowchart LR
   Main -->|IPC_events| Vue
 ```
 
-The Go runner is shared by the desktop app and the MCP server. Provider discovery and boundaries: [AGENTS.md](AGENTS.md). MCP setup: [packages/mcp/README.md](packages/mcp/README.md).
+The Go runner is shared by the desktop app and the MCP server.
 
 ## Quick start
 
