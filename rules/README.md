@@ -12,4 +12,4 @@ Shared, tool-agnostic rules for coding agents. Overview: [AGENTS.md](../AGENTS.m
 | [spacing-and-radius.md](spacing-and-radius.md) | Tailwind spacing scale and `rounded-xl`                   |
 | [vue-reactivity.md](vue-reactivity.md)         | Avoid unnecessary `computed` / `watch`                    |
 
-Do not commit tool-specific entry files (`.cursor/`, `CLAUDE.md`, `.claude/`).
+Wire these into your agent locally (see [CONTRIBUTING.md](../CONTRIBUTING.md)). Do not commit tool-specific entry files (`.cursor/`, `CLAUDE.md`, `.claude/`).
