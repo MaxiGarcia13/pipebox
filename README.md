@@ -64,28 +64,6 @@ Install the desktop app:
 pipebox install-desktop
 ```
 
-Enable Tab completion once in your shell config:
-
-**zsh** — add to `~/.zshrc`:
-
-```bash
-eval "$(pipebox completion zsh)"
-```
-
-**bash** — add to `~/.bashrc`:
-
-```bash
-eval "$(pipebox completion bash)"
-```
-
-**fish**:
-
-```fish
-pipebox completion fish > ~/.config/fish/completions/pipebox.fish
-```
-
-Then open a new terminal tab (or `source` your rc file).
-
 Check setup:
 
 ```bash
@@ -99,8 +77,6 @@ pipebox --repo .
 ```
 
 Or download the CLI binary for your OS/arch from [Releases](https://github.com/MaxiGarcia13/pipebox/releases) and put it on your `PATH`.
-
-Builds are unsigned for now. On macOS, if Gatekeeper blocks the app: right-click `PipeBox.app` → Open → Open. On Windows, accept the SmartScreen prompt if shown.
 
 ## CLI
 
@@ -248,7 +224,33 @@ pipebox uninstall
 
 ## Notes
 
+### GitHub
+
 GitHub `actions/cache` and `actions/upload-artifact` run locally via act’s servers so those steps don’t fail. Cache is ephemeral per run (not GitHub’s cloud cache, not shared across PipeBox runs). Artifacts are collected for the UI/CLI after the run; they are not uploaded to GitHub.
+
+### CLI
+
+Enable tab completion once in your shell config:
+
+**zsh** — add to `~/.zshrc`:
+
+```bash
+eval "$(pipebox completion zsh)"
+```
+
+**bash** — add to `~/.bashrc`:
+
+```bash
+eval "$(pipebox completion bash)"
+```
+
+**fish**:
+
+```fish
+pipebox completion fish > ~/.config/fish/completions/pipebox.fish
+```
+
+Then open a new terminal tab (or `source` your rc file).
 
 ## Develop
 
