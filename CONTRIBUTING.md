@@ -74,7 +74,7 @@ make test
 
 ## AI agents
 
-Shared guidance lives in [AGENTS.md](AGENTS.md) and [`rules/`](rules/) (shared skills go under `skills/` when added).
+Shared guidance lives in [AGENTS.md](AGENTS.md), [`rules/`](rules/), and [`skills/`](skills/).
 
 Wire **rules** and **skills** locally for whatever agent you use (e.g. Cursor `.cursor/rules`, Claude `CLAUDE.md`). They are not installed automatically on clone. Do not commit tool-specific config (`.cursor/`, `CLAUDE.md`, `.claude/`).
 
