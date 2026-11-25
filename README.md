@@ -70,7 +70,7 @@ pipebox doctor
 Open the UI on this repo:
 
 ```bash
-pipebox --repo .
+pipebox
 ```
 
 Or download the CLI binary for your OS/arch from [Releases](https://github.com/MaxiGarcia13/pipebox/releases) and put it on your `PATH`.
