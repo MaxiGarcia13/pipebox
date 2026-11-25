@@ -430,7 +430,7 @@ func TestCompleteWorkflows(t *testing.T) {
 }
 
 func TestRunGitHubCacheAndArtifacts(t *testing.T) {
-  requireDockerDaemon(t)
+  requireHostDockerE2E(t)
 
   repo := repoPath(t, "github-cache-artifacts")
   // Shared workspace leftovers must not fake cache/artifact sharing.
@@ -478,8 +478,13 @@ func TestRunGitHubCacheAndArtifacts(t *testing.T) {
   }
 }
 
-func requireDockerDaemon(t *testing.T) {
+func requireHostDockerE2E(t *testing.T) {
   t.Helper()
+  // Nested act (DooD) resolves -v paths on the host daemon; job-container
+  // fixture paths like /workspace/... are not valid host mounts.
+  if os.Getenv("ACT") != "" {
+    t.Skip("cache/artifact e2e needs host docker; nested act is unsupported")
+  }
   cmd := exec.Command("docker", "info")
   if err := cmd.Run(); err != nil {
     t.Skip("docker daemon not reachable")
