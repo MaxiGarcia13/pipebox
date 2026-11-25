@@ -24,9 +24,9 @@
   },
   "scripts": {
     "prepare": "simple-git-hooks",
-    "lint": "eslint . && pnpm -r --if-present run lint && pnpm runner:lint",
-    "lint:fix": "eslint --fix . && pnpm -r --if-present run lint:fix && pnpm runner:lint:fix",
-    "test": "pnpm runner:test && pnpm app:test:unit",
+    "lint": "eslint . && pnpm -r --if-present run lint && pnpm runner:lint && pnpm mcp:lint",
+    "lint:fix": "eslint --fix . && pnpm -r --if-present run lint:fix && pnpm runner:lint:fix && pnpm mcp:lint:fix",
+    "test": "pnpm runner:test && pnpm mcp:test && pnpm app:test:unit",
     "test:e2e": "pnpm app:test:e2e",
     "clean": "pnpm -r --if-present run clean && rm -rf node_modules pnpm-lock.yaml",
     "phoenix": "pnpm clean && pnpm install",
@@ -38,7 +38,11 @@
     "runner:image": "make -C packages/runner image",
     "runner:lint": "make -C packages/runner lint",
     "runner:lint:fix": "make -C packages/runner lint-fix",
-    "runner:doctor": "make -C packages/runner doctor"
+    "runner:doctor": "make -C packages/runner doctor",
+    "mcp:build": "make -C packages/mcp build",
+    "mcp:test": "make -C packages/mcp test",
+    "mcp:lint": "make -C packages/mcp lint",
+    "mcp:lint:fix": "make -C packages/mcp lint-fix"
   },
   "devEngines": {
     "packageManager": {

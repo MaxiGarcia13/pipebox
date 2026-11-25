@@ -1,0 +1,100 @@
+name: Publish MCP
+
+on:
+  workflow_call:
+    inputs:
+      tag_name:
+        description: Runner git tag used for version + checkout (e.g. packages/runner/v0.1.0)
+        required: true
+        type: string
+      create_release:
+        description: Create the MCP GitHub release; false only uploads assets
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  publish-mcp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag_name }}
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: packages/mcp/go.mod
+          cache-dependency-path: packages/mcp/go.sum
+
+      - name: Build
+        working-directory: packages/mcp
+        env:
+          TAG_NAME: ${{ inputs.tag_name }}
+        run: |
+          set -euo pipefail
+          mkdir -p ../../dist-mcp
+          version="${TAG_NAME#packages/runner/}"
+          for pair in darwin/amd64 darwin/arm64 linux/amd64 linux/arm64 windows/amd64; do
+            goos="${pair%/*}"
+            goarch="${pair#*/}"
+            out="../../dist-mcp/pipebox-mcp_${version}_${goos}_${goarch}"
+            if [ "$goos" = windows ]; then
+              out="${out}.exe"
+            fi
+            GOOS="$goos" GOARCH="$goarch" CGO_ENABLED=0 \
+              go build -trimpath -ldflags "-s -w" -o "$out" ./cmd/pipebox-mcp
+          done
+
+      - name: Release notes
+        if: ${{ inputs.create_release }}
+        env:
+          TAG_NAME: ${{ inputs.tag_name }}
+        run: |
+          set -euo pipefail
+          version="${TAG_NAME#packages/runner/}"
+          mcp_tag="packages/mcp/${version}"
+          previous=$(
+            git tag --sort=-version:refname -l 'packages/mcp/v*' \
+              | grep -vx "${mcp_tag}" \
+              | head -n1 || true
+          )
+          {
+            echo "## What's Changed"
+            echo
+            if [ -n "$previous" ]; then
+              git log --pretty=format:'- %s (%h)' "${previous}..${TAG_NAME}"
+            else
+              git log --pretty=format:'- %s (%h)' "${TAG_NAME}"
+            fi
+            echo
+          } > mcp-release-notes.md
+
+      - name: Create release
+        if: ${{ inputs.create_release }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ inputs.tag_name }}
+        run: |
+          set -euo pipefail
+          version="${TAG_NAME#packages/runner/}"
+          mcp_tag="packages/mcp/${version}"
+          title="${version}"
+          gh release create "$mcp_tag" dist-mcp/* \
+            --title "$title" \
+            --notes-file mcp-release-notes.md \
+            --target "${{ inputs.tag_name }}"
+
+      - name: Upload assets
+        if: ${{ !inputs.create_release }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ inputs.tag_name }}
+        run: |
+          set -euo pipefail
+          version="${TAG_NAME#packages/runner/}"
+          mcp_tag="packages/mcp/${version}"
+          gh release upload "$mcp_tag" dist-mcp/* --clobber

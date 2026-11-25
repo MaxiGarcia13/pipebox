@@ -22,6 +22,7 @@ type UpdateResult struct {
   UpToDate       bool
   CLIPath        string
   DesktopPath    string
+  MCPPath        string
 }
 
 func Update(options UpdateOptions) (UpdateResult, error) {
@@ -58,11 +59,25 @@ func Update(options UpdateOptions) (UpdateResult, error) {
     return result, fmt.Errorf("cli updated to %s, but completions failed: %w", cliPath, err)
   }
 
-  desktopPath, err := InstallDesktop(target, progress)
-  if err != nil {
-    return result, fmt.Errorf("cli updated to %s, but desktop failed: %w", cliPath, err)
+  if DesktopInstalled() {
+    desktopPath, err := InstallDesktop(target, progress)
+    if err != nil {
+      return result, fmt.Errorf("cli updated to %s, but desktop failed: %w", cliPath, err)
+    }
+    result.DesktopPath = desktopPath
   }
-  result.DesktopPath = desktopPath
+
+  if MCPInstalled() {
+    mcpVersion, err := LatestMCPVersion()
+    if err != nil {
+      return result, fmt.Errorf("cli updated to %s, but mcp latest failed: %w", cliPath, err)
+    }
+    mcpPath, err := InstallMCP(mcpVersion, progress)
+    if err != nil {
+      return result, fmt.Errorf("cli updated to %s, but mcp failed: %w", cliPath, err)
+    }
+    result.MCPPath = mcpPath
+  }
   return result, nil
 }
 

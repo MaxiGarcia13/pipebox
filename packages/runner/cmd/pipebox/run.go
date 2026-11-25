@@ -33,10 +33,15 @@ func runGraph(args []string) {
   if err != nil {
     fail(err)
   }
-  workflowPath := cli.FlagValue(args, "--workflow")
+  workflowRef := cli.FlagValue(args, "--workflow")
   providerHint := cli.FlagValue(args, "--provider")
-  if workflowPath == "" {
-    fail(fmt.Errorf("usage: pipebox graph --workflow <file> [--provider <id>]"))
+  if workflowRef == "" {
+    fail(fmt.Errorf("usage: pipebox graph --workflow <id|path> [--provider <id>]"))
+  }
+  workflowPath, err := provider.ResolveWorkflow(repoPath, workflowRef, providerHint)
+  if err != nil {
+    emitError(err)
+    os.Exit(1)
   }
   resolved, err := provider.Resolve(repoPath, workflowPath, providerHint)
   if err != nil {
@@ -60,14 +65,19 @@ func runWorkflow(args []string) {
   if err != nil {
     fail(err)
   }
-  workflowPath := cli.FlagValue(args, "--workflow")
+  workflowRef := cli.FlagValue(args, "--workflow")
   providerHint := cli.FlagValue(args, "--provider")
   job := cli.FlagValue(args, "--job")
   secretFile := cli.FlagValue(args, "--secret-file")
   secrets := cli.FlagValues(args, "--secret")
   inputs := cli.FlagValues(args, "--input")
-  if workflowPath == "" {
-    fail(fmt.Errorf("usage: pipebox run --workflow <file> [--provider <id>] [--job <id>] [--input KEY=VALUE] [--secret KEY=VALUE] [--secret-file <path>]"))
+  if workflowRef == "" {
+    fail(fmt.Errorf("usage: pipebox run --workflow <id|path> [--provider <id>] [--job <id>] [--input KEY=VALUE] [--secret KEY=VALUE] [--secret-file <path>]"))
+  }
+  workflowPath, err := provider.ResolveWorkflow(repoPath, workflowRef, providerHint)
+  if err != nil {
+    emitError(err)
+    os.Exit(1)
   }
   resolved, err := provider.Resolve(repoPath, workflowPath, providerHint)
   if err != nil {

@@ -15,8 +15,10 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version-file: packages/runner/go.mod
-          cache-dependency-path: packages/runner/go.sum
+          go-version-file: packages/mcp/go.mod
+          cache-dependency-path: |
+            packages/runner/go.sum
+            packages/mcp/go.sum
 
       - uses: pnpm/action-setup@v4
 
@@ -38,8 +40,10 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version-file: packages/runner/go.mod
-          cache-dependency-path: packages/runner/go.sum
+          go-version-file: packages/mcp/go.mod
+          cache-dependency-path: |
+            packages/runner/go.sum
+            packages/mcp/go.sum
 
       - uses: pnpm/action-setup@v4
 
@@ -71,8 +75,10 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version-file: packages/runner/go.mod
-          cache-dependency-path: packages/runner/go.sum
+          go-version-file: packages/mcp/go.mod
+          cache-dependency-path: |
+            packages/runner/go.sum
+            packages/mcp/go.sum
 
       - uses: pnpm/action-setup@v4
 

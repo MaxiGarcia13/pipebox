@@ -8,3 +8,7 @@ dist
 .vite
 
 /Jenkinsfile
+
+.cursor
+!.cursor/rules
+!.cursor/skills

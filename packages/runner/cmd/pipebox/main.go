@@ -44,8 +44,10 @@ func runSubcommand(command string, args []string) {
     runGraph(args)
   case "run":
     runWorkflow(args)
-  case "install", "install-desktop", "update", "uninstall":
+  case "install", "install-desktop", "install-mcp", "update", "uninstall":
     runLifecycle(command, args)
+  case "mcp":
+    runMCP(args)
   case "completion", "__complete":
     runCompletion(command, args)
   default:
