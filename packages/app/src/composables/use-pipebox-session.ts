@@ -140,8 +140,19 @@ export function usePipeboxSession() {
   }
 
   async function startRun(workflowPath: string) {
+    await beginRun(workflowPath);
+  }
+
+  async function startJob(workflowPath: string, jobId: string) {
+    await beginRun(workflowPath, jobId);
+  }
+
+  async function beginRun(workflowPath: string, jobId?: string) {
     const repoPath = project.repoPath.value;
     if (!repoPath || !workflowPath || run.isRunning.value) {
+      return;
+    }
+    if (jobId !== undefined && jobId.trim() === '') {
       return;
     }
     statusMessage.value = '';
@@ -157,6 +168,7 @@ export function usePipeboxSession() {
     const error = await run.start({
       repoPath,
       workflow: workflowPath,
+      job: jobId,
       inputs: toInputArgs(inputs, workflow.inputValues.value),
     });
     if (error) {
@@ -184,6 +196,7 @@ export function usePipeboxSession() {
     runDoctor: refreshDoctor,
     refreshWorkflows,
     startRun,
+    startJob,
     stopRun: run.stop,
     switchProjectOpen: project.switchProjectOpen,
     confirmSwitchProject,

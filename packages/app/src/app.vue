@@ -30,11 +30,19 @@ const {
   runDoctor,
   refreshWorkflows,
   startRun,
+  startJob,
   stopRun,
   switchProjectOpen,
   confirmSwitchProject,
   cancelSwitchProject,
 } = usePipeboxSession();
+
+function onRunJob(jobId: string) {
+  if (!selectedWorkflow.value) {
+    return;
+  }
+  void startJob(selectedWorkflow.value, jobId);
+}
 </script>
 
 <template>
@@ -81,6 +89,7 @@ const {
           class="min-w-0 flex-1"
           :events="events"
           :is-running="logIsRunning"
+          @run-job="onRunJob"
         />
         <aside
           v-if="selectedWorkflowInputs.length > 0"

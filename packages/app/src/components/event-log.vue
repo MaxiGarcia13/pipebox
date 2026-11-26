@@ -17,6 +17,10 @@ const props = defineProps<{
   isRunning: boolean;
 }>();
 
+defineEmits<{
+  runJob: [jobId: string];
+}>();
+
 const selectedId = ref<string | null>(null);
 const now = useNow(toRef(props, 'isRunning'));
 
