@@ -18,7 +18,7 @@
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
     "test:e2e": "pnpm package && playwright test -c playwright.config.ts",
-    "clean": "rm -rf .vite node_modules dist out resources"
+    "clean": "rm -rf .vite node_modules dist out resources test-results"
   },
   "dependencies": {
     "@vueuse/core": "^15.0.0",
