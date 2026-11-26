@@ -9,6 +9,7 @@ defineProps<{
 defineEmits<{
   openProject: [];
   refreshDoctor: [];
+  refreshWorkflows: [];
 }>();
 </script>
 
@@ -28,6 +29,7 @@ defineEmits<{
     <AppMenubar
       @open-project="$emit('openProject')"
       @refresh-doctor="$emit('refreshDoctor')"
+      @refresh-workflows="$emit('refreshWorkflows')"
     />
 
     <p

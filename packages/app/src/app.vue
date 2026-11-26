@@ -57,6 +57,7 @@ function onRunJob(jobId: string) {
         :status-message="statusMessage"
         @open-project="selectRepo"
         @refresh-doctor="runDoctor"
+        @refresh-workflows="refreshWorkflows"
       />
     </template>
 

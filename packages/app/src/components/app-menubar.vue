@@ -10,6 +10,7 @@ import {
 defineEmits<{
   openProject: [];
   refreshDoctor: [];
+  refreshWorkflows: [];
 }>();
 
 function reportIssue() {
@@ -38,6 +39,12 @@ function reportIssue() {
         View
       </MenubarTrigger>
       <MenubarContent>
+        <MenubarItem
+          data-testid="menubar-refresh-workflows"
+          @click="$emit('refreshWorkflows')"
+        >
+          Refresh Workflows
+        </MenubarItem>
         <MenubarItem
           data-testid="menubar-refresh-doctor"
           @click="$emit('refreshDoctor')"
