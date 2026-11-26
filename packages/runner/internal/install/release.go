@@ -46,6 +46,10 @@ func releaseListAPIURL() string {
 }
 
 func latestVersionWithPrefix(apiURL, prefix string) (string, error) {
+  return latestVersionWithPrefixTimeout(apiURL, prefix, 30*time.Second)
+}
+
+func latestVersionWithPrefixTimeout(apiURL, prefix string, timeout time.Duration) (string, error) {
   req, err := http.NewRequest(http.MethodGet, apiURL, nil)
   if err != nil {
     return "", fmt.Errorf("latest release request: %w", err)
@@ -53,7 +57,10 @@ func latestVersionWithPrefix(apiURL, prefix string) (string, error) {
   req.Header.Set("Accept", "application/vnd.github+json")
   req.Header.Set("User-Agent", "pipebox")
 
-  client := &http.Client{Timeout: 30 * time.Second}
+  if timeout <= 0 {
+    timeout = 30 * time.Second
+  }
+  client := &http.Client{Timeout: timeout}
   resp, err := client.Do(req)
   if err != nil {
     return "", fmt.Errorf("latest release: %w", err)

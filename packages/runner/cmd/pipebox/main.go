@@ -18,6 +18,7 @@ func main() {
   case cli.KindVersion:
     fmt.Println(version)
   case cli.KindOpenUI:
+    suggestUpdateIfNeeded()
     if err := uiopen.Open(parsed.Repo, parsed.NewWindow); err != nil {
       fmt.Fprintf(os.Stderr, "pipebox: %v\n", err)
       os.Exit(1)

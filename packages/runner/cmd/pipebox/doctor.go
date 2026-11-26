@@ -24,6 +24,7 @@ func runDoctor(args []string) {
   } else if err := event.EmitStdout(result); err != nil {
     fail(err)
   }
+  suggestUpdateIfNeeded()
   if !result.OK {
     os.Exit(1)
   }

@@ -26,6 +26,7 @@ func runList(args []string) {
   } else if err := event.EmitStdout(result); err != nil {
     fail(err)
   }
+  suggestUpdateIfNeeded()
 }
 
 func runGraph(args []string) {
@@ -98,5 +99,6 @@ func runWorkflow(args []string) {
       exitCode = 1
     }
   }
+  suggestUpdateIfNeeded()
   os.Exit(exitCode)
 }

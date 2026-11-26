@@ -9,6 +9,7 @@ import (
   "strings"
 
   dockerassets "github.com/MaxiGarcia13/pipebox/packages/runner/docker"
+  "github.com/MaxiGarcia13/pipebox/packages/runner/internal/hostcache"
 )
 
 func materializeEmbedded(subdir string) (string, error) {
@@ -35,11 +36,7 @@ func cacheRoot() (string, error) {
   if override := os.Getenv("PIPEBOX_DOCKER_CACHE_DIR"); override != "" {
     return override, nil
   }
-  base, err := os.UserCacheDir()
-  if err != nil {
-    return "", fmt.Errorf("cache dir: %w", err)
-  }
-  return filepath.Join(base, "pipebox", "docker"), nil
+  return hostcache.Path("docker")
 }
 
 func extractEmbedded(subdir, dest string) error {
