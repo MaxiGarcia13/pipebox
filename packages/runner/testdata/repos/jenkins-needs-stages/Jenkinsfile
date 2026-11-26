@@ -1,0 +1,35 @@
+pipeline {
+  agent any
+  parameters {
+    booleanParam(name: 'FAIL_E2E', defaultValue: false, description: 'Fail the e2e stage')
+  }
+  stages {
+    stage('CI') {
+      parallel {
+        stage('lint') {
+          steps {
+            sh 'echo LINT_OK'
+          }
+        }
+        stage('test') {
+          steps {
+            sh 'echo TEST_OK'
+          }
+        }
+      }
+    }
+    stage('e2e') {
+      steps {
+        sh '''
+          set -e
+          echo E2E_START
+          if [ "$FAIL_E2E" = "true" ]; then
+            echo E2E_FAIL
+            exit 1
+          fi
+          echo E2E_OK
+        '''
+      }
+    }
+  }
+}

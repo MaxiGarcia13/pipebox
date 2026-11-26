@@ -206,3 +206,57 @@ func lastRunFinished(t *testing.T, lines []string) event.RunFinished {
   }
   return last
 }
+
+func stepJobs(lines []string) map[string]struct{} {
+  jobs := map[string]struct{}{}
+  for _, line := range lines {
+    var started event.StepStarted
+    if err := json.Unmarshal([]byte(line), &started); err == nil && started.Type == event.TypeStepStarted {
+      if started.Job != "" {
+        jobs[started.Job] = struct{}{}
+      }
+      continue
+    }
+    var finished event.StepFinished
+    if err := json.Unmarshal([]byte(line), &finished); err == nil && finished.Type == event.TypeStepFinished {
+      if finished.Job != "" {
+        jobs[finished.Job] = struct{}{}
+      }
+    }
+  }
+  return jobs
+}
+
+func assertHasJobSteps(t *testing.T, lines []string, jobID string) {
+  t.Helper()
+  if _, ok := stepJobs(lines)[jobID]; !ok {
+    t.Fatalf("expected step events for job %q", jobID)
+  }
+}
+
+func assertNoJobSteps(t *testing.T, lines []string, jobIDs ...string) {
+  t.Helper()
+  seen := stepJobs(lines)
+  for _, jobID := range jobIDs {
+    if _, ok := seen[jobID]; ok {
+      t.Fatalf("unexpected step events for job %q (jobs=%v)", jobID, keys(seen))
+    }
+  }
+}
+
+func assertNoLogMarkers(t *testing.T, lines []string, markers ...string) {
+  t.Helper()
+  for _, marker := range markers {
+    if logContains(lines, marker) {
+      t.Fatalf("unexpected log marker %q", marker)
+    }
+  }
+}
+
+func keys(values map[string]struct{}) []string {
+  out := make([]string, 0, len(values))
+  for key := range values {
+    out = append(out, key)
+  }
+  return out
+}
