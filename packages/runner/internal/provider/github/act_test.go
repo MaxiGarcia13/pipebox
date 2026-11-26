@@ -169,6 +169,80 @@ on:
   }
 }
 
+func TestBuildActArgsIsolatesJobWithoutNeeds(t *testing.T) {
+  t.Parallel()
+
+  repoPath := t.TempDir()
+  workflowsDir := filepath.Join(repoPath, ".github", "workflows")
+  if err := os.MkdirAll(workflowsDir, 0o700); err != nil {
+    t.Fatal(err)
+  }
+  if err := os.WriteFile(filepath.Join(workflowsDir, "ci.yml"), []byte(`
+on: push
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo lint
+  e2e:
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo e2e
+`), 0o600); err != nil {
+    t.Fatal(err)
+  }
+
+  args, cleanup, err := buildActArgs(repoPath, Options{
+    Repo:         repoPath,
+    Workflow:     ".github/workflows/ci.yml",
+    Job:          "e2e",
+    ArtifactDir:  t.TempDir(),
+    ArtifactPort: 34567,
+    CacheDir:     t.TempDir(),
+    CachePort:    34568,
+  })
+  if cleanup != nil {
+    defer cleanup()
+  }
+  if err != nil {
+    t.Fatal(err)
+  }
+
+  if !containsPair(args, "-j", "e2e") {
+    t.Fatalf("missing -j e2e in %#v", args)
+  }
+  if !containsPair(args, "-W", materializedWorkflowMount) {
+    t.Fatalf("expected isolated -W mount path, got %#v", args)
+  }
+
+  mounted := false
+  for index := 0; index+1 < len(args); index++ {
+    if args[index] == "-v" && strings.Contains(args[index+1], materializedWorkflowMount+":ro") {
+      mounted = true
+      hostPath := strings.Split(args[index+1], ":")[0]
+      data, readErr := os.ReadFile(hostPath)
+      if readErr != nil {
+        t.Fatal(readErr)
+      }
+      body := string(data)
+      if strings.Contains(body, "needs:") {
+        t.Fatalf("isolated workflow still has needs: %s", body)
+      }
+      if strings.Contains(body, "echo lint") {
+        t.Fatalf("isolated workflow still has lint: %s", body)
+      }
+      if !strings.Contains(body, "echo e2e") {
+        t.Fatalf("isolated workflow missing e2e: %s", body)
+      }
+      break
+    }
+  }
+  if !mounted {
+    t.Fatalf("missing isolated workflow mount in %#v", args)
+  }
+}
+
 func TestBuildActArgsMaterializesLocalReusable(t *testing.T) {
   t.Parallel()
 

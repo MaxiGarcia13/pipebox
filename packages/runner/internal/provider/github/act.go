@@ -7,6 +7,7 @@ import (
   "os/exec"
   "path/filepath"
   "strconv"
+  "strings"
 
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/dockerimage"
   "github.com/MaxiGarcia13/pipebox/packages/runner/internal/envfile"
@@ -60,6 +61,23 @@ func buildActArgs(repoPath string, options Options) ([]string, func(), error) {
   cleanup := materialized.Cleanup
   if cleanup == nil {
     cleanup = func() {}
+  }
+
+  jobID := strings.TrimSpace(options.Job)
+  // act -j still runs needs; isolate the target job so sibling deps are not re-executed.
+  if jobID != "" {
+    isolated, isolateErr := IsolateJob(materialized.Path, jobID)
+    if isolateErr != nil {
+      cleanup()
+      return nil, nil, fmt.Errorf("isolate job %q: %w", jobID, isolateErr)
+    }
+    previousCleanup := cleanup
+    cleanup = func() {
+      isolated.Cleanup()
+      previousCleanup()
+    }
+    materialized = isolated.materializedWorkflow
+    jobID = isolated.JobID
   }
 
   secretFiles, err := envfile.Resolve(repoPath, options.SecretFile)
@@ -166,8 +184,8 @@ func buildActArgs(repoPath string, options Options) ([]string, func(), error) {
     "--container-options", "--add-host=host.docker.internal:host-gateway",
     "-W", actWorkflowPath,
   )
-  if options.Job != "" {
-    args = append(args, "-j", options.Job)
+  if jobID != "" {
+    args = append(args, "-j", jobID)
   }
   args = append(args, actSecretArgs...)
   for _, secret := range options.Secrets {
