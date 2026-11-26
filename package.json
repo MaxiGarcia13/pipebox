@@ -3,7 +3,7 @@
   "type": "module",
   "version": "0.0.0",
   "packageManager": "pnpm@12.18.0",
-  "description": "A lightweight desktop UI for running and debugging GitHub Actions and Jenkins pipelines locally with visual step-by-step logs—no git push required.",
+  "description": "Local CI/CD for GitHub Actions and Jenkins — run and debug pipelines from the desktop UI, terminal, or MCP. No git push required.",
   "author": "Maximiliano Garcia Mortigliengo",
   "repository": {
     "type": "git",
