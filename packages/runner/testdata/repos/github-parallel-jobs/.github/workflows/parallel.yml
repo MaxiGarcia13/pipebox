@@ -1,0 +1,19 @@
+name: Parallel jobs
+on: push
+jobs:
+  alpha:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Alpha marker
+        run: |
+          echo ALPHA_START
+          sleep 2
+          echo ALPHA_END
+  beta:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Beta marker
+        run: |
+          echo BETA_START
+          sleep 2
+          echo BETA_END
