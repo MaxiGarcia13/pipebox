@@ -12,7 +12,7 @@ import (
 
 const (
   serverName    = "pipebox"
-  serverVersion = "0.21.6"
+  serverVersion = "0.22.0"
   defaultTail   = 80
 )
 
