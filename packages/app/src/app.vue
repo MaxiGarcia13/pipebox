@@ -85,7 +85,7 @@ function onRunJob(jobId: string) {
     <template #main>
       <div class="flex min-h-0 flex-1">
         <EventLog
-          :key="`${selectedWorkflow ?? 'none'}:${logIsRunning ? 'live' : 'preview'}`"
+          :key="selectedWorkflow ?? 'none'"
           class="min-w-0 flex-1"
           :events="events"
           :is-running="logIsRunning"

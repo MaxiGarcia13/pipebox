@@ -96,4 +96,37 @@ describe('app session job re-run', () => {
     expect(startArgs.job).toBe('e2e');
     expect(document.body.querySelector('[data-testid="job-needs-dialog"]')).toBeNull();
   });
+
+  it('keeps e2e selected when running that job after siblings already passed', async () => {
+    const { wrapper } = await mountApp({
+      launchRepo: FIXTURE_REPO_GITHUB,
+      graphsByWorkflow: { [githubWorkflow.path]: parallelGraph },
+      runEvents: (options) => {
+        if (options.job === 'e2e') {
+          return e2eJobRerunEvents(githubWorkflow.path);
+        }
+        return parallelRunEvents(githubWorkflow.path, 'failed');
+      },
+    });
+
+    await wrapper.get('[data-testid="workflow-row"]').trigger('click');
+    await flushPromises();
+    await wrapper.get('#workflow-input-note').setValue('ship it');
+    await wrapper.get('[data-testid="workflow-run"]').trigger('click');
+    await flushPromises();
+
+    await wrapper.get('[data-testid="job-pill"][data-job-id="e2e"]').trigger('click');
+    await flushPromises();
+    expect(
+      wrapper.get('[data-testid="job-pill"][data-job-id="e2e"]').classes(),
+    ).toContain('border-primary');
+
+    await wrapper.get('[data-testid="job-run-button"]').trigger('click');
+    await flushPromises();
+
+    expect(
+      wrapper.get('[data-testid="job-pill"][data-job-id="e2e"]').classes(),
+    ).toContain('border-primary');
+    expect(wrapper.get('[data-testid="event-log"]').text()).toContain('echo e2e');
+  });
 });
