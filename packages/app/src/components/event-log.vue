@@ -1,11 +1,15 @@
 <script setup lang="ts">
+import type { JobNeedDependency } from '@/components/job-needs-dialog.vue';
 import type { Artifact, ErrorEvent, RunnerEvent } from '@/domain/runner-events';
 import { computed, ref, toRef } from 'vue';
 import ArtifactList from '@/components/artifact-list.vue';
+import JobNeedsDialog from '@/components/job-needs-dialog.vue';
+import JobRunBar from '@/components/job-run-bar.vue';
 import JobTimeline from '@/components/job-timeline.vue';
 import StepLogGroup from '@/components/step-log-group.vue';
 import { useNow } from '@/composables/use-now';
 import {
+  allNeedsPassed,
   defaultSelectedJobId,
   groupRunEvents,
   stepsForJob,
@@ -17,11 +21,12 @@ const props = defineProps<{
   isRunning: boolean;
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
   runJob: [jobId: string];
 }>();
 
 const selectedId = ref<string | null>(null);
+const needsDialogOpen = ref(false);
 const now = useNow(toRef(props, 'isRunning'));
 
 const grouped = computed(() => groupRunEvents(props.events));
@@ -41,6 +46,29 @@ const activeJob = computed(() =>
 const visibleSteps = computed(() =>
   stepsForJob(grouped.value.steps, activeJob.value),
 );
+
+const runLabel = computed((): 'Run' | 'Re-run' =>
+  activeJob.value && activeJob.value.status !== 'pending'
+    ? 'Re-run'
+    : 'Run',
+);
+
+const needDependencies = computed((): JobNeedDependency[] => {
+  const job = activeJob.value;
+  if (!job) {
+    return [];
+  }
+  return job.needs.map((needId) => {
+    const dependency = grouped.value.jobs.find(
+      (candidate) => candidate.id === needId || candidate.name === needId,
+    );
+    return {
+      id: needId,
+      name: dependency?.name ?? needId,
+      status: dependency?.status ?? 'pending',
+    };
+  });
+});
 
 const runFinished = computed(() => {
   for (let index = props.events.length - 1; index >= 0; index -= 1) {
@@ -71,6 +99,26 @@ const systemLogs = computed(() => unscopedLogLines(props.events));
 const isEmpty = computed(() =>
   !props.isRunning && props.events.length === 0,
 );
+
+function requestRunJob() {
+  const job = activeJob.value;
+  if (!job || props.isRunning) {
+    return;
+  }
+  if (allNeedsPassed(job, grouped.value.jobs)) {
+    emit('runJob', job.id);
+    return;
+  }
+  needsDialogOpen.value = true;
+}
+
+function confirmNeedsRun() {
+  const job = activeJob.value;
+  if (!job) {
+    return;
+  }
+  emit('runJob', job.id);
+}
 </script>
 
 <template>
@@ -98,6 +146,20 @@ const isEmpty = computed(() =>
         :selected-id="activeJobId"
         :now="now"
         @select="selectedId = $event"
+      />
+
+      <JobRunBar
+        v-if="activeJob"
+        :label="runLabel"
+        :disabled="isRunning"
+        @run="requestRunJob"
+      />
+
+      <JobNeedsDialog
+        v-model:open="needsDialogOpen"
+        :job-name="activeJob?.name ?? ''"
+        :dependencies="needDependencies"
+        @confirm="confirmNeedsRun"
       />
 
       <div class="min-h-0 flex-1 overflow-auto">
