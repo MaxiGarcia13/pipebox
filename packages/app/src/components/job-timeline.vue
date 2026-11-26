@@ -38,6 +38,8 @@ function jobDuration(job: JobSummary): number | undefined {
             v-for="job in column"
             :key="job.id"
             type="button"
+            data-testid="job-pill"
+            :data-job-id="job.id"
             class="flex h-10 w-full max-w-64 min-w-48 shrink-0 cursor-pointer items-center gap-2 rounded-xl border bg-card p-2 text-left text-sm shadow-sm transition-colors hover:bg-muted/40"
             :class="selectedId === job.id
               ? 'border-primary ring-2 ring-ring/40'

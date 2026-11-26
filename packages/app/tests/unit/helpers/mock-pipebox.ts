@@ -31,6 +31,7 @@ export interface MockPipeboxOptions {
   runEvents?: RunnerEvent[] | ((options: {
     repoPath: string;
     workflow: string;
+    job?: string;
     inputs?: string[];
   }) => RunnerEvent[]);
   startRunError?: Error;
