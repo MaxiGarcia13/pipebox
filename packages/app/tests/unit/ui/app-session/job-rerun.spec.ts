@@ -1,3 +1,4 @@
+import type { VueWrapper } from '@vue/test-utils';
 import {
   e2eJobRerunEvents,
   FIXTURE_REPO_GITHUB,
@@ -8,6 +9,12 @@ import {
 import { mountApp } from '@unit-tests/helpers/mount-app';
 import { flushPromises } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
+
+function jobStatus(wrapper: VueWrapper, jobId: string): string | undefined {
+  return wrapper
+    .get(`[data-testid="job-pill"][data-job-id="${jobId}"]`)
+    .attributes('data-status');
+}
 
 describe('app session job re-run', () => {
   it('re-runs e2e with job flag, skips needs modal when lint and test passed, keeps siblings', async () => {
@@ -128,5 +135,66 @@ describe('app session job re-run', () => {
       wrapper.get('[data-testid="job-pill"][data-job-id="e2e"]').classes(),
     ).toContain('border-primary');
     expect(wrapper.get('[data-testid="event-log"]').text()).toContain('echo e2e');
+  });
+
+  it('updates job statuses when re-running a failed job', async () => {
+    const rerunEvents = e2eJobRerunEvents(githubWorkflow.path);
+    const { wrapper, mock } = await mountApp({
+      launchRepo: FIXTURE_REPO_GITHUB,
+      graphsByWorkflow: { [githubWorkflow.path]: parallelGraph },
+      runEvents: (options) => {
+        if (options.job === 'e2e') {
+          return [];
+        }
+        return parallelRunEvents(githubWorkflow.path, 'failed');
+      },
+    });
+
+    await wrapper.get('[data-testid="workflow-row"]').trigger('click');
+    await flushPromises();
+    await wrapper.get('#workflow-input-note').setValue('ship it');
+    await wrapper.get('[data-testid="workflow-run"]').trigger('click');
+    await flushPromises();
+
+    expect(jobStatus(wrapper, 'lint')).toBe('passed');
+    expect(jobStatus(wrapper, 'test')).toBe('passed');
+    expect(jobStatus(wrapper, 'e2e')).toBe('failed');
+    expect(wrapper.get('[data-testid="run-finished"]').text()).toBe(
+      'run failed (exit 1)',
+    );
+
+    await wrapper.get('[data-testid="job-pill"][data-job-id="e2e"]').trigger('click');
+    await flushPromises();
+    await wrapper.get('[data-testid="job-run-button"]').trigger('click');
+    await flushPromises();
+
+    expect(mock.startRunCalls).toHaveBeenCalledTimes(2);
+    expect(jobStatus(wrapper, 'lint')).toBe('passed');
+    expect(jobStatus(wrapper, 'test')).toBe('passed');
+    expect(jobStatus(wrapper, 'e2e')).toBe('pending');
+    expect(wrapper.find('[data-testid="run-finished"]').exists()).toBe(false);
+
+    // Through e2e step_started — filtered job_graph is ignored.
+    for (const event of rerunEvents.slice(0, 3)) {
+      mock.emit(event);
+    }
+    await flushPromises();
+
+    expect(jobStatus(wrapper, 'lint')).toBe('passed');
+    expect(jobStatus(wrapper, 'test')).toBe('passed');
+    expect(jobStatus(wrapper, 'e2e')).toBe('running');
+    expect(wrapper.find('[data-testid="run-finished"]').exists()).toBe(false);
+
+    for (const event of rerunEvents.slice(3)) {
+      mock.emit(event);
+    }
+    await flushPromises();
+
+    expect(jobStatus(wrapper, 'lint')).toBe('passed');
+    expect(jobStatus(wrapper, 'test')).toBe('passed');
+    expect(jobStatus(wrapper, 'e2e')).toBe('passed');
+    expect(wrapper.get('[data-testid="run-finished"]').text()).toBe(
+      'run passed (exit 0)',
+    );
   });
 });
