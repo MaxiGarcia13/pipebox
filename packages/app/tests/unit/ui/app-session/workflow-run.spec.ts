@@ -102,6 +102,32 @@ describe('app session workflow run', () => {
     expect(wrapper.get('[data-testid="status-message"]').text()).toBe('boom');
   });
 
+  it('passes parallel on full-workflow run when the checkbox is enabled', async () => {
+    const { wrapper, mock } = await mountApp({
+      launchRepo: FIXTURE_REPO_GITHUB,
+      runEvents: passedRunEvents(githubWorkflow.path),
+    });
+
+    await wrapper.get('[data-testid="workflow-row"]').trigger('click');
+    await flushPromises();
+    await wrapper.get('#workflow-input-note').setValue('ship it');
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="parallel-jobs-toggle"]').exists()).toBe(true);
+    const runBar = wrapper.getComponent({ name: 'JobRunBar' });
+    await runBar.vm.$emit('update:parallelJobs', true);
+    await flushPromises();
+
+    await wrapper.get('[data-testid="workflow-run"]').trigger('click');
+    await flushPromises();
+
+    const startArgs = mock.startRunCalls.mock.calls[0]?.[0] as {
+      parallel?: boolean;
+    };
+    expect(startArgs.parallel).toBe(true);
+    expect(wrapper.find('[data-testid="run-terminal"]').exists()).toBe(true);
+  });
+
   it('shows job statuses while a failing run streams', async () => {
     const events = parallelRunEvents(githubWorkflow.path, 'failed');
     const { wrapper, mock } = await mountApp({

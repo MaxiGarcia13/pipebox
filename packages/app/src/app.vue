@@ -16,11 +16,14 @@ const {
   workflows,
   providers,
   selectedWorkflow,
+  selectedWorkflowProvider,
   runningWorkflow,
   doctor,
   events,
   isRunning,
   logIsRunning,
+  logDisplayMode,
+  parallelJobs,
   statusMessage,
   selectedWorkflowInputs,
   inputValues,
@@ -42,6 +45,10 @@ function onRunJob(jobId: string) {
     return;
   }
   void startJob(selectedWorkflow.value, jobId);
+}
+
+function onParallelJobsUpdate(value: boolean) {
+  parallelJobs.value = value;
 }
 </script>
 
@@ -90,7 +97,11 @@ function onRunJob(jobId: string) {
           class="min-w-0 flex-1"
           :events="events"
           :is-running="logIsRunning"
+          :provider="selectedWorkflowProvider"
+          :parallel-jobs="parallelJobs"
+          :log-display-mode="logDisplayMode"
           @run-job="onRunJob"
+          @update:parallel-jobs="onParallelJobsUpdate"
         />
         <aside
           v-if="selectedWorkflowInputs.length > 0"

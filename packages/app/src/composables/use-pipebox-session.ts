@@ -7,6 +7,8 @@ import { useWorkflowSession } from './use-workflow-session';
 
 export function usePipeboxSession() {
   const statusMessage = ref('');
+  const parallelJobs = ref(false);
+  const logDisplayMode = ref<'steps' | 'terminal'>('steps');
   const project = useProjectSession();
   const doctor = useDoctorSession();
   const workflow = useWorkflowSession(project.workflows);
@@ -30,6 +32,15 @@ export function usePipeboxSession() {
     viewingRun.value && run.isRunning.value,
   );
 
+  const selectedWorkflowProvider = computed(() => {
+    const path = workflow.selectedWorkflow.value;
+    if (!path) {
+      return null;
+    }
+    return project.workflows.value.find((item) => item.path === path)?.provider
+      ?? null;
+  });
+
   onMounted(() => {
     unsubscribeOpenRepo = window.pipebox.onOpenRepo((nextPath) => {
       void requestOpenRepo(nextPath);
@@ -52,6 +63,8 @@ export function usePipeboxSession() {
 
   async function openRepo(nextPath: string) {
     statusMessage.value = '';
+    parallelJobs.value = false;
+    logDisplayMode.value = 'steps';
     workflow.reset();
     run.reset();
     await project.load(nextPath);
@@ -140,14 +153,22 @@ export function usePipeboxSession() {
   }
 
   async function startRun(workflowPath: string) {
-    await beginRun(workflowPath);
+    const provider = project.workflows.value.find(
+      (item) => item.path === workflowPath,
+    )?.provider;
+    const useParallel = parallelJobs.value && provider === 'github';
+    await beginRun(workflowPath, undefined, useParallel);
   }
 
   async function startJob(workflowPath: string, jobId: string) {
-    await beginRun(workflowPath, jobId);
+    await beginRun(workflowPath, jobId, false);
   }
 
-  async function beginRun(workflowPath: string, jobId?: string) {
+  async function beginRun(
+    workflowPath: string,
+    jobId?: string,
+    parallel = false,
+  ) {
     const repoPath = project.repoPath.value;
     if (!repoPath || !workflowPath || run.isRunning.value) {
       return;
@@ -165,14 +186,19 @@ export function usePipeboxSession() {
       return;
     }
 
+    const useParallel = parallel && !jobId;
+    logDisplayMode.value = useParallel ? 'terminal' : 'steps';
+
     const error = await run.start({
       repoPath,
       workflow: workflowPath,
       job: jobId,
       inputs: toInputArgs(inputs, workflow.inputValues.value),
+      parallel: useParallel || undefined,
     });
     if (error) {
       statusMessage.value = error;
+      logDisplayMode.value = 'steps';
     }
   }
 
@@ -182,11 +208,14 @@ export function usePipeboxSession() {
     workflows: project.workflows,
     providers: project.providers,
     selectedWorkflow: workflow.selectedWorkflow,
+    selectedWorkflowProvider,
     runningWorkflow: run.runningWorkflow,
     doctor: doctor.doctor,
     events,
     isRunning: run.isRunning,
     logIsRunning,
+    logDisplayMode,
+    parallelJobs,
     statusMessage,
     selectedWorkflowInputs: workflow.selectedWorkflowInputs,
     inputValues: workflow.inputValues,

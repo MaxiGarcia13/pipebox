@@ -2,12 +2,12 @@
 import type { JobNeedDependency } from '@/components/job-needs-dialog.vue';
 import type { Artifact, ErrorEvent, RunnerEvent, WorkflowProvider } from '@/domain/runner-events';
 import { computed, ref, toRef } from 'vue';
-import ArtifactList from '@/components/artifact-list.vue';
 import JobNeedsDialog from '@/components/job-needs-dialog.vue';
 import JobRunBar from '@/components/job-run-bar.vue';
 import JobTimeline from '@/components/job-timeline.vue';
+import RunOutcome from '@/components/run-outcome.vue';
 import RunTerminal from '@/components/run-terminal.vue';
-import StepLogGroup from '@/components/step-log-group.vue';
+import StepLogPanel from '@/components/step-log-panel.vue';
 import { useNow } from '@/composables/use-now';
 import {
   allNeedsPassed,
@@ -179,69 +179,27 @@ function confirmNeedsRun() {
       />
 
       <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <RunTerminal
-          v-if="showTerminal"
-          :lines="terminalLines"
-          :is-live="isRunning"
-        />
-
-        <template v-else>
-          <div class="min-h-0 flex-1 overflow-auto">
-            <StepLogGroup
-              v-for="group in visibleSteps"
-              :key="group.key"
-              :group="group"
-              :now="now"
-            />
-
-            <p
-              v-if="visibleSteps.length === 0 && !isRunning && systemLogs.length === 0"
-              class="p-4 text-sm text-muted-foreground"
-            >
-              No steps for this job yet
-            </p>
-
-            <pre
-              v-if="systemLogs.length > 0"
-              data-testid="event-log-system"
-              class="overflow-x-auto border-t border-border p-4 font-mono text-xs leading-relaxed text-muted-foreground"
-            >{{ systemLogs.join('\n') }}</pre>
-
-            <ul
-              v-if="runErrors.length > 0"
-              data-testid="event-log-errors"
-              class="space-y-2 border-t border-border p-4 text-sm text-destructive"
-            >
-              <li
-                v-for="(error, index) in runErrors"
-                :key="index"
-              >
-                {{ error.message }}
-              </li>
-            </ul>
-
-            <ArtifactList :artifacts="artifacts" />
-
-            <p
-              v-if="runFinished"
-              data-testid="run-finished"
-              class="border-t border-border px-4 py-2 text-sm text-muted-foreground"
-            >
-              run {{ runFinished.status }} (exit {{ runFinished.exitCode }})
-            </p>
-          </div>
-        </template>
-
         <template v-if="showTerminal">
-          <ArtifactList :artifacts="artifacts" />
-          <p
-            v-if="runFinished"
-            data-testid="run-finished"
-            class="border-t border-border px-4 py-2 text-sm text-muted-foreground"
-          >
-            run {{ runFinished.status }} (exit {{ runFinished.exitCode }})
-          </p>
+          <RunTerminal
+            :lines="terminalLines"
+            :is-live="isRunning"
+          />
+          <RunOutcome
+            :artifacts="artifacts"
+            :run-finished="runFinished"
+          />
         </template>
+
+        <StepLogPanel
+          v-else
+          :steps="visibleSteps"
+          :system-logs="systemLogs"
+          :is-running="isRunning"
+          :now="now"
+          :artifacts="artifacts"
+          :run-finished="runFinished"
+          :errors="runErrors"
+        />
       </div>
     </template>
   </div>
