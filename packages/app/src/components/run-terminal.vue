@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import type { ChronologicalLogLine } from '@/domain/run';
-import { ChevronDown, ChevronUp, X } from 'lucide-vue-next';
 import { nextTick, ref, toRef, watch } from 'vue';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import LogMarkedLines from '@/components/log-marked-lines.vue';
+import LogSearchBar from '@/components/log-search-bar.vue';
 import { useLogSearch } from '@/composables/use-log-search';
 
 const props = defineProps<{
@@ -66,62 +65,16 @@ watch(
     data-testid="run-terminal"
     class="flex min-h-0 flex-1 flex-col bg-terminal text-foreground"
   >
-    <div
+    <LogSearchBar
       v-if="open"
-      data-testid="run-terminal-search-bar"
-      class="flex items-center gap-2 border-b border-border px-3 py-2"
-    >
-      <Input
-        v-model="query"
-        data-testid="run-terminal-search"
-        type="search"
-        placeholder="Find in logs…"
-        class="h-8"
-        @keydown="onSearchKeydown"
-      />
-      <span
-        v-if="matchLabel"
-        data-testid="run-terminal-search-count"
-        class="shrink-0 text-xs text-muted-foreground tabular-nums"
-      >
-        {{ matchLabel }}
-      </span>
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        class="size-8 shrink-0 p-0"
-        :disabled="matchCount === 0"
-        aria-label="Previous match"
-        data-testid="run-terminal-search-prev"
-        @click="goPrev"
-      >
-        <ChevronUp class="size-4" />
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        class="size-8 shrink-0 p-0"
-        :disabled="matchCount === 0"
-        aria-label="Next match"
-        data-testid="run-terminal-search-next"
-        @click="goNext"
-      >
-        <ChevronDown class="size-4" />
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        class="size-8 shrink-0 p-0"
-        aria-label="Close find"
-        data-testid="run-terminal-search-close"
-        @click="closeSearch"
-      >
-        <X class="size-4" />
-      </Button>
-    </div>
+      v-model:query="query"
+      :match-count="matchCount"
+      :match-label="matchLabel"
+      @next="goNext"
+      @prev="goPrev"
+      @close="closeSearch"
+      @keydown="onSearchKeydown"
+    />
 
     <div
       ref="scroller"
@@ -134,26 +87,11 @@ watch(
       >
         {{ isLive ? 'Waiting for output…' : 'No log lines' }}
       </p>
-      <pre
+      <LogMarkedLines
         v-else
-        class="overflow-x-auto p-4 font-mono text-xs leading-relaxed break-all whitespace-pre-wrap"
-      ><span
-        v-for="(line, lineIndex) in renderedLines"
-        :key="lineIndex"
-        class="block"
-        :class="line.kind === 'error' ? 'text-destructive' : ''"
-      ><template
-        v-for="(part, partIndex) in line.parts"
-        :key="partIndex"
-      ><mark
-        v-if="part.matchIndex != null"
-        :data-match-index="part.matchIndex"
-        class="rounded-sm px-0.5 text-search-mark-foreground"
-        :class="part.matchIndex === activeMatch
-          ? 'bg-search-mark-active text-search-mark-active-foreground'
-          : 'bg-search-mark'"
-      >{{ part.text }}</mark><template v-else>{{ part.text }}</template></template>
-      </span></pre>
+        :lines="renderedLines"
+        :active-match="activeMatch"
+      />
       <p
         v-if="isLive && lines.length > 0"
         class="border-t border-secondary px-4 py-2 text-xs text-muted-foreground"

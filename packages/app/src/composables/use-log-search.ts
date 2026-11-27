@@ -8,14 +8,15 @@ export interface SearchedLogLine {
   parts: Array<{ text: string; matchIndex: number | null }>;
 }
 
+const open = ref(false);
+const query = ref('');
+
 export function useLogSearch(
   lines: MaybeRefOrGetter<ChronologicalLogLine[]>,
   scroller: Ref<HTMLElement | null>,
   container: Ref<HTMLElement | null>,
   onNavigateAwayFromBottom?: () => void,
 ) {
-  const open = ref(false);
-  const query = ref('');
   const activeMatch = ref(0);
 
   const search = computed(() => {
@@ -55,18 +56,16 @@ export function useLogSearch(
   const isSearching = computed(() => open.value && query.value.trim() !== '');
 
   function focusInput() {
-    container.value
-      ?.querySelector<HTMLInputElement>('[data-testid="run-terminal-search"]')
-      ?.focus();
+    const input = container.value
+      ?.querySelector<HTMLInputElement>('[data-testid="log-search-input"]');
+    input?.focus();
+    input?.select();
   }
 
   async function openSearch() {
     open.value = true;
     await nextTick();
     focusInput();
-    container.value
-      ?.querySelector<HTMLInputElement>('[data-testid="run-terminal-search"]')
-      ?.select();
   }
 
   function closeSearch() {
@@ -86,14 +85,24 @@ export function useLogSearch(
   }
 
   async function scrollActiveMatchIntoView() {
-    await nextTick();
-    if (matchCount.value === 0 || !scroller.value) {
+    if (matchCount.value === 0) {
       return;
     }
-    const mark = scroller.value.querySelector(
-      `[data-match-index="${activeMatch.value}"]`,
-    );
-    mark?.scrollIntoView({ block: 'center' });
+    // Collapsible content unmounts while closed; wait until the mark exists
+    // after force-open remounts matching step groups.
+    for (let attempt = 0; attempt < 12; attempt += 1) {
+      await nextTick();
+      const mark = scroller.value?.querySelector(
+        `[data-match-index="${activeMatch.value}"]`,
+      );
+      if (mark instanceof HTMLElement && mark.getClientRects().length > 0) {
+        mark.scrollIntoView({ block: 'center' });
+        return;
+      }
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => resolve());
+      });
+    }
   }
 
   function goToMatch(index: number) {
