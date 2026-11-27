@@ -85,3 +85,4 @@ MCP: [packages/mcp/README.md](packages/mcp/README.md).
 - Keep changes focused; match existing naming (kebab-case files, camelCase functions).
 - Run `pnpm lint` and `pnpm test` before opening a PR.
 - Prefer small modules with a single responsibility (app main / preload / renderer stay separate).
+- Use the description template in [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md) (Summary, Motivation, Details, Test plan).
