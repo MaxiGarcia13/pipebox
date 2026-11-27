@@ -9,7 +9,7 @@ import (
 )
 
 const (
-  suggestTTL     = 24 * time.Hour
+  suggestTTL     = time.Hour
   suggestTimeout = 2 * time.Second
 )
 
