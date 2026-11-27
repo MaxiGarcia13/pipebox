@@ -22,10 +22,15 @@ var (
 type Parser struct {
   currentJob  string
   currentStep string
+  raw         bool
 }
 
 func NewParser() *Parser {
   return &Parser{}
+}
+
+func NewRawParser() *Parser {
+  return &Parser{raw: true}
 }
 
 func (parser *Parser) HandleLine(rawLine string) []any {
@@ -34,13 +39,37 @@ func (parser *Parser) HandleLine(rawLine string) []any {
     return nil
   }
 
+  if parser.raw {
+    return parser.handleRawLine(line)
+  }
+  return parser.handleAttributedLine(line)
+}
+
+func (parser *Parser) handleRawLine(line string) []any {
+  events := make([]any, 0, 2)
+
   if isGlobalActError(line) {
-    return []any{
-      event.Error{
-        Type:    event.TypeError,
-        Message: line,
-      },
-    }
+    events = append(events, globalErrorEvent(line))
+  }
+
+  job, rest, hasJobPrefix := splitJobPrefix(line)
+  if !hasJobPrefix {
+    // Unprefixed: never sticky-attribute across parallel jobs.
+    events = append(events, unscopedLog(line))
+    return events
+  }
+
+  parser.setJob(job)
+  if stepEvents := parser.matchPrefixedStep(rest); len(stepEvents) > 0 {
+    events = append(events, stepEvents...)
+  }
+  events = append(events, parser.logForJob(line))
+  return events
+}
+
+func (parser *Parser) handleAttributedLine(line string) []any {
+  if isGlobalActError(line) {
+    return []any{globalErrorEvent(line)}
   }
 
   job, rest, hasJobPrefix := splitJobPrefix(line)
@@ -48,58 +77,81 @@ func (parser *Parser) HandleLine(rawLine string) []any {
     // act often omits [workflow/job] on `| …` continuations; keep those on the
     // active step. Drop other unprefixed lines so parallel jobs don't cross-talk.
     if strings.HasPrefix(line, "|") && parser.currentJob != "" && parser.currentStep != "" {
-      return []any{
-        event.Log{
-          Type: event.TypeLog,
-          Job:  parser.currentJob,
-          Step: parser.currentStep,
-          Line: line,
-        },
-      }
+      return []any{parser.logForJob(line)}
     }
     return nil
   }
+
+  parser.setJob(job)
+  if stepEvents := parser.matchPrefixedStep(rest); len(stepEvents) > 0 {
+    return stepEvents
+  }
+  if parser.currentStep == "" {
+    return nil
+  }
+  return []any{parser.logForJob(line)}
+}
+
+func (parser *Parser) setJob(job string) {
   if job != parser.currentJob {
     parser.currentStep = ""
   }
   parser.currentJob = job
-  message := rest
+}
 
+func (parser *Parser) matchPrefixedStep(message string) []any {
   if step, ok := matchStepStart(message); ok {
-    parser.currentStep = step
-    return []any{
-      event.StepStarted{
-        Type: event.TypeStepStarted,
-        Job:  parser.currentJob,
-        Step: step,
-      },
-    }
+    return []any{parser.noteStepStart(step)}
   }
-
   if step, status, durationMs, ok := matchStepFinished(message); ok {
-    parser.currentStep = step
-    return []any{
-      event.StepFinished{
-        Type:       event.TypeStepFinished,
-        Job:        parser.currentJob,
-        Step:       step,
-        Status:     status,
-        DurationMs: durationMs,
-      },
-    }
+    return []any{parser.noteStepFinished(step, status, durationMs)}
   }
+  return nil
+}
 
-  if parser.currentStep == "" {
-    return nil
+func (parser *Parser) noteStepStart(step string) event.StepStarted {
+  parser.currentStep = step
+  return event.StepStarted{
+    Type: event.TypeStepStarted,
+    Job:  parser.currentJob,
+    Step: step,
   }
+}
 
-  return []any{
-    event.Log{
-      Type: event.TypeLog,
-      Job:  parser.currentJob,
-      Step: parser.currentStep,
-      Line: line,
-    },
+func (parser *Parser) noteStepFinished(step, status string, durationMs int64) event.StepFinished {
+  parser.currentStep = step
+  return event.StepFinished{
+    Type:       event.TypeStepFinished,
+    Job:        parser.currentJob,
+    Step:       step,
+    Status:     status,
+    DurationMs: durationMs,
+  }
+}
+
+func (parser *Parser) logForJob(line string) event.Log {
+  logEvent := event.Log{
+    Type: event.TypeLog,
+    Job:  parser.currentJob,
+    Line: line,
+  }
+  if parser.currentStep != "" {
+    logEvent.Step = parser.currentStep
+  }
+  return logEvent
+}
+
+func globalErrorEvent(line string) event.Error {
+  return event.Error{
+    Type:    event.TypeError,
+    Message: line,
+  }
+}
+
+func unscopedLog(line string) event.Log {
+  return event.Log{
+    Type: event.TypeLog,
+    Line: line,
   }
 }
 
