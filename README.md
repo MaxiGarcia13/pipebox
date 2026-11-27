@@ -67,7 +67,7 @@ Check setup:
 pipebox doctor
 ```
 
-Open the UI on this repo:
+Open the UI:
 
 ```bash
 pipebox
