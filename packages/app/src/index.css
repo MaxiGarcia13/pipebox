@@ -23,6 +23,10 @@
   --color-accent-foreground: #f8f8f2;
   --color-destructive: #ff5555;
   --color-destructive-foreground: #f8f8f2;
+  --color-search-mark: #ffb86c;
+  --color-search-mark-foreground: #282a36;
+  --color-search-mark-active: #f1fa8c;
+  --color-search-mark-active-foreground: #282a36;
   --color-border: #44475a;
   --color-input: #44475a;
   --color-ring: #bd93f9;
@@ -67,6 +71,10 @@
   --accent-foreground: var(--color-accent-foreground);
   --destructive: var(--color-destructive);
   --destructive-foreground: var(--color-destructive-foreground);
+  --search-mark: var(--color-search-mark);
+  --search-mark-foreground: var(--color-search-mark-foreground);
+  --search-mark-active: var(--color-search-mark-active);
+  --search-mark-active-foreground: var(--color-search-mark-active-foreground);
   --border: var(--color-border);
   --input: var(--color-input);
   --ring: var(--color-ring);
