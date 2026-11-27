@@ -8,6 +8,7 @@
 @theme {
   --color-background: #282a36;
   --color-foreground: #f8f8f2;
+  --color-terminal: #21222c;
   --color-card: #282a36;
   --color-card-foreground: #f8f8f2;
   --color-popover: #282a36;
@@ -51,6 +52,7 @@
 .dark {
   --background: var(--color-background);
   --foreground: var(--color-foreground);
+  --terminal: var(--color-terminal);
   --card: var(--color-card);
   --card-foreground: var(--color-card-foreground);
   --popover: var(--color-popover);
