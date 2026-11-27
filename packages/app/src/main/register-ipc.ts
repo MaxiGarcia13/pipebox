@@ -89,6 +89,9 @@ export function registerIpc(): void {
     if (options.job) {
       args.push('--job', options.job);
     }
+    if (options.parallel) {
+      args.push('--parallel');
+    }
     for (const input of options.inputs ?? []) {
       args.push('--input', input);
     }

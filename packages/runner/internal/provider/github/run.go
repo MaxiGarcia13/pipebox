@@ -24,6 +24,7 @@ type Options struct {
   Secrets      []string
   SecretFile   string
   Inputs       []string
+  Parallel     bool
   ArtifactDir  string
   ArtifactPort int
   CacheDir     string
@@ -115,7 +116,11 @@ func runAct(ctx context.Context, options Options) (exitCode int, status string) 
   // buildActCommand already ensured the act image.
   doctor.Emit(ID)
 
-  return runstream.Run(ctx, cmd, actparse.NewParser(), "start dockerized act")
+  var parser runstream.LineHandler = actparse.NewParser()
+  if options.Parallel {
+    parser = actparse.NewRawParser()
+  }
+  return runstream.Run(ctx, cmd, parser, "start dockerized act")
 }
 
 func loadJobGraph(options Options) event.JobGraph {

@@ -8,6 +8,7 @@
 @theme {
   --color-background: #282a36;
   --color-foreground: #f8f8f2;
+  --color-terminal: #21222c;
   --color-card: #282a36;
   --color-card-foreground: #f8f8f2;
   --color-popover: #282a36;
@@ -22,6 +23,10 @@
   --color-accent-foreground: #f8f8f2;
   --color-destructive: #ff5555;
   --color-destructive-foreground: #f8f8f2;
+  --color-search-mark: #ffb86c;
+  --color-search-mark-foreground: #282a36;
+  --color-search-mark-active: #f1fa8c;
+  --color-search-mark-active-foreground: #282a36;
   --color-border: #44475a;
   --color-input: #44475a;
   --color-ring: #bd93f9;
@@ -51,6 +56,7 @@
 .dark {
   --background: var(--color-background);
   --foreground: var(--color-foreground);
+  --terminal: var(--color-terminal);
   --card: var(--color-card);
   --card-foreground: var(--color-card-foreground);
   --popover: var(--color-popover);
@@ -65,6 +71,10 @@
   --accent-foreground: var(--color-accent-foreground);
   --destructive: var(--color-destructive);
   --destructive-foreground: var(--color-destructive-foreground);
+  --search-mark: var(--color-search-mark);
+  --search-mark-foreground: var(--color-search-mark-foreground);
+  --search-mark-active: var(--color-search-mark-active);
+  --search-mark-active-foreground: var(--color-search-mark-active-foreground);
   --border: var(--color-border);
   --input: var(--color-input);
   --ring: var(--color-ring);

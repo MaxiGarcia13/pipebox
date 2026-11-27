@@ -102,6 +102,11 @@ func DefaultCatalog() Catalog {
             Usage:     "Job id",
           },
           {
+            Names:     []string{"--parallel"},
+            ValueKind: ValueNone,
+            Usage:     "Run jobs concurrently (GitHub/act; raw log stream)",
+          },
+          {
             Names:      []string{"--input"},
             ValueKind:  ValueOpaque,
             Repeatable: true,

@@ -146,3 +146,71 @@ func TestParserClearsStepOnJobSwitch(t *testing.T) {
     t.Fatalf("log: %#v", logEvents)
   }
 }
+
+func TestRawParserPassthroughAndPrefixedSteps(t *testing.T) {
+  parser := NewRawParser()
+
+  started := parser.HandleLine("[ci/lint] ⭐ Run Main Install")
+  if len(started) != 2 {
+    t.Fatalf("expected step + log, got %#v", started)
+  }
+  stepStarted, ok := started[0].(event.StepStarted)
+  if !ok || stepStarted.Job != "lint" || stepStarted.Step != "Main Install" {
+    t.Fatalf("start: %#v", started[0])
+  }
+  startLog, ok := started[1].(event.Log)
+  if !ok || startLog.Job != "lint" || startLog.Line == "" {
+    t.Fatalf("start log: %#v", started[1])
+  }
+
+  pipe := parser.HandleLine("| Packages: +578")
+  if len(pipe) != 1 {
+    t.Fatalf("unprefixed pipe: %#v", pipe)
+  }
+  pipeLog, ok := pipe[0].(event.Log)
+  if !ok || pipeLog.Job != "" || pipeLog.Step != "" || pipeLog.Line != "| Packages: +578" {
+    t.Fatalf("expected unscoped pipe log, got %#v", pipe[0])
+  }
+
+  noise := parser.HandleLine("Downloading something")
+  if len(noise) != 1 {
+    t.Fatalf("unprefixed noise: %#v", noise)
+  }
+  noiseLog, ok := noise[0].(event.Log)
+  if !ok || noiseLog.Job != "" || noiseLog.Line != "Downloading something" {
+    t.Fatalf("expected unscoped noise log, got %#v", noise[0])
+  }
+
+  other := parser.HandleLine("[ci/test] | npm test")
+  if len(other) != 1 {
+    t.Fatalf("other job log: %#v", other)
+  }
+  otherLog, ok := other[0].(event.Log)
+  if !ok || otherLog.Job != "test" || otherLog.Step != "" {
+    t.Fatalf("expected job-only log after switch, got %#v", other[0])
+  }
+
+  finished := parser.HandleLine("[ci/lint]   ✅  Success - Main Install [1s]")
+  if len(finished) != 2 {
+    t.Fatalf("expected finish + log, got %#v", finished)
+  }
+  stepFinished, ok := finished[0].(event.StepFinished)
+  if !ok || stepFinished.Job != "lint" || stepFinished.Status != "passed" {
+    t.Fatalf("finish: %#v", finished[0])
+  }
+}
+
+func TestRawParserGlobalErrorAlsoLogs(t *testing.T) {
+  parser := NewRawParser()
+  items := parser.HandleLine("Error: Job 'lint' failed")
+  if len(items) != 2 {
+    t.Fatalf("items: %#v", items)
+  }
+  if _, ok := items[0].(event.Error); !ok {
+    t.Fatalf("expected error first, got %#v", items[0])
+  }
+  logEvent, ok := items[1].(event.Log)
+  if !ok || logEvent.Line != "Error: Job 'lint' failed" {
+    t.Fatalf("expected log passthrough, got %#v", items[1])
+  }
+}

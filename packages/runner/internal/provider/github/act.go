@@ -164,8 +164,8 @@ func buildActArgs(repoPath string, options Options) ([]string, func(), error) {
   args = append(args, actimage.Image, actEvent)
   // -P skips act's interactive first-run image survey (Medium defaults).
   // --use-new-action-cache: avoid shared worktree races between parallel jobs (nektos/act#6180).
-  // --concurrent-jobs=1: one job at a time so act stdout is not interleaved; actparse
-  // cannot reliably attribute unprefixed "| …" lines across parallel jobs.
+  // Default --concurrent-jobs=1 so act stdout is not interleaved; actparse cannot
+  // reliably attribute unprefixed "| …" lines across parallel jobs. --parallel omits it.
   args = append(args,
     "-P", "ubuntu-latest=catthehacker/ubuntu:act-latest",
     "-P", "ubuntu-24.04=catthehacker/ubuntu:act-24.04",
@@ -173,7 +173,11 @@ func buildActArgs(repoPath string, options Options) ([]string, func(), error) {
     "-P", "ubuntu-20.04=catthehacker/ubuntu:act-20.04",
     "-P", "ubuntu-18.04=catthehacker/ubuntu:act-18.04",
     "--use-new-action-cache",
-    "--concurrent-jobs", "1",
+  )
+  if !options.Parallel {
+    args = append(args, "--concurrent-jobs", "1")
+  }
+  args = append(args,
     "--artifact-server-path", artifactMountPath,
     "--artifact-server-addr", artifactBindAddr,
     "--artifact-server-port", artifactPort,

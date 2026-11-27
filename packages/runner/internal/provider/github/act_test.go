@@ -133,6 +133,38 @@ func TestBuildActArgsPushWorkflow(t *testing.T) {
   }
 }
 
+func TestBuildActArgsParallelOmitsConcurrentJobs(t *testing.T) {
+  t.Parallel()
+
+  repoPath := t.TempDir()
+  workflowsDir := filepath.Join(repoPath, ".github", "workflows")
+  if err := os.MkdirAll(workflowsDir, 0o700); err != nil {
+    t.Fatal(err)
+  }
+  if err := os.WriteFile(filepath.Join(workflowsDir, "ci.yml"), []byte("on: push\n"), 0o600); err != nil {
+    t.Fatal(err)
+  }
+
+  args, cleanup, err := buildActArgs(repoPath, Options{
+    Repo:         repoPath,
+    Workflow:     ".github/workflows/ci.yml",
+    Parallel:     true,
+    ArtifactDir:  t.TempDir(),
+    ArtifactPort: 34567,
+    CacheDir:     t.TempDir(),
+    CachePort:    34568,
+  })
+  if cleanup != nil {
+    defer cleanup()
+  }
+  if err != nil {
+    t.Fatal(err)
+  }
+  if slices.Contains(args, "--concurrent-jobs") {
+    t.Fatalf("expected no --concurrent-jobs when Parallel, got %#v", args)
+  }
+}
+
 func TestBuildActArgsPullRequestWorkflow(t *testing.T) {
   t.Parallel()
 

@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import type { StepGroup } from '@/domain/run';
+import type { SearchLinePart, StepGroup } from '@/domain/run';
 import { ChevronRight } from 'lucide-vue-next';
+import { computed } from 'vue';
+import LogMarkedLines from '@/components/log-marked-lines.vue';
+import { LOG_SURFACE_CLASS } from '@/components/log-surface';
 import RunStatusIcon from '@/components/run-status-icon.vue';
 import {
   Collapsible,
@@ -14,16 +17,41 @@ import { formatDuration } from '@/utils';
 const props = defineProps<{
   group: StepGroup;
   now?: number;
+  lineParts?: SearchLinePart[][];
+  activeMatch?: number;
+  forceOpen?: boolean;
 }>();
+
+// Remount when search forces open so defaultOpen applies (controlled v-model
+// through the collapsible wrapper does not reliably expand closed panels).
+const collapsibleKey = computed(() =>
+  `${props.group.key}:${props.forceOpen ? 'search' : 'idle'}`,
+);
+
+const startOpen = computed(() =>
+  Boolean(props.forceOpen || props.group.openDefault),
+);
 
 function stepDuration(group: StepGroup): number | undefined {
   return visibleDurationMs(group, props.now ?? 0, group.status === 'running');
 }
+
+const markedLines = computed(() => {
+  if (props.lineParts && props.lineParts.length > 0) {
+    return props.lineParts.map((parts) => ({ parts }));
+  }
+  return props.group.lines.map((text) => ({
+    parts: [
+      { text, matchIndex: null as number | null },
+    ],
+  }));
+});
 </script>
 
 <template>
   <div
     v-if="group.status === 'pending'"
+    data-testid="step-log-group"
     class="flex items-center gap-2 border-b border-border px-4 py-2 text-sm text-muted-foreground opacity-50"
     aria-disabled="true"
   >
@@ -40,7 +68,9 @@ function stepDuration(group: StepGroup): number | undefined {
   <Collapsible
     v-else
     v-slot="{ open }"
-    :default-open="group.openDefault"
+    :key="collapsibleKey"
+    :default-open="startOpen"
+    data-testid="step-log-group"
     class="border-b border-border"
   >
     <CollapsibleTrigger
@@ -64,10 +94,15 @@ function stepDuration(group: StepGroup): number | undefined {
     </CollapsibleTrigger>
 
     <CollapsibleContent>
-      <pre
+      <div
         v-if="group.lines.length > 0"
-        class="overflow-x-auto bg-background px-4 py-2 font-mono text-xs leading-relaxed break-all whitespace-pre-wrap text-foreground"
-      >{{ group.lines.join('\n') }}</pre>
+        :class="LOG_SURFACE_CLASS"
+      >
+        <LogMarkedLines
+          :lines="markedLines"
+          :active-match="activeMatch ?? -1"
+        />
+      </div>
       <p
         v-else-if="group.status !== 'running'"
         class="px-4 py-2 text-xs text-muted-foreground"

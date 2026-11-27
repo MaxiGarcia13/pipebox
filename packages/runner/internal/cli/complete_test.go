@@ -39,7 +39,7 @@ func TestCompleteRunFlags(t *testing.T) {
   t.Parallel()
 
   got := Complete([]string{"run", ""}, CompleteOptions{Catalog: DefaultCatalog()})
-  assertContains(t, got, "--repo", "--workflow", "--job", "--provider")
+  assertContains(t, got, "--repo", "--workflow", "--job", "--provider", "--parallel")
 }
 
 func TestCompleteSkipsUsedFlags(t *testing.T) {

@@ -23,6 +23,7 @@ export interface StartRunOptions {
   workflow: string;
   job?: string;
   inputs?: string[];
+  parallel?: boolean;
 }
 
 export interface GraphWorkflowOptions {

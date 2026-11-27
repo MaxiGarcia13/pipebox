@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import DoctorStatus from '@/components/doctor-status.vue';
-import EventLog from '@/components/event-log.vue';
+import EventLog from '@/components/event-log';
 import ProjectStatus from '@/components/project-status.vue';
 import RunToolbar from '@/components/run-toolbar.vue';
 import SetupBanner from '@/components/setup-banner.vue';
@@ -16,11 +16,13 @@ const {
   workflows,
   providers,
   selectedWorkflow,
+  selectedWorkflowProvider,
   runningWorkflow,
   doctor,
   events,
   isRunning,
   logIsRunning,
+  parallelJobs,
   statusMessage,
   selectedWorkflowInputs,
   inputValues,
@@ -41,7 +43,23 @@ function onRunJob(jobId: string) {
   if (!selectedWorkflow.value) {
     return;
   }
+  // Parallel is whole-workflow only; never spawn --job while the box is on.
+  if (parallelJobs.value) {
+    void startRun(selectedWorkflow.value);
+    return;
+  }
   void startJob(selectedWorkflow.value, jobId);
+}
+
+function onRunWorkflow() {
+  if (!selectedWorkflow.value) {
+    return;
+  }
+  void startRun(selectedWorkflow.value);
+}
+
+function onParallelJobsUpdate(value: boolean) {
+  parallelJobs.value = value;
 }
 </script>
 
@@ -90,7 +108,11 @@ function onRunJob(jobId: string) {
           class="min-w-0 flex-1"
           :events="events"
           :is-running="logIsRunning"
+          :provider="selectedWorkflowProvider"
+          :parallel-jobs="parallelJobs"
           @run-job="onRunJob"
+          @run-workflow="onRunWorkflow"
+          @update:parallel-jobs="onParallelJobsUpdate"
         />
         <aside
           v-if="selectedWorkflowInputs.length > 0"
