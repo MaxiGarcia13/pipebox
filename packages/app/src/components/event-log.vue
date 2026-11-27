@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import type { JobNeedDependency } from '@/components/job-needs-dialog.vue';
-import type { Artifact, ErrorEvent, RunnerEvent } from '@/domain/runner-events';
+import type { Artifact, ErrorEvent, RunnerEvent, WorkflowProvider } from '@/domain/runner-events';
 import { computed, ref, toRef } from 'vue';
 import ArtifactList from '@/components/artifact-list.vue';
 import JobNeedsDialog from '@/components/job-needs-dialog.vue';
 import JobRunBar from '@/components/job-run-bar.vue';
 import JobTimeline from '@/components/job-timeline.vue';
+import RunTerminal from '@/components/run-terminal.vue';
 import StepLogGroup from '@/components/step-log-group.vue';
 import { useNow } from '@/composables/use-now';
 import {
   allNeedsPassed,
+  chronologicalLogLines,
   defaultSelectedJobId,
   groupRunEvents,
   stepsForJob,
@@ -19,10 +21,14 @@ import {
 const props = defineProps<{
   events: RunnerEvent[];
   isRunning: boolean;
+  provider?: WorkflowProvider | null;
+  parallelJobs?: boolean;
+  logDisplayMode?: 'steps' | 'terminal';
 }>();
 
 const emit = defineEmits<{
-  runJob: [jobId: string];
+  'runJob': [jobId: string];
+  'update:parallelJobs': [value: boolean];
 }>();
 
 const selectedId = ref<string | null>(null);
@@ -52,6 +58,12 @@ const runLabel = computed((): 'Run' | 'Re-run' =>
     ? 'Re-run'
     : 'Run',
 );
+
+const showParallel = computed(() => props.provider === 'github');
+
+const showTerminal = computed(() => props.logDisplayMode === 'terminal');
+
+const terminalLines = computed(() => chronologicalLogLines(props.events));
 
 const needDependencies = computed((): JobNeedDependency[] => {
   const job = activeJob.value;
@@ -149,10 +161,14 @@ function confirmNeedsRun() {
       />
 
       <JobRunBar
-        v-if="activeJob"
+        v-if="activeJob || showParallel"
         :label="runLabel"
         :disabled="isRunning"
+        :show-run="Boolean(activeJob)"
+        :show-parallel="showParallel"
+        :parallel-jobs="parallelJobs"
         @run="requestRunJob"
+        @update:parallel-jobs="emit('update:parallelJobs', $event)"
       />
 
       <JobNeedsDialog
@@ -162,49 +178,70 @@ function confirmNeedsRun() {
         @confirm="confirmNeedsRun"
       />
 
-      <div class="min-h-0 flex-1 overflow-auto">
-        <StepLogGroup
-          v-for="group in visibleSteps"
-          :key="group.key"
-          :group="group"
-          :now="now"
+      <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <RunTerminal
+          v-if="showTerminal"
+          :lines="terminalLines"
+          :is-live="isRunning"
         />
 
-        <p
-          v-if="visibleSteps.length === 0 && !isRunning && systemLogs.length === 0"
-          class="p-4 text-sm text-muted-foreground"
-        >
-          No steps for this job yet
-        </p>
+        <template v-else>
+          <div class="min-h-0 flex-1 overflow-auto">
+            <StepLogGroup
+              v-for="group in visibleSteps"
+              :key="group.key"
+              :group="group"
+              :now="now"
+            />
 
-        <pre
-          v-if="systemLogs.length > 0"
-          data-testid="event-log-system"
-          class="overflow-x-auto border-t border-border p-4 font-mono text-xs leading-relaxed text-muted-foreground"
-        >{{ systemLogs.join('\n') }}</pre>
+            <p
+              v-if="visibleSteps.length === 0 && !isRunning && systemLogs.length === 0"
+              class="p-4 text-sm text-muted-foreground"
+            >
+              No steps for this job yet
+            </p>
 
-        <ul
-          v-if="runErrors.length > 0"
-          data-testid="event-log-errors"
-          class="space-y-2 border-t border-border p-4 text-sm text-destructive"
-        >
-          <li
-            v-for="(error, index) in runErrors"
-            :key="index"
+            <pre
+              v-if="systemLogs.length > 0"
+              data-testid="event-log-system"
+              class="overflow-x-auto border-t border-border p-4 font-mono text-xs leading-relaxed text-muted-foreground"
+            >{{ systemLogs.join('\n') }}</pre>
+
+            <ul
+              v-if="runErrors.length > 0"
+              data-testid="event-log-errors"
+              class="space-y-2 border-t border-border p-4 text-sm text-destructive"
+            >
+              <li
+                v-for="(error, index) in runErrors"
+                :key="index"
+              >
+                {{ error.message }}
+              </li>
+            </ul>
+
+            <ArtifactList :artifacts="artifacts" />
+
+            <p
+              v-if="runFinished"
+              data-testid="run-finished"
+              class="border-t border-border px-4 py-2 text-sm text-muted-foreground"
+            >
+              run {{ runFinished.status }} (exit {{ runFinished.exitCode }})
+            </p>
+          </div>
+        </template>
+
+        <template v-if="showTerminal">
+          <ArtifactList :artifacts="artifacts" />
+          <p
+            v-if="runFinished"
+            data-testid="run-finished"
+            class="border-t border-border px-4 py-2 text-sm text-muted-foreground"
           >
-            {{ error.message }}
-          </li>
-        </ul>
-
-        <ArtifactList :artifacts="artifacts" />
-
-        <p
-          v-if="runFinished"
-          data-testid="run-finished"
-          class="border-t border-border px-4 py-2 text-sm text-muted-foreground"
-        >
-          run {{ runFinished.status }} (exit {{ runFinished.exitCode }})
-        </p>
+            run {{ runFinished.status }} (exit {{ runFinished.exitCode }})
+          </p>
+        </template>
       </div>
     </template>
   </div>
