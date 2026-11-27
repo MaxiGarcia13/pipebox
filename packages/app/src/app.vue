@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import DoctorStatus from '@/components/doctor-status.vue';
-import EventLog from '@/components/event-log/event-log.vue';
+import EventLog from '@/components/event-log';
 import ProjectStatus from '@/components/project-status.vue';
 import RunToolbar from '@/components/run-toolbar.vue';
 import SetupBanner from '@/components/setup-banner.vue';
