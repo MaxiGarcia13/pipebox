@@ -4,7 +4,6 @@ import type { Artifact, ErrorEvent, RunFinishedEvent } from '@/domain/runner-eve
 import { LOG_PRE_CLASS, LOG_SURFACE_CLASS } from '@/components/log-surface';
 import RunOutcome from '@/components/run-outcome.vue';
 import StepLogGroup from '@/components/step-log-group.vue';
-import { cn } from '@/utils';
 
 defineProps<{
   steps: StepGroup[];
@@ -36,9 +35,9 @@ defineProps<{
     <div
       v-if="systemLogs.length > 0"
       data-testid="event-log-system"
-      :class="cn('m-4 overflow-hidden', LOG_SURFACE_CLASS)"
+      :class="LOG_SURFACE_CLASS"
     >
-      <pre :class="cn(LOG_PRE_CLASS, 'text-muted-foreground')">{{ systemLogs.join('\n') }}</pre>
+      <pre :class="LOG_PRE_CLASS">{{ systemLogs.join('\n') }}</pre>
     </div>
 
     <RunOutcome

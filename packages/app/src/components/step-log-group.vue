@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/collapsible';
 import { Skeleton } from '@/components/ui/skeleton';
 import { visibleDurationMs } from '@/domain/run';
-import { cn, formatDuration } from '@/utils';
+import { formatDuration } from '@/utils';
 
 const props = defineProps<{
   group: StepGroup;
@@ -67,9 +67,9 @@ function stepDuration(group: StepGroup): number | undefined {
     <CollapsibleContent>
       <div
         v-if="group.lines.length > 0"
-        :class="cn('mx-4 mb-4 overflow-hidden', LOG_SURFACE_CLASS)"
+        :class="LOG_SURFACE_CLASS"
       >
-        <pre :class="cn(LOG_PRE_CLASS, 'text-foreground')">{{ group.lines.join('\n') }}</pre>
+        <pre :class="LOG_PRE_CLASS">{{ group.lines.join('\n') }}</pre>
       </div>
       <p
         v-else-if="group.status !== 'running'"
