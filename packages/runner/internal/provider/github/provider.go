@@ -55,7 +55,14 @@ func (Provider) Graph(repo, workflow string) (event.JobGraph, error) {
   return Graph(repo, workflow)
 }
 
-func (Provider) Run(_ context.Context, repo, workflow, job string, secrets []string, secretFile string, inputs []string) (int, error) {
+func (Provider) Run(
+  _ context.Context,
+  repo, workflow, job string,
+  secrets []string,
+  secretFile string,
+  inputs []string,
+  parallel bool,
+) (int, error) {
   return Start(Options{
     Repo:       repo,
     Workflow:   workflow,
@@ -63,5 +70,6 @@ func (Provider) Run(_ context.Context, repo, workflow, job string, secrets []str
     Secrets:    secrets,
     SecretFile: secretFile,
     Inputs:     inputs,
+    Parallel:   parallel,
   })
 }

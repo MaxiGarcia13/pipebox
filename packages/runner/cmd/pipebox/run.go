@@ -72,8 +72,9 @@ func runWorkflow(args []string) {
   secretFile := cli.FlagValue(args, "--secret-file")
   secrets := cli.FlagValues(args, "--secret")
   inputs := cli.FlagValues(args, "--input")
+  parallel := cli.HasFlag(args, "--parallel")
   if workflowRef == "" {
-    fail(fmt.Errorf("usage: pipebox run --workflow <id|path> [--provider <id>] [--job <id>] [--input KEY=VALUE] [--secret KEY=VALUE] [--secret-file <path>]"))
+    fail(fmt.Errorf("usage: pipebox run --workflow <id|path> [--provider <id>] [--job <id>] [--parallel] [--input KEY=VALUE] [--secret KEY=VALUE] [--secret-file <path>]"))
   }
   workflowPath, err := provider.ResolveWorkflow(repoPath, workflowRef, providerHint)
   if err != nil {
@@ -92,6 +93,7 @@ func runWorkflow(args []string) {
     Secrets:    secrets,
     SecretFile: secretFile,
     Inputs:     inputs,
+    Parallel:   parallel,
   })
   if err != nil {
     emitError(err)

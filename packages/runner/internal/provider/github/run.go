@@ -24,6 +24,7 @@ type Options struct {
   Secrets      []string
   SecretFile   string
   Inputs       []string
+  Parallel     bool
   ArtifactDir  string
   ArtifactPort int
   CacheDir     string

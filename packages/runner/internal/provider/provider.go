@@ -13,6 +13,7 @@ type RunOptions struct {
   Secrets    []string
   SecretFile string
   Inputs     []string
+  Parallel   bool
 }
 
 type Provider interface {

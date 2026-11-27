@@ -33,6 +33,7 @@ func (adapter githubAdapter) Run(ctx context.Context, opts RunOptions) (int, err
     opts.Secrets,
     opts.SecretFile,
     opts.Inputs,
+    opts.Parallel,
   )
 }
 
