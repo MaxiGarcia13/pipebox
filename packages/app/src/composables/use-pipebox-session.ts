@@ -8,7 +8,6 @@ import { useWorkflowSession } from './use-workflow-session';
 export function usePipeboxSession() {
   const statusMessage = ref('');
   const parallelJobs = ref(false);
-  const logDisplayMode = ref<'steps' | 'terminal'>('steps');
   const project = useProjectSession();
   const doctor = useDoctorSession();
   const workflow = useWorkflowSession(project.workflows);
@@ -64,7 +63,6 @@ export function usePipeboxSession() {
   async function openRepo(nextPath: string) {
     statusMessage.value = '';
     parallelJobs.value = false;
-    logDisplayMode.value = 'steps';
     workflow.reset();
     run.reset();
     await project.load(nextPath);
@@ -187,7 +185,6 @@ export function usePipeboxSession() {
     }
 
     const useParallel = parallel && !jobId;
-    logDisplayMode.value = useParallel ? 'terminal' : 'steps';
 
     const error = await run.start({
       repoPath,
@@ -198,7 +195,6 @@ export function usePipeboxSession() {
     });
     if (error) {
       statusMessage.value = error;
-      logDisplayMode.value = 'steps';
     }
   }
 
@@ -214,7 +210,6 @@ export function usePipeboxSession() {
     events,
     isRunning: run.isRunning,
     logIsRunning,
-    logDisplayMode,
     parallelJobs,
     statusMessage,
     selectedWorkflowInputs: workflow.selectedWorkflowInputs,

@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import type { StepGroup } from '@/domain/run';
 import type { Artifact, ErrorEvent, RunFinishedEvent } from '@/domain/runner-events';
+import { LOG_PRE_CLASS, LOG_SURFACE_CLASS } from '@/components/log-surface';
 import RunOutcome from '@/components/run-outcome.vue';
 import StepLogGroup from '@/components/step-log-group.vue';
+import { cn } from '@/utils';
 
 defineProps<{
   steps: StepGroup[];
@@ -31,11 +33,13 @@ defineProps<{
       No steps for this job yet
     </p>
 
-    <pre
+    <div
       v-if="systemLogs.length > 0"
       data-testid="event-log-system"
-      class="overflow-x-auto border-t border-border p-4 font-mono text-xs leading-relaxed text-muted-foreground"
-    >{{ systemLogs.join('\n') }}</pre>
+      :class="cn('m-4 overflow-hidden', LOG_SURFACE_CLASS)"
+    >
+      <pre :class="cn(LOG_PRE_CLASS, 'text-muted-foreground')">{{ systemLogs.join('\n') }}</pre>
+    </div>
 
     <RunOutcome
       :artifacts="artifacts"

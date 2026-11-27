@@ -22,7 +22,6 @@ const {
   events,
   isRunning,
   logIsRunning,
-  logDisplayMode,
   parallelJobs,
   statusMessage,
   selectedWorkflowInputs,
@@ -44,7 +43,19 @@ function onRunJob(jobId: string) {
   if (!selectedWorkflow.value) {
     return;
   }
+  // Parallel is whole-workflow only; never spawn --job while the box is on.
+  if (parallelJobs.value) {
+    void startRun(selectedWorkflow.value);
+    return;
+  }
   void startJob(selectedWorkflow.value, jobId);
+}
+
+function onRunWorkflow() {
+  if (!selectedWorkflow.value) {
+    return;
+  }
+  void startRun(selectedWorkflow.value);
 }
 
 function onParallelJobsUpdate(value: boolean) {
@@ -99,8 +110,8 @@ function onParallelJobsUpdate(value: boolean) {
           :is-running="logIsRunning"
           :provider="selectedWorkflowProvider"
           :parallel-jobs="parallelJobs"
-          :log-display-mode="logDisplayMode"
           @run-job="onRunJob"
+          @run-workflow="onRunWorkflow"
           @update:parallel-jobs="onParallelJobsUpdate"
         />
         <aside

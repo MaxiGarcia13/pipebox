@@ -38,7 +38,7 @@ watch(
   <div
     ref="root"
     data-testid="run-terminal"
-    class="min-h-0 flex-1 overflow-auto"
+    class="min-h-0 flex-1 overflow-auto bg-terminal text-foreground"
     @scroll="onScroll"
   >
     <p
@@ -54,11 +54,11 @@ watch(
       v-for="(line, index) in lines"
       :key="index"
       class="block"
-      :class="line.kind === 'error' ? 'text-destructive' : 'text-foreground'"
+      :class="line.kind === 'error' ? 'text-destructive' : ''"
     >{{ line.text }}</span></pre>
     <p
       v-if="isLive && lines.length > 0"
-      class="border-t border-border px-4 py-2 text-xs text-muted-foreground"
+      class="border-t border-secondary px-4 py-2 text-xs text-muted-foreground"
     >
       streaming…
     </p>

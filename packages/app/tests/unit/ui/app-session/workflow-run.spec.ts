@@ -114,17 +114,56 @@ describe('app session workflow run', () => {
     await flushPromises();
 
     expect(wrapper.find('[data-testid="parallel-jobs-toggle"]').exists()).toBe(true);
-    const runBar = wrapper.getComponent({ name: 'JobRunBar' });
-    await runBar.vm.$emit('update:parallelJobs', true);
+    await wrapper.get('[data-testid="parallel-jobs-toggle"]').trigger('click');
     await flushPromises();
 
-    await wrapper.get('[data-testid="workflow-run"]').trigger('click');
+    expect(wrapper.find('[data-testid="parallel-jobs-hint"]').exists()).toBe(true);
+    // Selecting parallel hides step logs immediately (before Run).
+    expect(wrapper.find('[data-testid="run-terminal"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="step-log-group"]').exists()).toBe(false);
+    expect(
+      wrapper.get('[data-testid="parallel-jobs-toggle"]').attributes('aria-checked'),
+    ).toBe('true');
+    expect(
+      wrapper.get('[data-testid="parallel-jobs-toggle"] [data-slot="checkbox"]')
+        .attributes('data-state'),
+    ).toBe('checked');
+
+    // Logs Run button must start the full workflow (not --job) when parallel is on.
+    await wrapper.get('[data-testid="job-run-button"]').trigger('click');
     await flushPromises();
 
     const startArgs = mock.startRunCalls.mock.calls[0]?.[0] as {
       parallel?: boolean;
+      job?: string;
     };
     expect(startArgs.parallel).toBe(true);
+    expect(startArgs.job).toBeUndefined();
+  });
+
+  it('ignores runJob and starts the full workflow when parallel is on', async () => {
+    const { wrapper, mock } = await mountApp({
+      launchRepo: FIXTURE_REPO_GITHUB,
+      runEvents: passedRunEvents(githubWorkflow.path),
+    });
+
+    await wrapper.get('[data-testid="workflow-row"]').trigger('click');
+    await flushPromises();
+    await wrapper.get('#workflow-input-note').setValue('ship it');
+    await flushPromises();
+
+    const eventLog = wrapper.getComponent({ name: 'EventLog' });
+    await eventLog.vm.$emit('update:parallelJobs', true);
+    await flushPromises();
+    await eventLog.vm.$emit('runJob', 'build');
+    await flushPromises();
+
+    const startArgs = mock.startRunCalls.mock.calls[0]?.[0] as {
+      parallel?: boolean;
+      job?: string;
+    };
+    expect(startArgs.parallel).toBe(true);
+    expect(startArgs.job).toBeUndefined();
     expect(wrapper.find('[data-testid="run-terminal"]').exists()).toBe(true);
   });
 
