@@ -80,9 +80,10 @@ Wire **rules** and **skills** locally for whatever agent you use (e.g. Cursor `.
 
 MCP: [packages/mcp/README.md](packages/mcp/README.md).
 
-## Pull requests
+## Issues and pull requests
 
-- Keep changes focused; match existing naming (kebab-case files, camelCase functions).
+- Bugs and ideas: use the GitHub templates under [`.github/ISSUE_TEMPLATE/`](.github/ISSUE_TEMPLATE/) (Bug, Idea).
+- Keep PR changes focused; match existing naming (kebab-case files, camelCase functions).
 - Run `pnpm lint` and `pnpm test` before opening a PR.
 - Prefer small modules with a single responsibility (app main / preload / renderer stay separate).
 - Use the description template in [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md) (Summary, Motivation, Details, Test plan).
