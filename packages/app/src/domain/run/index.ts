@@ -7,6 +7,11 @@ export type {
   ChronologicalLogLine,
 } from './chronological-log-lines';
 export { visibleDurationMs } from './elapsed';
+export {
+  findLastArtifacts,
+  findLastRunFinished,
+  findRunErrors,
+} from './find-run-meta';
 export { groupRunEvents } from './group-run-events';
 export { groupJobsByColumn, layoutJobGraph } from './layout-job-graph';
 export type { LaidOutJob } from './layout-job-graph';

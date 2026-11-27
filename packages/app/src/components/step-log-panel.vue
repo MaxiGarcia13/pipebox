@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { LogSearchSession } from '@/composables/use-log-search-session';
 import type { ChronologicalLogLine, SearchLinePart, StepGroup } from '@/domain/run';
 import type { Artifact, ErrorEvent, RunFinishedEvent } from '@/domain/runner-events';
 import { computed, ref } from 'vue';
@@ -17,9 +18,9 @@ const props = defineProps<{
   artifacts: Artifact[];
   runFinished?: RunFinishedEvent | null;
   errors?: ErrorEvent[];
+  search: LogSearchSession;
 }>();
 
-const root = ref<HTMLElement | null>(null);
 const scroller = ref<HTMLElement | null>(null);
 
 const searchLines = computed((): ChronologicalLogLine[] => {
@@ -47,7 +48,7 @@ const {
   goNext,
   goPrev,
   onSearchKeydown,
-} = useLogSearch(searchLines, scroller, root);
+} = useLogSearch(searchLines, scroller, props.search);
 
 const stepSearchParts = computed((): SearchLinePart[][][] => {
   let offset = 0;
@@ -75,7 +76,6 @@ function stepHasMatch(parts: SearchLinePart[][]): boolean {
 
 <template>
   <div
-    ref="root"
     data-testid="step-log-panel"
     class="flex min-h-0 flex-1 flex-col"
   >

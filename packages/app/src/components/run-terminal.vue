@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { LogSearchSession } from '@/composables/use-log-search-session';
 import type { ChronologicalLogLine } from '@/domain/run';
 import { nextTick, ref, toRef, watch } from 'vue';
 import LogMarkedLines from '@/components/log-marked-lines.vue';
@@ -8,9 +9,9 @@ import { useLogSearch } from '@/composables/use-log-search';
 const props = defineProps<{
   lines: ChronologicalLogLine[];
   isLive: boolean;
+  search: LogSearchSession;
 }>();
 
-const root = ref<HTMLElement | null>(null);
 const scroller = ref<HTMLElement | null>(null);
 const stickToBottom = ref(true);
 
@@ -29,7 +30,7 @@ const {
 } = useLogSearch(
   toRef(props, 'lines'),
   scroller,
-  root,
+  props.search,
   () => {
     stickToBottom.value = false;
   },
@@ -61,7 +62,6 @@ watch(
 
 <template>
   <div
-    ref="root"
     data-testid="run-terminal"
     class="flex min-h-0 flex-1 flex-col bg-terminal text-foreground"
   >

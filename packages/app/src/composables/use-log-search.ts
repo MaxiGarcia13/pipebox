@@ -1,6 +1,7 @@
 import type { MaybeRefOrGetter, Ref } from 'vue';
+import type { LogSearchSession } from '@/composables/use-log-search-session';
 import type { ChronologicalLogKind, ChronologicalLogLine } from '@/domain/run';
-import { computed, nextTick, onMounted, onUnmounted, ref, toValue, watch } from 'vue';
+import { computed, nextTick, toValue, watch } from 'vue';
 import { buildSearchLineParts } from '@/domain/run';
 
 export interface SearchedLogLine {
@@ -8,16 +9,13 @@ export interface SearchedLogLine {
   parts: Array<{ text: string; matchIndex: number | null }>;
 }
 
-const open = ref(false);
-const query = ref('');
-
 export function useLogSearch(
   lines: MaybeRefOrGetter<ChronologicalLogLine[]>,
   scroller: Ref<HTMLElement | null>,
-  container: Ref<HTMLElement | null>,
+  session: LogSearchSession,
   onNavigateAwayFromBottom?: () => void,
 ) {
-  const activeMatch = ref(0);
+  const { open, query, activeMatch, closeSearch } = session;
 
   const search = computed(() => {
     if (!open.value) {
@@ -54,25 +52,6 @@ export function useLogSearch(
   );
 
   const isSearching = computed(() => open.value && query.value.trim() !== '');
-
-  function focusInput() {
-    const input = container.value
-      ?.querySelector<HTMLInputElement>('[data-testid="log-search-input"]');
-    input?.focus();
-    input?.select();
-  }
-
-  async function openSearch() {
-    open.value = true;
-    await nextTick();
-    focusInput();
-  }
-
-  function closeSearch() {
-    open.value = false;
-    query.value = '';
-    activeMatch.value = 0;
-  }
 
   function clampActiveMatch() {
     if (matchCount.value === 0) {
@@ -140,18 +119,6 @@ export function useLogSearch(
     goNext();
   }
 
-  function onGlobalKeydown(event: KeyboardEvent) {
-    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'f') {
-      event.preventDefault();
-      void openSearch();
-      return;
-    }
-    if (event.key === 'Escape' && open.value) {
-      event.preventDefault();
-      closeSearch();
-    }
-  }
-
   watch(query, () => {
     activeMatch.value = 0;
     if (isSearching.value) {
@@ -164,14 +131,6 @@ export function useLogSearch(
     clampActiveMatch();
   });
 
-  onMounted(() => {
-    window.addEventListener('keydown', onGlobalKeydown);
-  });
-
-  onUnmounted(() => {
-    window.removeEventListener('keydown', onGlobalKeydown);
-  });
-
   return {
     open,
     query,
@@ -180,7 +139,6 @@ export function useLogSearch(
     matchLabel,
     renderedLines,
     isSearching,
-    openSearch,
     closeSearch,
     goNext,
     goPrev,
