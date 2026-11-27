@@ -5,7 +5,7 @@ JENKINS_IMAGE := pipebox-jenkins:latest
 JENKINS_REVISION := $(shell sed -n 's/^[[:space:]]*Revision = "\(.*\)"/\1/p' internal/provider/jenkins/jfrimage/image.go)
 GO_INDENT := node $(CURDIR)/../../scripts/go-indent.mjs
 
-.PHONY: build clean test lint lint-indent lint-fix doctor image image-act image-jenkins
+.PHONY: build clean test test-e2e lint lint-indent lint-fix doctor image image-act image-jenkins
 
 build:
 	go build -o $(BINARY) $(CMD)
@@ -15,6 +15,9 @@ clean:
 
 test:
 	go test ./...
+
+test-e2e:
+	go test -tags e2e -count=1 -timeout 30m ./internal/e2e/
 
 # gofmt uses tabs; this repo uses 2-space indent (.editorconfig).
 lint-indent:

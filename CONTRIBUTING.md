@@ -19,12 +19,13 @@ pnpm start          # build runner + launch Electron app
 
 ```bash
 pnpm start
-pnpm test              # Go runner tests + app unit (Vitest)
-pnpm test:e2e          # package Electron app + Playwright smoke
+pnpm test:unit         # Go runner unit tests, MCP tests, app unit (Vitest)
+pnpm test:e2e          # runner CLI e2e (Docker) + package Electron app + Playwright smoke
 pnpm lint
 pnpm lint:fix
 pnpm runner:build
 pnpm runner:test
+pnpm runner:test:e2e
 pnpm runner:image
 pnpm runner:lint
 pnpm runner:lint:fix
@@ -84,6 +85,6 @@ MCP: [packages/mcp/README.md](packages/mcp/README.md).
 
 - Bugs and ideas: use the GitHub templates under [`.github/ISSUE_TEMPLATE/`](.github/ISSUE_TEMPLATE/) (Bug, Idea).
 - Keep PR changes focused; match existing naming (kebab-case files, camelCase functions).
-- Run `pnpm lint` and `pnpm test` before opening a PR.
+- Run `pnpm lint` and `pnpm test:unit` before opening a PR.
 - Prefer small modules with a single responsibility (app main / preload / renderer stay separate).
 - Use the description template in [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md) (Summary, Motivation, Details, Test plan).

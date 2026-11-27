@@ -1,5 +1,9 @@
 version: '2'
 
+run:
+  build-tags:
+    - e2e
+
 # gofmt/gofumpt/goimports enforce tabs; this repo uses 2-space indent.
 formatters:
   enable: []

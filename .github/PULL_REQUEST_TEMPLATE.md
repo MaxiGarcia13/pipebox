@@ -16,5 +16,5 @@
 
 ## Test plan
 
-- [ ] `pnpm lint` and `pnpm test` pass
+- [ ] `pnpm lint` and `pnpm test:unit` pass
 - [ ]
